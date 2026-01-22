@@ -10,7 +10,9 @@ This is phase 2 of 3 for the dashboard UI layout. Use the screenshot referenced 
 - Items/types with links to /items/TYPE (eg.items/snippets)
 - Favorite collections
 - Most recent collections
-- Drawer on mobile
+- User avatar area at the bottom
+- Drawer icon to open/close sidebar
+- Always a drawer on mobile view
 
 ## References
 
@@ -19,4 +21,3 @@ This is phase 2 of 3 for the dashboard UI layout. Use the screenshot referenced 
 - @src/lib/mock-data.ts
 - @context/features/dashboard-phase-1-spec.md
 - @context/features/dashboard-phase-3-spec.md
-
