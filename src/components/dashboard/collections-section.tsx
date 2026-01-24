@@ -1,15 +1,14 @@
-"use client";
+import Link from 'next/link';
+import CollectionCard from './collection-card';
+import type { CollectionWithTypes } from '@/lib/db/collections';
 
-import Link from "next/link";
-import CollectionCard from "./collection-card";
-import { mockCollections } from "@/lib/mock-data";
+interface CollectionsSectionProps {
+  collections: CollectionWithTypes[];
+}
 
-export default function CollectionsSection() {
-  // Show up to 6 recent collections sorted by updatedAt
-  const recentCollections = [...mockCollections]
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-    .slice(0, 6);
-
+export default function CollectionsSection({
+  collections,
+}: CollectionsSectionProps) {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -21,11 +20,15 @@ export default function CollectionsSection() {
           View all
         </Link>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {recentCollections.map((collection) => (
-          <CollectionCard key={collection.id} collection={collection} />
-        ))}
-      </div>
+      {collections.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No collections yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {collections.map((collection) => (
+            <CollectionCard key={collection.id} collection={collection} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
