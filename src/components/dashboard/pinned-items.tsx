@@ -1,13 +1,13 @@
-"use client";
+import { Pin } from 'lucide-react';
+import ItemCard from './item-card';
+import type { ItemWithType } from '@/lib/db/items';
 
-import { Pin } from "lucide-react";
-import ItemCard from "./item-card";
-import { mockItems } from "@/lib/mock-data";
+interface PinnedItemsProps {
+  items: ItemWithType[];
+}
 
-export default function PinnedItems() {
-  const pinnedItems = mockItems.filter((item) => item.isPinned);
-
-  if (pinnedItems.length === 0) {
+export default function PinnedItems({ items }: PinnedItemsProps) {
+  if (items.length === 0) {
     return null;
   }
 
@@ -18,7 +18,7 @@ export default function PinnedItems() {
         <h2 className="text-lg font-semibold text-foreground">Pinned</h2>
       </div>
       <div className="space-y-3">
-        {pinnedItems.map((item) => (
+        {items.map((item) => (
           <ItemCard key={item.id} item={item} />
         ))}
       </div>

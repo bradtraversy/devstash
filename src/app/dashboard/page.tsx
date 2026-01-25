@@ -4,10 +4,18 @@ import CollectionsSection from '@/components/dashboard/collections-section';
 import PinnedItems from '@/components/dashboard/pinned-items';
 import RecentItems from '@/components/dashboard/recent-items';
 import { getDemoUser, getRecentCollections } from '@/lib/db/collections';
+import { getPinnedItems, getRecentItems } from '@/lib/db/items';
 
 export default async function DashboardPage() {
   const user = await getDemoUser();
-  const collections = user ? await getRecentCollections(user.id, 6) : [];
+
+  const [collections, pinnedItems, recentItems] = user
+    ? await Promise.all([
+        getRecentCollections(user.id, 6),
+        getPinnedItems(user.id),
+        getRecentItems(user.id, 10),
+      ])
+    : [[], [], []];
 
   return (
     <DashboardLayout>
@@ -25,10 +33,10 @@ export default async function DashboardPage() {
         <CollectionsSection collections={collections} />
 
         {/* Pinned Items */}
-        <PinnedItems />
+        <PinnedItems items={pinnedItems} />
 
         {/* Recent Items */}
-        <RecentItems />
+        <RecentItems items={recentItems} />
       </div>
     </DashboardLayout>
   );

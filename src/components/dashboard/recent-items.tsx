@@ -1,17 +1,13 @@
-"use client";
+import { Clock } from 'lucide-react';
+import ItemCard from './item-card';
+import type { ItemWithType } from '@/lib/db/items';
 
-import { Clock } from "lucide-react";
-import ItemCard from "./item-card";
-import { mockItems } from "@/lib/mock-data";
+interface RecentItemsProps {
+  items: ItemWithType[];
+}
 
-export default function RecentItems() {
-  // Get 10 most recent items sorted by updatedAt, excluding pinned items
-  const recentItems = [...mockItems]
-    .filter((item) => !item.isPinned)
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-    .slice(0, 10);
-
-  if (recentItems.length === 0) {
+export default function RecentItems({ items }: RecentItemsProps) {
+  if (items.length === 0) {
     return null;
   }
 
@@ -22,7 +18,7 @@ export default function RecentItems() {
         <h2 className="text-lg font-semibold text-foreground">Recent Items</h2>
       </div>
       <div className="space-y-3">
-        {recentItems.map((item) => (
+        {items.map((item) => (
           <ItemCard key={item.id} item={item} />
         ))}
       </div>
