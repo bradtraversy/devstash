@@ -19,6 +19,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ItemTypeWithCount } from "@/lib/db/items";
@@ -89,8 +90,16 @@ export default function MobileSidebar({
                     className="flex items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent"
                   >
                     <Icon className="h-4 w-4" style={{ color: type.color }} />
-                    <span className="flex-1 capitalize">{type.name}s</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="capitalize">{type.name}s</span>
+                    {(type.name === "file" || type.name === "image") && (
+                      <Badge
+                        variant="secondary"
+                        className="h-4 px-1 text-[10px] font-medium"
+                      >
+                        PRO
+                      </Badge>
+                    )}
+                    <span className="ml-auto text-xs text-muted-foreground">
                       {type.count}
                     </span>
                   </Link>

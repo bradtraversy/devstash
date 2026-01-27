@@ -18,6 +18,7 @@ import {
   PanelLeft,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -115,8 +116,16 @@ export default function Sidebar({
                 <Icon className="h-4 w-4" style={{ color: type.color }} />
                 {!isCollapsed && (
                   <>
-                    <span className="flex-1 capitalize">{type.name}s</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="capitalize">{type.name}s</span>
+                    {(type.name === "file" || type.name === "image") && (
+                      <Badge
+                        variant="secondary"
+                        className="h-4 px-1 text-[10px] font-medium"
+                      >
+                        PRO
+                      </Badge>
+                    )}
+                    <span className="ml-auto text-xs text-muted-foreground">
                       {type.count}
                     </span>
                   </>
