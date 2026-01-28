@@ -1,17 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  File,
-  Image,
-  Link as LinkIcon,
-  Star,
-  Settings,
-} from "lucide-react";
+import { Star, Settings } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -22,18 +12,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { getItemTypeIcon } from "@/lib/constants/item-types";
 import type { ItemTypeWithCount } from "@/lib/db/items";
 import type { SidebarCollections } from "@/lib/db/collections";
-
-const ICON_MAP = {
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  File,
-  Image,
-  Link: LinkIcon,
-};
 
 interface User {
   id: string;
@@ -80,7 +61,7 @@ export default function MobileSidebar({
                 Types
               </h3>
               {itemTypes.map((type) => {
-                const Icon = ICON_MAP[type.icon as keyof typeof ICON_MAP];
+                const Icon = getItemTypeIcon(type.icon);
 
                 return (
                   <Link

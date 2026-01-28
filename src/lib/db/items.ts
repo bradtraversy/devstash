@@ -1,5 +1,15 @@
 import { prisma } from '@/lib/prisma';
 
+// Maximum allowed limit for queries to prevent abuse
+const MAX_QUERY_LIMIT = 100;
+
+/**
+ * Validate and cap limit parameter
+ */
+function validateLimit(limit: number, defaultLimit: number): number {
+  return Math.min(Math.max(1, limit), MAX_QUERY_LIMIT) || defaultLimit;
+}
+
 export interface ItemType {
   name: string;
   icon: string;
@@ -125,13 +135,15 @@ export async function getRecentItems(
   userId: string,
   limit: number = 10
 ): Promise<ItemWithType[]> {
+  const safeLimit = validateLimit(limit, 10);
+
   const items = await prisma.item.findMany({
     where: {
       userId,
       isPinned: false,
     },
     orderBy: { updatedAt: 'desc' },
-    take: limit,
+    take: safeLimit,
     include: {
       itemType: true,
       tags: true,

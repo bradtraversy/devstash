@@ -1,28 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Star,
-  MoreHorizontal,
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  File,
-  Image,
-  Link as LinkIcon,
-  LucideIcon,
-} from 'lucide-react';
+import { Star, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getItemTypeIcon } from '@/lib/constants/item-types';
 import type { CollectionItemType } from '@/lib/db/collections';
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  File,
-  Image,
-  Link: LinkIcon,
-};
 
 interface CollectionCardProps {
   collection: {
@@ -73,8 +53,7 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
         {collection.itemTypes.length > 0 && (
           <div className="mt-3 flex items-center gap-2">
             {collection.itemTypes.map((itemType) => {
-              const IconComponent = ICON_MAP[itemType.icon];
-              if (!IconComponent) return null;
+              const IconComponent = getItemTypeIcon(itemType.icon);
               return (
                 <IconComponent
                   key={itemType.name}

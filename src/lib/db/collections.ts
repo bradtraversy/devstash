@@ -1,5 +1,15 @@
 import { prisma } from '@/lib/prisma';
 
+// Maximum allowed limit for queries to prevent abuse
+const MAX_QUERY_LIMIT = 100;
+
+/**
+ * Validate and cap limit parameter
+ */
+function validateLimit(limit: number, defaultLimit: number): number {
+  return Math.min(Math.max(1, limit), MAX_QUERY_LIMIT) || defaultLimit;
+}
+
 const DEMO_USER_EMAIL = 'demo@devstash.io';
 
 /**
@@ -30,24 +40,41 @@ export interface CollectionWithTypes {
   updatedAt: Date;
 }
 
+// Maximum items to sample per collection for type aggregation
+const MAX_ITEMS_FOR_TYPE_SAMPLE = 50;
+
 /**
  * Get recent collections for a user with item type information
  * Returns collections sorted by updatedAt, with aggregated item type data
+ * Uses _count for accurate item count and limits items fetched for type aggregation
  */
 export async function getRecentCollections(
   userId: string,
   limit: number = 6
 ): Promise<CollectionWithTypes[]> {
+  const safeLimit = validateLimit(limit, 6);
+
   const collections = await prisma.collection.findMany({
     where: { userId },
     orderBy: { updatedAt: 'desc' },
-    take: limit,
+    take: safeLimit,
     include: {
+      _count: {
+        select: { items: true },
+      },
       items: {
+        take: MAX_ITEMS_FOR_TYPE_SAMPLE,
         include: {
           item: {
-            include: {
-              itemType: true,
+            select: {
+              itemType: {
+                select: {
+                  id: true,
+                  name: true,
+                  icon: true,
+                  color: true,
+                },
+              },
             },
           },
         },
@@ -56,7 +83,7 @@ export async function getRecentCollections(
   });
 
   return collections.map((collection) => {
-    // Count items by type
+    // Count items by type from sampled items
     const typeCounts = new Map<string, CollectionItemType>();
 
     for (const itemCollection of collection.items) {
@@ -88,7 +115,7 @@ export async function getRecentCollections(
       name: collection.name,
       description: collection.description,
       isFavorite: collection.isFavorite,
-      itemCount: collection.items.length,
+      itemCount: collection._count.items,
       itemTypes,
       dominantColor,
       createdAt: collection.createdAt,
@@ -110,29 +137,56 @@ export interface SidebarCollections {
   recents: SidebarCollection[];
 }
 
-/**
- * Get collections for sidebar (favorites and recents)
- */
-export async function getSidebarCollections(
-  userId: string
-): Promise<SidebarCollections> {
-  const collections = await prisma.collection.findMany({
-    where: { userId },
-    orderBy: { updatedAt: 'desc' },
+// Shared include config for sidebar collections
+const sidebarCollectionInclude = {
+  _count: {
+    select: { items: true },
+  },
+  items: {
+    take: MAX_ITEMS_FOR_TYPE_SAMPLE,
     include: {
-      items: {
-        include: {
-          item: {
-            include: {
-              itemType: true,
+      item: {
+        select: {
+          itemType: {
+            select: {
+              id: true,
+              color: true,
             },
           },
         },
       },
     },
-  });
+  },
+} as const;
 
-  const processCollection = (collection: typeof collections[0]): SidebarCollection => {
+type SidebarCollectionWithItems = Awaited<
+  ReturnType<typeof prisma.collection.findMany<{ include: typeof sidebarCollectionInclude }>>
+>[number];
+
+/**
+ * Get collections for sidebar (favorites and recents)
+ * Uses parallel queries with proper limits instead of fetching all and filtering
+ */
+export async function getSidebarCollections(
+  userId: string
+): Promise<SidebarCollections> {
+  // Fetch favorites and recents in parallel with proper limits
+  const [favoriteCollections, recentCollections] = await Promise.all([
+    prisma.collection.findMany({
+      where: { userId, isFavorite: true },
+      orderBy: { updatedAt: 'desc' },
+      take: 5,
+      include: sidebarCollectionInclude,
+    }),
+    prisma.collection.findMany({
+      where: { userId, isFavorite: false },
+      orderBy: { updatedAt: 'desc' },
+      take: 3,
+      include: sidebarCollectionInclude,
+    }),
+  ]);
+
+  const processCollection = (collection: SidebarCollectionWithItems): SidebarCollection => {
     // Count items by type to find dominant color
     const typeCounts = new Map<string, { color: string; count: number }>();
 
@@ -163,21 +217,14 @@ export async function getSidebarCollections(
     return {
       id: collection.id,
       name: collection.name,
-      itemCount: collection.items.length,
+      itemCount: collection._count.items,
       isFavorite: collection.isFavorite,
       dominantColor,
     };
   };
 
-  const favorites = collections
-    .filter((c) => c.isFavorite)
-    .slice(0, 5)
-    .map(processCollection);
-
-  const recents = collections
-    .filter((c) => !c.isFavorite)
-    .slice(0, 3)
-    .map(processCollection);
+  const favorites = favoriteCollections.map(processCollection);
+  const recents = recentCollections.map(processCollection);
 
   return { favorites, recents };
 }

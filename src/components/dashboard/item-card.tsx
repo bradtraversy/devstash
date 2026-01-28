@@ -1,46 +1,16 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  File,
-  Image,
-  Link as LinkIcon,
-  Star,
-  Pin,
-  LucideIcon,
-} from 'lucide-react';
+import { Star, Pin } from 'lucide-react';
+import { getItemTypeIcon } from '@/lib/constants/item-types';
+import { formatRelativeDate } from '@/lib/utils/date';
 import type { ItemWithType } from '@/lib/db/items';
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  File,
-  Image,
-  Link: LinkIcon,
-};
 
 interface ItemCardProps {
   item: ItemWithType;
 }
 
-function formatDate(date: Date): string {
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
 export default function ItemCard({ item }: ItemCardProps) {
-  const IconComponent = ICON_MAP[item.itemType.icon] || Code;
+  const IconComponent = getItemTypeIcon(item.itemType.icon);
   const iconColor = item.itemType.color;
 
   return (
@@ -84,7 +54,7 @@ export default function ItemCard({ item }: ItemCardProps) {
           )}
         </div>
         <span className="text-xs text-muted-foreground shrink-0">
-          {formatDate(item.updatedAt)}
+          {formatRelativeDate(item.updatedAt)}
         </span>
       </CardContent>
     </Card>

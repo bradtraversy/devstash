@@ -3,13 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  File,
-  Image,
-  Link as LinkIcon,
   Star,
   ChevronDown,
   ChevronRight,
@@ -22,18 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { getItemTypeIcon } from "@/lib/constants/item-types";
 import type { ItemTypeWithCount } from "@/lib/db/items";
 import type { SidebarCollections } from "@/lib/db/collections";
-
-const ICON_MAP = {
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  File,
-  Image,
-  Link: LinkIcon,
-};
 
 interface User {
   id: string;
@@ -101,7 +85,7 @@ export default function Sidebar({
             </h3>
           )}
           {itemTypes.map((type) => {
-            const Icon = ICON_MAP[type.icon as keyof typeof ICON_MAP];
+            const Icon = getItemTypeIcon(type.icon);
 
             return (
               <Link

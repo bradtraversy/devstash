@@ -1,18 +1,28 @@
 # Current Feature
 
-<!-- Feature name and short description -->
+Code Quality Quick Wins - Address low-risk issues from codebase audit including N+1 query fix, code deduplication, and missing UI states.
 
 ## Status
 
-<!-- Not Started | In Progress | Completed -->
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+1. **Fix N+1 Query in Collections** - Refactor `getRecentCollections` and `getSidebarCollections` to limit nested item fetching using Prisma's `take` on relations (no raw SQL)
+2. **Add Database Indexes** - Add indexes on `isPinned`, `isFavorite`, and `updatedAt` fields for common query patterns
+3. **Create Shared ICON_MAP** - Move duplicate icon mapping from sidebar.tsx, mobile-sidebar.tsx, and collection-card.tsx to `/src/lib/constants/item-types.ts`
+4. **Create Shared Date Utility** - Move `formatDate` function from item-card.tsx to `/src/lib/utils/date.ts`
+5. **Add Loading State** - Create `/src/app/dashboard/loading.tsx` with skeleton UI
+6. **Add Error Boundary** - Create `/src/app/dashboard/error.tsx` for graceful error handling
+7. **Add Query Limit Validation** - Cap limit parameters in database functions to prevent abuse
+8. **Fix Unsafe Icon Type Assertion** - Add fallback icon when icon name not found in ICON_MAP
 
 ## Notes
 
-<!-- Any extra notes -->
+- These are all low-risk changes identified from the codebase audit
+- Authentication is a separate feature and will be implemented later
+- Stick to Prisma conventions - no raw SQL queries
+- Keep mock-data.ts for reference/testing purposes
 
 ## History
 
