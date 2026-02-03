@@ -166,3 +166,51 @@ export async function getRecentItems(
     updatedAt: item.updatedAt,
   }));
 }
+
+/**
+ * Valid item type names (singular form as stored in database)
+ */
+export const VALID_ITEM_TYPES = ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'] as const;
+export type ValidItemType = typeof VALID_ITEM_TYPES[number];
+
+/**
+ * Get items by type for a user
+ */
+export async function getItemsByType(
+  userId: string,
+  typeName: string
+): Promise<ItemWithType[]> {
+  const items = await prisma.item.findMany({
+    where: {
+      userId,
+      itemType: {
+        name: typeName,
+        isSystem: true,
+      },
+    },
+    orderBy: [
+      { isPinned: 'desc' },
+      { updatedAt: 'desc' },
+    ],
+    include: {
+      itemType: true,
+      tags: true,
+    },
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    isFavorite: item.isFavorite,
+    isPinned: item.isPinned,
+    itemType: {
+      name: item.itemType.name,
+      icon: item.itemType.icon,
+      color: item.itemType.color,
+    },
+    tags: item.tags.map((tag) => tag.name),
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }));
+}
