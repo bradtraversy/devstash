@@ -17,6 +17,8 @@ Read the following to get the full context of the project:
 - **Build**: `npm run build`
 - **Production server**: `npm run start`
 - **Lint**: `npm run lint`
+- **Test**: `npm run test` (single run)
+- **Test watch**: `npm run test:watch`
 
 ## Neon Database
 
