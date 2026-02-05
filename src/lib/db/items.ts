@@ -364,3 +364,28 @@ export async function updateItem(
     updatedAt: updated.updatedAt,
   };
 }
+
+/**
+ * Delete an item by ID (with ownership check)
+ * Returns true if deleted, false if not found or not owned
+ */
+export async function deleteItem(
+  userId: string,
+  itemId: string
+): Promise<boolean> {
+  // Verify ownership first
+  const existing = await prisma.item.findUnique({
+    where: { id: itemId },
+    select: { userId: true },
+  });
+
+  if (!existing || existing.userId !== userId) {
+    return false;
+  }
+
+  await prisma.item.delete({
+    where: { id: itemId },
+  });
+
+  return true;
+}

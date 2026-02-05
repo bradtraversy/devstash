@@ -8,14 +8,16 @@ vi.mock('@/auth', () => ({
 // Mock the db module
 vi.mock('@/lib/db/items', () => ({
   updateItem: vi.fn(),
+  deleteItem: vi.fn(),
 }));
 
-import { updateItem } from './items';
+import { updateItem, deleteItem } from './items';
 import { auth } from '@/auth';
-import { updateItem as updateItemQuery } from '@/lib/db/items';
+import { updateItem as updateItemQuery, deleteItem as deleteItemQuery } from '@/lib/db/items';
 
 const mockAuth = vi.mocked(auth);
 const mockUpdateItemQuery = vi.mocked(updateItemQuery);
+const mockDeleteItemQuery = vi.mocked(deleteItemQuery);
 
 describe('updateItem server action', () => {
   beforeEach(() => {
@@ -184,5 +186,58 @@ describe('updateItem server action', () => {
       language: null,
       tags: ['valid', 'another'],
     });
+  });
+});
+
+describe('deleteItem server action', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns error when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    const result = await deleteItem('item-123');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Unauthorized');
+  });
+
+  it('returns error for empty item ID', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+
+    const result = await deleteItem('');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Invalid item ID');
+  });
+
+  it('returns error when item not found', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockDeleteItemQuery.mockResolvedValue(false);
+
+    const result = await deleteItem('item-123');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Item not found or access denied');
+  });
+
+  it('returns success when item deleted', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockDeleteItemQuery.mockResolvedValue(true);
+
+    const result = await deleteItem('item-123');
+
+    expect(result.success).toBe(true);
+    expect(mockDeleteItemQuery).toHaveBeenCalledWith('user-123', 'item-123');
   });
 });

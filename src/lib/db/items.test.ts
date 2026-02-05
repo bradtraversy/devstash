@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getItemById } from './items';
+import { getItemById, deleteItem } from './items';
 
 // Mock Prisma client
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     item: {
       findUnique: vi.fn(),
+      delete: vi.fn(),
     },
   },
 }));
@@ -13,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
 import { prisma } from '@/lib/prisma';
 
 const mockFindUnique = vi.mocked(prisma.item.findUnique);
+const mockDelete = vi.mocked(prisma.item.delete);
 
 const mockDate = new Date('2025-06-15T12:00:00Z');
 
@@ -158,5 +160,39 @@ describe('getItemById', () => {
         },
       },
     });
+  });
+});
+
+describe('deleteItem', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns false when item does not exist', async () => {
+    mockFindUnique.mockResolvedValue(null);
+
+    const result = await deleteItem('user-1', 'nonexistent');
+
+    expect(result).toBe(false);
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it('returns false when item belongs to different user', async () => {
+    mockFindUnique.mockResolvedValue({ userId: 'other-user' } as never);
+
+    const result = await deleteItem('user-1', 'item-1');
+
+    expect(result).toBe(false);
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it('deletes item and returns true when user owns item', async () => {
+    mockFindUnique.mockResolvedValue({ userId: 'user-1' } as never);
+    mockDelete.mockResolvedValue({} as never);
+
+    const result = await deleteItem('user-1', 'item-1');
+
+    expect(result).toBe(true);
+    expect(mockDelete).toHaveBeenCalledWith({ where: { id: 'item-1' } });
   });
 });

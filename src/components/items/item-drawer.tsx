@@ -31,7 +31,8 @@ import {
 import { getItemTypeIcon } from "@/lib/constants/item-types";
 import { useItemDrawer } from "./item-drawer-provider";
 import { toast } from "sonner";
-import { updateItem } from "@/actions/items";
+import { updateItem, deleteItem } from "@/actions/items";
+import DeleteItemDialog from "./delete-item-dialog";
 
 function DrawerSkeleton() {
   return (
@@ -75,6 +76,7 @@ export default function ItemDrawer() {
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -163,6 +165,20 @@ export default function ItemDrawer() {
       toast.error("Failed to update item");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!item) return;
+
+    const result = await deleteItem(item.id);
+
+    if (result.success) {
+      toast.success("Item deleted");
+      closeDrawer();
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to delete item");
     }
   };
 
@@ -297,7 +313,10 @@ export default function ItemDrawer() {
                   Edit
                 </button>
                 <div className="flex-1" />
-                <button className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-red-500">
+                <button
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-red-500"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -574,6 +593,15 @@ export default function ItemDrawer() {
           </>
         )}
       </SheetContent>
+
+      {item && (
+        <DeleteItemDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          itemTitle={item.title}
+          onConfirm={handleDelete}
+        />
+      )}
     </Sheet>
   );
 }
