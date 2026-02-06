@@ -17,13 +17,13 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createItem, type CreateItemInput } from "@/actions/items";
 import { getItemTypeIcon, ITEM_TYPE_COLORS } from "@/lib/constants/item-types";
 import CodeEditor from "./code-editor";
+import MarkdownEditor from "./markdown-editor";
 
 interface NewItemDialogProps {
   open: boolean;
@@ -200,14 +200,10 @@ export default function NewItemDialog({ open, onOpenChange, defaultType }: NewIt
                   language={language || "plaintext"}
                 />
               ) : (
-                <Textarea
-                  id="content"
+                <MarkdownEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Enter content..."
-                  rows={6}
-                  className="font-mono text-sm"
-                  disabled={isLoading}
+                  onChange={setContent}
+                  placeholder="Write your content in Markdown..."
                 />
               )}
             </div>

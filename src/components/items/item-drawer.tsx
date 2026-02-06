@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { updateItem, deleteItem } from "@/actions/items";
 import DeleteItemDialog from "./delete-item-dialog";
 import CodeEditor from "./code-editor";
+import MarkdownEditor from "./markdown-editor";
 
 function DrawerSkeleton() {
   return (
@@ -354,13 +355,10 @@ export default function ItemDrawer() {
                             language={language || "plaintext"}
                           />
                         ) : (
-                          <Textarea
-                            id="content"
+                          <MarkdownEditor
                             value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            placeholder="Enter content..."
-                            rows={10}
-                            className="font-mono text-sm"
+                            onChange={setContent}
+                            placeholder="Write your content in Markdown..."
                           />
                         )}
                       </div>
@@ -492,20 +490,10 @@ export default function ItemDrawer() {
                           readOnly
                         />
                       ) : (
-                        <div className="rounded-lg border border-border bg-muted/50 overflow-hidden">
-                          <pre className="overflow-x-auto p-4 text-sm leading-relaxed">
-                            <code>
-                              {item.content.split("\n").map((line, i) => (
-                                <span key={i} className="flex">
-                                  <span className="inline-block w-8 shrink-0 text-right text-muted-foreground/50 select-none pr-4">
-                                    {i + 1}
-                                  </span>
-                                  <span className="flex-1">{line}</span>
-                                </span>
-                              ))}
-                            </code>
-                          </pre>
-                        </div>
+                        <MarkdownEditor
+                          value={item.content}
+                          readOnly
+                        />
                       )}
                     </div>
                   )}
