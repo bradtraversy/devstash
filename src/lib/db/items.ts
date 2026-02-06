@@ -40,6 +40,9 @@ export interface ItemDetail {
   url: string | null;
   language: string | null;
   contentType: string;
+  fileUrl: string | null;
+  fileName: string | null;
+  fileSize: number | null;
   isFavorite: boolean;
   isPinned: boolean;
   itemType: ItemType;
@@ -266,6 +269,9 @@ export async function getItemById(
     url: item.url,
     language: item.language,
     contentType: item.contentType,
+    fileUrl: item.fileUrl,
+    fileName: item.fileName,
+    fileSize: item.fileSize,
     isFavorite: item.isFavorite,
     isPinned: item.isPinned,
     itemType: {
@@ -348,6 +354,9 @@ export async function updateItem(
     url: updated.url,
     language: updated.language,
     contentType: updated.contentType,
+    fileUrl: updated.fileUrl,
+    fileName: updated.fileName,
+    fileSize: updated.fileSize,
     isFavorite: updated.isFavorite,
     isPinned: updated.isPinned,
     itemType: {
@@ -367,20 +376,32 @@ export async function updateItem(
 
 /**
  * Delete an item by ID (with ownership check)
+ * Also deletes associated file from R2 if present
  * Returns true if deleted, false if not found or not owned
  */
 export async function deleteItem(
   userId: string,
   itemId: string
 ): Promise<boolean> {
-  // Verify ownership first
+  // Verify ownership and get file URL
   const existing = await prisma.item.findUnique({
     where: { id: itemId },
-    select: { userId: true },
+    select: { userId: true, fileUrl: true },
   });
 
   if (!existing || existing.userId !== userId) {
     return false;
+  }
+
+  // Delete file from R2 if present
+  if (existing.fileUrl) {
+    try {
+      const { deleteFromR2 } = await import('@/lib/r2');
+      await deleteFromR2(existing.fileUrl);
+    } catch (error) {
+      // Log but don't fail - the DB record should still be deleted
+      console.error('Failed to delete file from R2:', error);
+    }
   }
 
   await prisma.item.delete({
@@ -398,6 +419,9 @@ export interface CreateItemData {
   url: string | null;
   language: string | null;
   tags: string[];
+  fileUrl?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
 }
 
 /**
@@ -437,6 +461,9 @@ export async function createItem(
       url: data.url,
       language: data.language,
       contentType,
+      fileUrl: data.fileUrl ?? null,
+      fileName: data.fileName ?? null,
+      fileSize: data.fileSize ?? null,
       tags: {
         connectOrCreate: data.tags.map((tagName) => ({
           where: { name: tagName },
@@ -465,6 +492,9 @@ export async function createItem(
     url: created.url,
     language: created.language,
     contentType: created.contentType,
+    fileUrl: created.fileUrl,
+    fileName: created.fileName,
+    fileSize: created.fileSize,
     isFavorite: created.isFavorite,
     isPinned: created.isPinned,
     itemType: {

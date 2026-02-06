@@ -261,6 +261,9 @@ describe('createItem server action', () => {
       url: null,
       language: null,
       tags: [],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
     });
 
     expect(result.success).toBe(false);
@@ -281,6 +284,9 @@ describe('createItem server action', () => {
       url: null,
       language: null,
       tags: [],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
     });
 
     expect(result.success).toBe(false);
@@ -302,6 +308,9 @@ describe('createItem server action', () => {
       url: 'not-a-url',
       language: null,
       tags: [],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
     });
 
     expect(result.success).toBe(false);
@@ -323,6 +332,9 @@ describe('createItem server action', () => {
       url: null,
       language: null,
       tags: [],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
     });
 
     expect(result.success).toBe(false);
@@ -345,6 +357,9 @@ describe('createItem server action', () => {
       url: null,
       language: null,
       tags: [],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
     });
 
     expect(result.success).toBe(false);
@@ -383,6 +398,9 @@ describe('createItem server action', () => {
       url: null,
       language: 'javascript',
       tags: ['react'],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
     });
 
     expect(result.success).toBe(true);
@@ -395,6 +413,9 @@ describe('createItem server action', () => {
       url: null,
       language: 'javascript',
       tags: ['react'],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
     });
   });
 
@@ -430,6 +451,9 @@ describe('createItem server action', () => {
       url: null,
       language: null,
       tags: ['valid', '', '  ', 'another'],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
     });
 
     expect(mockCreateItemQuery).toHaveBeenCalledWith('user-123', {
@@ -440,6 +464,9 @@ describe('createItem server action', () => {
       url: null,
       language: null,
       tags: ['valid', 'another'],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
     });
   });
 });

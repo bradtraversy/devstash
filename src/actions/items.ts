@@ -101,6 +101,9 @@ const createItemSchema = z.object({
   tags: z.array(z.string().trim()).transform((tags) =>
     tags.filter((tag) => tag.length > 0)
   ),
+  fileUrl: z.string().url().nullable().optional().transform((val) => val || null),
+  fileName: z.string().nullable().optional().transform((val) => val || null),
+  fileSize: z.number().int().positive().nullable().optional().transform((val) => val || null),
 });
 
 export type CreateItemInput = z.infer<typeof createItemSchema>;

@@ -27,7 +27,10 @@ import {
   Info,
   X,
   Save,
+  Download,
+  File,
 } from "lucide-react";
+import { formatFileSize } from "@/lib/r2";
 import { getItemTypeIcon } from "@/lib/constants/item-types";
 import { useItemDrawer } from "./item-drawer-provider";
 import { toast } from "sonner";
@@ -70,6 +73,8 @@ function DrawerSkeleton() {
 const TEXT_TYPES = ["snippet", "prompt", "command", "note"];
 // Types that have language field
 const LANGUAGE_TYPES = ["snippet", "command"];
+// Types that have file uploads
+const FILE_TYPES = ["file", "image"];
 
 export default function ItemDrawer() {
   const router = useRouter();
@@ -190,7 +195,25 @@ export default function ItemDrawer() {
   const showContent = TEXT_TYPES.includes(typeName);
   const showLanguage = LANGUAGE_TYPES.includes(typeName);
   const showUrl = typeName === "link";
+  const showFileContent = FILE_TYPES.includes(typeName);
+  const isImage = typeName === "image";
   const canSave = title.trim().length > 0;
+
+  const handleDownload = () => {
+    if (!item?.fileUrl) return;
+
+    // Extract the path from the R2 URL (format: https://xxx.r2.dev/{userId}/{timestamp}-{filename})
+    try {
+      const url = new URL(item.fileUrl);
+      // Remove leading slash from pathname
+      const filePath = url.pathname.slice(1);
+      // Use download proxy to avoid CORS
+      window.open(`/api/download/${filePath}`, "_blank");
+    } catch {
+      // Fallback: open the file URL directly
+      window.open(item.fileUrl, "_blank");
+    }
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeDrawer()}>
@@ -307,6 +330,15 @@ export default function ItemDrawer() {
                   <Copy className="h-4 w-4" />
                   Copy
                 </button>
+                {showFileContent && item.fileUrl && (
+                  <button
+                    onClick={handleDownload}
+                    className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </button>
+                )}
                 <button
                   onClick={handleEdit}
                   className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted"
@@ -512,6 +544,51 @@ export default function ItemDrawer() {
                       >
                         {item.url}
                       </a>
+                    </div>
+                  )}
+
+                  {/* File/Image content */}
+                  {showFileContent && item.fileUrl && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">
+                        {isImage ? "Image" : "File"}
+                      </p>
+                      {isImage ? (
+                        <div className="rounded-lg border border-border overflow-hidden bg-muted/30">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.fileUrl}
+                            alt={item.fileName || item.title}
+                            className="max-w-full h-auto max-h-80 object-contain mx-auto"
+                          />
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-border p-4 bg-muted/30">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
+                              <File className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm truncate">
+                                {item.fileName}
+                              </p>
+                              {item.fileSize && (
+                                <p className="text-muted-foreground text-xs">
+                                  {formatFileSize(item.fileSize)}
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleDownload}
+                            >
+                              <Download className="h-4 w-4 mr-1.5" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
