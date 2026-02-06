@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { signInWithGitHub } from "@/actions/auth";
 
 export function SignInForm() {
   const router = useRouter();
@@ -37,7 +38,6 @@ export function SignInForm() {
   }, [registered, router]);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isGitHubLoading, setIsGitHubLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [needsVerification, setNeedsVerification] = useState(false);
@@ -84,11 +84,6 @@ export function SignInForm() {
     } else {
       router.push(callbackUrl);
     }
-  }
-
-  async function handleGitHubSignIn() {
-    setIsGitHubLoading(true);
-    await signIn("github", { callbackUrl });
   }
 
   async function handleResendVerification() {
@@ -196,19 +191,12 @@ export function SignInForm() {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleGitHubSignIn}
-          disabled={isGitHubLoading}
-        >
-          {isGitHubLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
+        <form action={signInWithGitHub}>
+          <Button variant="outline" className="w-full" type="submit">
             <Github className="mr-2 h-4 w-4" />
-          )}
-          GitHub
-        </Button>
+            GitHub
+          </Button>
+        </form>
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
