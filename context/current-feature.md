@@ -14,6 +14,8 @@ Not Started
 
 ## History
 
+- **File & Image Upload** - Cloudflare R2 integration with upload/delete utilities, /api/upload and /api/download routes, FileUpload component with drag-and-drop and progress indicator, NewItemDialog file/image types with PRO badges, ItemDrawer image preview and file info with download button, R2 file cleanup on item deletion, 25 unit tests for R2 utilities (Completed)
+
 - **Markdown Editor** - MarkdownEditor component with Write/Preview tabs, react-markdown with remark-gfm for GitHub Flavored Markdown, @tailwindcss/typography plugin with prose styling, integrated into NewItemDialog and ItemDrawer for notes/prompts, macOS window styling in readonly mode, custom scrollbar styling (Completed)
 
 - **Item Create** - New Item modal dialog from top bar with shadcn Dialog, type selector (snippet/prompt/command/note/link), dynamic fields based on type, createItem server action with Zod validation, createItem query with tag connectOrCreate, unit tests (Completed)
