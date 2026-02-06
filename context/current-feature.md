@@ -14,6 +14,8 @@ Not Started
 
 ## History
 
+- **Markdown Editor** - MarkdownEditor component with Write/Preview tabs, react-markdown with remark-gfm for GitHub Flavored Markdown, @tailwindcss/typography plugin with prose styling, integrated into NewItemDialog and ItemDrawer for notes/prompts, macOS window styling in readonly mode, custom scrollbar styling (Completed)
+
 - **Item Create** - New Item modal dialog from top bar with shadcn Dialog, type selector (snippet/prompt/command/note/link), dynamic fields based on type, createItem server action with Zod validation, createItem query with tag connectOrCreate, unit tests (Completed)
 
 - **Initial Setup** - Next.js 16, Tailwind CSS v4, TypeScript configured (Completed)
