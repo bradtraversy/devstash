@@ -28,6 +28,7 @@ export interface ItemWithType {
   isPinned: boolean;
   itemType: ItemType;
   tags: string[];
+  fileUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -143,6 +144,7 @@ export async function getPinnedItems(userId: string): Promise<ItemWithType[]> {
       color: item.itemType.color,
     },
     tags: item.tags.map((tag) => tag.name),
+    fileUrl: item.fileUrl,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   }));
@@ -182,6 +184,7 @@ export async function getRecentItems(
       color: item.itemType.color,
     },
     tags: item.tags.map((tag) => tag.name),
+    fileUrl: item.fileUrl,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   }));
@@ -230,6 +233,7 @@ export async function getItemsByType(
       color: item.itemType.color,
     },
     tags: item.tags.map((tag) => tag.name),
+    fileUrl: item.fileUrl,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   }));
