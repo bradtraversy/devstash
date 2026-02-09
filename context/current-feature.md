@@ -1,16 +1,25 @@
-# Current Feature
+# Current Feature: Collection Create
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add feature goals here -->
+- Add "New Collection" button in top bar (next to New Item button)
+- Modal dialog with Name and Description fields
+- User-scoped collections (authenticated user only)
+- Follow existing patterns: lib/db functions for server, API routes for client
+- Toast notifications on success/failure
+- UI updates immediately with new collection after save
 
 ## Notes
 
-<!-- Add notes and constraints here -->
+- Pattern reference: NewItemDialog component, createItem action/query
+- Collections need: name (required), description (optional)
+- Update sidebar collections list after creation
+- Update dashboard collections section after creation
+- Validate name is not empty
 
 ## History
 

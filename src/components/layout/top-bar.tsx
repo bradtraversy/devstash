@@ -6,6 +6,7 @@ import { Search, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import NewItemDialog from "@/components/items/new-item-dialog";
+import NewCollectionDialog from "@/components/collections/new-collection-dialog";
 
 interface TopBarProps {
   onMenuClick?: () => void;
@@ -13,6 +14,7 @@ interface TopBarProps {
 
 export default function TopBar({ onMenuClick }: TopBarProps) {
   const [newItemOpen, setNewItemOpen] = useState(false);
+  const [newCollectionOpen, setNewCollectionOpen] = useState(false);
 
   return (
     <header className="flex h-14 items-center gap-4 border-b border-border px-6">
@@ -49,7 +51,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={() => setNewCollectionOpen(true)}>
           New Collection
         </Button>
         <Button size="sm" onClick={() => setNewItemOpen(true)}>
@@ -58,6 +60,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
       </div>
 
       <NewItemDialog open={newItemOpen} onOpenChange={setNewItemOpen} />
+      <NewCollectionDialog open={newCollectionOpen} onOpenChange={setNewCollectionOpen} />
     </header>
   );
 }

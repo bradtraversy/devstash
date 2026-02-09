@@ -245,3 +245,42 @@ export async function getSidebarCollections(
 
   return { favorites, recents };
 }
+
+export interface CreateCollectionData {
+  name: string;
+  description: string | null;
+}
+
+export interface CreatedCollection {
+  id: string;
+  name: string;
+  description: string | null;
+  isFavorite: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Create a new collection for a user
+ */
+export async function createCollection(
+  userId: string,
+  data: CreateCollectionData
+): Promise<CreatedCollection> {
+  const created = await prisma.collection.create({
+    data: {
+      userId,
+      name: data.name,
+      description: data.description,
+    },
+  });
+
+  return {
+    id: created.id,
+    name: created.name,
+    description: created.description,
+    isFavorite: created.isFavorite,
+    createdAt: created.createdAt,
+    updatedAt: created.updatedAt,
+  };
+}
