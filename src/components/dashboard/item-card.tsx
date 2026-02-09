@@ -2,10 +2,12 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, Pin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Star, Pin, Copy, Check } from 'lucide-react';
 import { getItemTypeIcon } from '@/lib/constants/item-types';
 import { formatRelativeDate } from '@/lib/utils/date';
 import { useItemDrawer } from '@/components/items/item-drawer-provider';
+import { useState } from 'react';
 import type { ItemWithType } from '@/lib/db/items';
 
 interface ItemCardProps {
@@ -14,13 +16,31 @@ interface ItemCardProps {
 
 export default function ItemCard({ item }: ItemCardProps) {
   const { openDrawer } = useItemDrawer();
+  const [copied, setCopied] = useState(false);
   const IconComponent = getItemTypeIcon(item.itemType.icon);
   const iconColor = item.itemType.color;
   const borderStyle = { borderLeftColor: iconColor, borderLeftWidth: '3px' };
 
+  // Determine if item has copyable content
+  const copyableContent = item.content || item.url;
+  const canCopy = !!copyableContent;
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!copyableContent) return;
+
+    try {
+      await navigator.clipboard.writeText(copyableContent);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   return (
     <Card
-      className="bg-card border-border hover:border-muted-foreground/50 transition-colors cursor-pointer"
+      className="group relative bg-card border-border hover:border-muted-foreground/50 transition-colors cursor-pointer"
       style={borderStyle}
       onClick={() => openDrawer(item.id)}
     >
@@ -66,6 +86,20 @@ export default function ItemCard({ item }: ItemCardProps) {
           {formatRelativeDate(item.updatedAt)}
         </span>
       </CardContent>
+      {canCopy && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute bottom-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={handleCopy}
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Copy className="h-4 w-4 text-muted-foreground" />
+          )}
+        </Button>
+      )}
     </Card>
   );
 }
