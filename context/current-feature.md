@@ -14,6 +14,8 @@ Not Started
 
 ## History
 
+- **Global Search / Command Palette** - Cmd+K/Ctrl+K opens command palette, search across items and collections, grouped results with type icons and item counts, keyboard navigation, TopBar search trigger, SearchProvider context with data pre-fetching, stricter substring matching, 7 new unit tests (Completed)
+
 - **Collection Management Actions** - Edit/delete/favorite buttons on /collections/[id] page, 3-dot dropdown on collection cards, EditCollectionDialog and DeleteCollectionDialog modals, updateCollection/deleteCollection server actions and db queries, items NOT deleted when collection deleted, 17 new unit tests (Completed)
 
 - **Collections Pages** - /collections page listing all collections, /collections/[id] detail page showing items grouped by type, getUserById utility, getAllCollections/getCollectionById/getItemsByCollection queries, collection cards link to detail pages, 5 unit tests (Completed)
