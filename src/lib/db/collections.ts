@@ -487,3 +487,34 @@ export async function deleteCollection(
 
   return true;
 }
+
+export interface SearchableCollection {
+  id: string;
+  name: string;
+  itemCount: number;
+}
+
+/**
+ * Get all collections for a user in a lightweight format for search
+ */
+export async function getSearchableCollections(
+  userId: string
+): Promise<SearchableCollection[]> {
+  const collections = await prisma.collection.findMany({
+    where: { userId },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      id: true,
+      name: true,
+      _count: {
+        select: { items: true },
+      },
+    },
+  });
+
+  return collections.map((collection) => ({
+    id: collection.id,
+    name: collection.name,
+    itemCount: collection._count.items,
+  }));
+}

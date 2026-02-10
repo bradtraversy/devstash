@@ -467,6 +467,58 @@ export interface CreateItemData {
 /**
  * Create a new item for a user
  */
+export interface SearchableItem {
+  id: string;
+  title: string;
+  typeName: string;
+  typeIcon: string;
+  typeColor: string;
+  contentPreview: string | null;
+}
+
+/**
+ * Get all items for a user in a lightweight format for search
+ */
+export async function getSearchableItems(
+  userId: string
+): Promise<SearchableItem[]> {
+  const items = await prisma.item.findMany({
+    where: { userId },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      description: true,
+      url: true,
+      itemType: {
+        select: {
+          name: true,
+          icon: true,
+          color: true,
+        },
+      },
+    },
+  });
+
+  return items.map((item) => {
+    // Create a content preview (first 100 chars of content, description, or url)
+    const previewSource = item.content || item.description || item.url || '';
+    const contentPreview = previewSource.length > 100
+      ? previewSource.slice(0, 100) + '...'
+      : previewSource || null;
+
+    return {
+      id: item.id,
+      title: item.title,
+      typeName: item.itemType.name,
+      typeIcon: item.itemType.icon,
+      typeColor: item.itemType.color,
+      contentPreview,
+    };
+  });
+}
+
 export async function createItem(
   userId: string,
   data: CreateItemData

@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Search, Menu } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import NewItemDialog from "@/components/items/new-item-dialog";
 import NewCollectionDialog from "@/components/collections/new-collection-dialog";
+import { useSearch } from "@/components/search/search-provider";
 
 interface TopBarProps {
   onMenuClick?: () => void;
@@ -15,6 +15,7 @@ interface TopBarProps {
 export default function TopBar({ onMenuClick }: TopBarProps) {
   const [newItemOpen, setNewItemOpen] = useState(false);
   const [newCollectionOpen, setNewCollectionOpen] = useState(false);
+  const { openSearch } = useSearch();
 
   return (
     <header className="flex h-14 items-center gap-4 border-b border-border px-6">
@@ -36,18 +37,18 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
         <span className="text-lg font-semibold">DevStash</span>
       </Link>
 
-      {/* Search - centered and flexible */}
-      <div className="relative mx-auto flex max-w-md flex-1 items-center">
-        <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search items..."
-          className="w-full pl-9"
-        />
-        <kbd className="pointer-events-none absolute right-3 hidden h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-xs font-medium opacity-100 sm:flex">
+      {/* Search trigger - opens command palette */}
+      <button
+        type="button"
+        onClick={openSearch}
+        className="relative mx-auto flex max-w-md flex-1 items-center h-9 rounded-md border border-input bg-background px-3 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+      >
+        <Search className="mr-2 h-4 w-4" />
+        <span className="flex-1 text-left">Search items...</span>
+        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-xs font-medium sm:flex">
           ⌘K
         </kbd>
-      </div>
+      </button>
 
       {/* Actions */}
       <div className="flex items-center gap-2">
