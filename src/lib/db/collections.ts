@@ -286,55 +286,78 @@ export async function getUserCollections(
   return collections;
 }
 
+export interface PaginatedCollections {
+  collections: CollectionWithTypes[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
+
 /**
- * Get all collections for a user with item type information
+ * Get all collections for a user with item type information and pagination
  */
 export async function getAllCollections(
-  userId: string
-): Promise<CollectionWithTypes[]> {
-  const collections = await prisma.collection.findMany({
-    where: { userId },
-    orderBy: { updatedAt: 'desc' },
-    include: {
-      _count: {
-        select: { items: true },
-      },
-      items: {
-        take: MAX_ITEMS_FOR_TYPE_SAMPLE,
-        include: {
-          item: {
-            select: {
-              itemType: {
-                select: {
-                  id: true,
-                  name: true,
-                  icon: true,
-                  color: true,
+  userId: string,
+  page: number = 1,
+  limit: number = 21
+): Promise<PaginatedCollections> {
+  const skip = (page - 1) * limit;
+
+  const [collections, totalCount] = await Promise.all([
+    prisma.collection.findMany({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+      skip,
+      take: limit,
+      include: {
+        _count: {
+          select: { items: true },
+        },
+        items: {
+          take: MAX_ITEMS_FOR_TYPE_SAMPLE,
+          include: {
+            item: {
+              select: {
+                itemType: {
+                  select: {
+                    id: true,
+                    name: true,
+                    icon: true,
+                    color: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.collection.count({
+      where: { userId },
+    }),
+  ]);
 
-  return collections.map((collection) => {
-    const itemTypes = countItemTypes(collection.items);
-    const dominantColor = itemTypes.length > 0 ? itemTypes[0].color : null;
+  return {
+    collections: collections.map((collection) => {
+      const itemTypes = countItemTypes(collection.items);
+      const dominantColor = itemTypes.length > 0 ? itemTypes[0].color : null;
 
-    return {
-      id: collection.id,
-      name: collection.name,
-      description: collection.description,
-      isFavorite: collection.isFavorite,
-      itemCount: collection._count.items,
-      itemTypes,
-      dominantColor,
-      createdAt: collection.createdAt,
-      updatedAt: collection.updatedAt,
-    };
-  });
+      return {
+        id: collection.id,
+        name: collection.name,
+        description: collection.description,
+        isFavorite: collection.isFavorite,
+        itemCount: collection._count.items,
+        itemTypes,
+        dominantColor,
+        createdAt: collection.createdAt,
+        updatedAt: collection.updatedAt,
+      };
+    }),
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit),
+    currentPage: page,
+  };
 }
 
 export interface CollectionDetail {

@@ -6,15 +6,19 @@ import ItemCard from '@/components/dashboard/item-card';
 import ImageThumbnailCard from '@/components/items/image-thumbnail-card';
 import FileListRow from '@/components/items/file-list-row';
 import ItemsPageHeader from '@/components/items/items-page-header';
+import Pagination from '@/components/shared/pagination';
 import { getSidebarCollections } from '@/lib/db/collections';
 import { getItemsByType, getItemTypesWithCounts, VALID_ITEM_TYPES } from '@/lib/db/items';
+import { ITEMS_PER_PAGE } from '@/lib/constants/pagination';
 
 interface ItemsPageProps {
   params: Promise<{ type: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
-export default async function ItemsPage({ params }: ItemsPageProps) {
+export default async function ItemsPage({ params, searchParams }: ItemsPageProps) {
   const { type: typeParam } = await params;
+  const { page: pageParam } = await searchParams;
 
   // Convert plural route param to singular type name (e.g., "snippets" -> "snippet")
   const typeName = typeParam.endsWith('s') ? typeParam.slice(0, -1) : typeParam;
@@ -23,6 +27,9 @@ export default async function ItemsPage({ params }: ItemsPageProps) {
   if (!VALID_ITEM_TYPES.includes(typeName as typeof VALID_ITEM_TYPES[number])) {
     notFound();
   }
+
+  // Parse page number (default to 1)
+  const currentPage = Math.max(1, parseInt(pageParam || '1', 10) || 1);
 
   const session = await auth();
 
@@ -39,12 +46,13 @@ export default async function ItemsPage({ params }: ItemsPageProps) {
     redirect('/sign-in');
   }
 
-  const [items, itemTypes, sidebarCollections] = await Promise.all([
-    getItemsByType(user.id, typeName),
+  const [paginatedItems, itemTypes, sidebarCollections] = await Promise.all([
+    getItemsByType(user.id, typeName, currentPage, ITEMS_PER_PAGE),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
   ]);
 
+  const { items, totalCount, totalPages } = paginatedItems;
   const displayName = typeName.charAt(0).toUpperCase() + typeName.slice(1) + 's';
 
   return (
@@ -58,7 +66,7 @@ export default async function ItemsPage({ params }: ItemsPageProps) {
         <ItemsPageHeader
           typeName={typeName}
           displayName={displayName}
-          itemCount={items.length}
+          itemCount={totalCount}
         />
 
         {/* Items Grid/List */}
@@ -89,6 +97,13 @@ export default async function ItemsPage({ params }: ItemsPageProps) {
             </p>
           </div>
         )}
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          baseUrl={`/items/${typeParam}`}
+        />
       </div>
     </DashboardLayout>
   );

@@ -252,59 +252,109 @@ export async function getRecentItems(
 export const VALID_ITEM_TYPES = ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'] as const;
 export type ValidItemType = typeof VALID_ITEM_TYPES[number];
 
-/**
- * Get items by type for a user
- */
-export async function getItemsByType(
-  userId: string,
-  typeName: string
-): Promise<ItemWithType[]> {
-  const items = await prisma.item.findMany({
-    where: {
-      userId,
-      itemType: {
-        name: typeName,
-        isSystem: true,
-      },
-    },
-    orderBy: [
-      { isPinned: 'desc' },
-      { updatedAt: 'desc' },
-    ],
-    include: {
-      itemType: true,
-      tags: true,
-    },
-  });
-
-  return items.map(toItemWithType);
+export interface PaginatedItems {
+  items: ItemWithType[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
 }
 
 /**
- * Get items by collection ID for a user
+ * Get items by type for a user with pagination
+ */
+export async function getItemsByType(
+  userId: string,
+  typeName: string,
+  page: number = 1,
+  limit: number = 21
+): Promise<PaginatedItems> {
+  const skip = (page - 1) * limit;
+
+  const [items, totalCount] = await Promise.all([
+    prisma.item.findMany({
+      where: {
+        userId,
+        itemType: {
+          name: typeName,
+          isSystem: true,
+        },
+      },
+      orderBy: [
+        { isPinned: 'desc' },
+        { updatedAt: 'desc' },
+      ],
+      skip,
+      take: limit,
+      include: {
+        itemType: true,
+        tags: true,
+      },
+    }),
+    prisma.item.count({
+      where: {
+        userId,
+        itemType: {
+          name: typeName,
+          isSystem: true,
+        },
+      },
+    }),
+  ]);
+
+  return {
+    items: items.map(toItemWithType),
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit),
+    currentPage: page,
+  };
+}
+
+/**
+ * Get items by collection ID for a user with pagination
  */
 export async function getItemsByCollection(
   userId: string,
-  collectionId: string
-): Promise<ItemWithType[]> {
-  const items = await prisma.item.findMany({
-    where: {
-      userId,
-      collections: {
-        some: { collectionId },
-      },
-    },
-    orderBy: [
-      { isPinned: 'desc' },
-      { updatedAt: 'desc' },
-    ],
-    include: {
-      itemType: true,
-      tags: true,
-    },
-  });
+  collectionId: string,
+  page: number = 1,
+  limit: number = 21
+): Promise<PaginatedItems> {
+  const skip = (page - 1) * limit;
 
-  return items.map(toItemWithType);
+  const [items, totalCount] = await Promise.all([
+    prisma.item.findMany({
+      where: {
+        userId,
+        collections: {
+          some: { collectionId },
+        },
+      },
+      orderBy: [
+        { isPinned: 'desc' },
+        { updatedAt: 'desc' },
+      ],
+      skip,
+      take: limit,
+      include: {
+        itemType: true,
+        tags: true,
+      },
+    }),
+    prisma.item.count({
+      where: {
+        userId,
+        collections: {
+          some: { collectionId },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    items: items.map(toItemWithType),
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit),
+    currentPage: page,
+  };
 }
 
 /**

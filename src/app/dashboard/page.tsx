@@ -8,6 +8,7 @@ import PinnedItems from '@/components/dashboard/pinned-items';
 import RecentItems from '@/components/dashboard/recent-items';
 import { getRecentCollections, getSidebarCollections } from '@/lib/db/collections';
 import { getPinnedItems, getRecentItems, getDashboardStats, getItemTypesWithCounts } from '@/lib/db/items';
+import { DASHBOARD_COLLECTIONS_LIMIT, DASHBOARD_RECENT_ITEMS_LIMIT } from '@/lib/constants/pagination';
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -23,9 +24,9 @@ export default async function DashboardPage() {
 
   const [collections, pinnedItems, recentItems, stats, itemTypes, sidebarCollections] = user
     ? await Promise.all([
-        getRecentCollections(user.id, 6),
+        getRecentCollections(user.id, DASHBOARD_COLLECTIONS_LIMIT),
         getPinnedItems(user.id),
-        getRecentItems(user.id, 10),
+        getRecentItems(user.id, DASHBOARD_RECENT_ITEMS_LIMIT),
         getDashboardStats(user.id),
         getItemTypesWithCounts(user.id),
         getSidebarCollections(user.id),

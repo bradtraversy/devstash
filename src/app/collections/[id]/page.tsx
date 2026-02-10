@@ -5,18 +5,22 @@ import ItemCard from '@/components/dashboard/item-card';
 import ImageThumbnailCard from '@/components/items/image-thumbnail-card';
 import FileListRow from '@/components/items/file-list-row';
 import CollectionActions from '@/components/collections/collection-actions';
+import Pagination from '@/components/shared/pagination';
 import { getSidebarCollections, getCollectionById } from '@/lib/db/collections';
 import { getItemTypesWithCounts, getItemsByCollection } from '@/lib/db/items';
 import { getUserById } from '@/lib/db/users';
 import { getItemTypeIcon } from '@/lib/constants/item-types';
+import { ITEMS_PER_PAGE } from '@/lib/constants/pagination';
 import { Star } from 'lucide-react';
 
 interface CollectionDetailPageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
-export default async function CollectionDetailPage({ params }: CollectionDetailPageProps) {
+export default async function CollectionDetailPage({ params, searchParams }: CollectionDetailPageProps) {
   const { id: collectionId } = await params;
+  const { page: pageParam } = await searchParams;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -35,11 +39,16 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
     notFound();
   }
 
-  const [items, itemTypes, sidebarCollections] = await Promise.all([
-    getItemsByCollection(user.id, collectionId),
+  // Parse page number (default to 1)
+  const currentPage = Math.max(1, parseInt(pageParam || '1', 10) || 1);
+
+  const [paginatedItems, itemTypes, sidebarCollections] = await Promise.all([
+    getItemsByCollection(user.id, collectionId, currentPage, ITEMS_PER_PAGE),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
   ]);
+
+  const { items, totalPages } = paginatedItems;
 
   // Separate items by type for different rendering
   const fileItems = items.filter((item) => item.itemType.name === 'file');
@@ -139,6 +148,13 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
             </p>
           </div>
         )}
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          baseUrl={`/collections/${collectionId}`}
+        />
       </div>
     </DashboardLayout>
   );
