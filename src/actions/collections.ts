@@ -7,6 +7,7 @@ import {
   updateCollection as updateCollectionQuery,
   deleteCollection as deleteCollectionQuery,
   getUserCollections as getUserCollectionsQuery,
+  toggleCollectionFavorite as toggleCollectionFavoriteQuery,
   type CreatedCollection,
   type CollectionForPicker,
 } from '@/lib/db/collections';
@@ -68,6 +69,40 @@ export async function getUserCollections(): Promise<GetCollectionsResult> {
   } catch {
     return { success: false, error: 'Failed to fetch collections' };
   }
+}
+
+const toggleFavoriteSchema = z.object({
+  id: z.string().min(1, 'Collection ID is required'),
+});
+
+interface ToggleFavoriteResult {
+  success: boolean;
+  data?: { isFavorite: boolean };
+  error?: string;
+}
+
+export async function toggleCollectionFavorite(
+  collectionId: string
+): Promise<ToggleFavoriteResult> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const parsed = toggleFavoriteSchema.safeParse({ id: collectionId });
+
+  if (!parsed.success) {
+    return { success: false, error: 'Invalid collection ID' };
+  }
+
+  const isFavorite = await toggleCollectionFavoriteQuery(parsed.data.id, session.user.id);
+
+  if (isFavorite === null) {
+    return { success: false, error: 'Collection not found' };
+  }
+
+  return { success: true, data: { isFavorite } };
 }
 
 const updateCollectionSchema = z.object({

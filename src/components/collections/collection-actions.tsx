@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, Star } from "lucide-react";
 import EditCollectionDialog from "./edit-collection-dialog";
 import DeleteCollectionDialog from "./delete-collection-dialog";
-import { deleteCollection } from "@/actions/collections";
+import { deleteCollection, toggleCollectionFavorite } from "@/actions/collections";
 import { toast } from "sonner";
 
 interface CollectionActionsProps {
@@ -22,6 +22,17 @@ export default function CollectionActions({ collection }: CollectionActionsProps
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const handleToggleFavorite = async () => {
+    const result = await toggleCollectionFavorite(collection.id);
+
+    if (result.success && result.data) {
+      toast.success(result.data.isFavorite ? "Added to favorites" : "Removed from favorites");
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to update favorite");
+    }
+  };
 
   const handleDelete = async () => {
     const result = await deleteCollection({ id: collection.id });
@@ -49,6 +60,7 @@ export default function CollectionActions({ collection }: CollectionActionsProps
         <Button
           variant="outline"
           size="icon"
+          onClick={handleToggleFavorite}
           title={collection.isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
           <Star

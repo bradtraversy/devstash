@@ -11,15 +11,17 @@ vi.mock('@/lib/db/collections', () => ({
   updateCollection: vi.fn(),
   deleteCollection: vi.fn(),
   getUserCollections: vi.fn(),
+  toggleCollectionFavorite: vi.fn(),
 }));
 
-import { createCollection, updateCollection, deleteCollection, getUserCollections } from './collections';
+import { createCollection, updateCollection, deleteCollection, getUserCollections, toggleCollectionFavorite } from './collections';
 import { auth } from '@/auth';
 import {
   createCollection as createCollectionQuery,
   updateCollection as updateCollectionQuery,
   deleteCollection as deleteCollectionQuery,
   getUserCollections as getUserCollectionsQuery,
+  toggleCollectionFavorite as toggleCollectionFavoriteQuery,
 } from '@/lib/db/collections';
 
 const mockAuth = vi.mocked(auth);
@@ -27,6 +29,7 @@ const mockCreateCollectionQuery = vi.mocked(createCollectionQuery);
 const mockUpdateCollectionQuery = vi.mocked(updateCollectionQuery);
 const mockDeleteCollectionQuery = vi.mocked(deleteCollectionQuery);
 const mockGetUserCollectionsQuery = vi.mocked(getUserCollectionsQuery);
+const mockToggleCollectionFavoriteQuery = vi.mocked(toggleCollectionFavoriteQuery);
 
 describe('createCollection server action', () => {
   beforeEach(() => {
@@ -432,5 +435,72 @@ describe('deleteCollection server action', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe('Failed to delete collection');
+  });
+});
+
+describe('toggleCollectionFavorite server action', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns error when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    const result = await toggleCollectionFavorite('collection-123');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Unauthorized');
+  });
+
+  it('returns error for empty collection ID', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+
+    const result = await toggleCollectionFavorite('');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Invalid collection ID');
+  });
+
+  it('returns error when collection not found', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockToggleCollectionFavoriteQuery.mockResolvedValue(null);
+
+    const result = await toggleCollectionFavorite('collection-123');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Collection not found');
+  });
+
+  it('returns new favorite state when toggled on', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockToggleCollectionFavoriteQuery.mockResolvedValue(true);
+
+    const result = await toggleCollectionFavorite('collection-123');
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ isFavorite: true });
+    expect(mockToggleCollectionFavoriteQuery).toHaveBeenCalledWith('collection-123', 'user-123');
+  });
+
+  it('returns new favorite state when toggled off', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockToggleCollectionFavoriteQuery.mockResolvedValue(false);
+
+    const result = await toggleCollectionFavorite('collection-123');
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ isFavorite: false });
   });
 });

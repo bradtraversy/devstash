@@ -588,6 +588,32 @@ export async function getFavoriteItems(userId: string): Promise<ItemWithType[]> 
   return items.map(toItemWithType);
 }
 
+/**
+ * Toggle isFavorite on an item (with ownership check)
+ * Returns the new isFavorite value, or null if not found/not owned
+ */
+export async function toggleItemFavorite(
+  userId: string,
+  itemId: string
+): Promise<boolean | null> {
+  const existing = await prisma.item.findUnique({
+    where: { id: itemId },
+    select: { userId: true, isFavorite: true },
+  });
+
+  if (!existing || existing.userId !== userId) {
+    return null;
+  }
+
+  const updated = await prisma.item.update({
+    where: { id: itemId },
+    data: { isFavorite: !existing.isFavorite },
+    select: { isFavorite: true },
+  });
+
+  return updated.isFavorite;
+}
+
 export async function createItem(
   userId: string,
   data: CreateItemData

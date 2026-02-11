@@ -10,17 +10,19 @@ vi.mock('@/lib/db/items', () => ({
   updateItem: vi.fn(),
   deleteItem: vi.fn(),
   createItem: vi.fn(),
+  toggleItemFavorite: vi.fn(),
   VALID_ITEM_TYPES: ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'] as const,
 }));
 
-import { updateItem, deleteItem, createItem } from './items';
+import { updateItem, deleteItem, createItem, toggleItemFavorite } from './items';
 import { auth } from '@/auth';
-import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery } from '@/lib/db/items';
+import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery } from '@/lib/db/items';
 
 const mockAuth = vi.mocked(auth);
 const mockUpdateItemQuery = vi.mocked(updateItemQuery);
 const mockDeleteItemQuery = vi.mocked(deleteItemQuery);
 const mockCreateItemQuery = vi.mocked(createItemQuery);
+const mockToggleItemFavoriteQuery = vi.mocked(toggleItemFavoriteQuery);
 
 describe('updateItem server action', () => {
   beforeEach(() => {
@@ -566,5 +568,72 @@ describe('createItem server action', () => {
       fileName: null,
       fileSize: null,
     });
+  });
+});
+
+describe('toggleItemFavorite server action', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns error when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    const result = await toggleItemFavorite('item-123');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Unauthorized');
+  });
+
+  it('returns error for empty item ID', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+
+    const result = await toggleItemFavorite('');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Invalid item ID');
+  });
+
+  it('returns error when item not found', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockToggleItemFavoriteQuery.mockResolvedValue(null);
+
+    const result = await toggleItemFavorite('item-123');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Item not found or access denied');
+  });
+
+  it('returns new favorite state when toggled on', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockToggleItemFavoriteQuery.mockResolvedValue(true);
+
+    const result = await toggleItemFavorite('item-123');
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ isFavorite: true });
+    expect(mockToggleItemFavoriteQuery).toHaveBeenCalledWith('user-123', 'item-123');
+  });
+
+  it('returns new favorite state when toggled off', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockToggleItemFavoriteQuery.mockResolvedValue(false);
+
+    const result = await toggleItemFavorite('item-123');
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ isFavorite: false });
   });
 });

@@ -511,6 +511,32 @@ export async function deleteCollection(
   return true;
 }
 
+/**
+ * Toggle isFavorite on a collection (with ownership check)
+ * Returns the new isFavorite value, or null if not found/not owned
+ */
+export async function toggleCollectionFavorite(
+  collectionId: string,
+  userId: string
+): Promise<boolean | null> {
+  const existing = await prisma.collection.findFirst({
+    where: { id: collectionId, userId },
+    select: { isFavorite: true },
+  });
+
+  if (!existing) {
+    return null;
+  }
+
+  const updated = await prisma.collection.update({
+    where: { id: collectionId },
+    data: { isFavorite: !existing.isFavorite },
+    select: { isFavorite: true },
+  });
+
+  return updated.isFavorite;
+}
+
 export interface FavoriteCollection {
   id: string;
   name: string;

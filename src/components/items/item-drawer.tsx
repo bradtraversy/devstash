@@ -37,7 +37,7 @@ import { getItemTypeIcon } from "@/lib/constants/item-types";
 import { useItemDrawer } from "./item-drawer-provider";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { toast } from "sonner";
-import { updateItem, deleteItem } from "@/actions/items";
+import { updateItem, deleteItem, toggleItemFavorite } from "@/actions/items";
 import { getUserCollections } from "@/actions/collections";
 import DeleteItemDialog from "./delete-item-dialog";
 import CodeEditor from "./code-editor";
@@ -120,6 +120,20 @@ export default function ItemDrawer() {
       setIsEditing(false);
     }
   }, [isOpen]);
+
+  const handleToggleFavorite = async () => {
+    if (!item) return;
+
+    const result = await toggleItemFavorite(item.id);
+
+    if (result.success && result.data) {
+      setItem({ ...item, isFavorite: result.data.isFavorite });
+      toast.success(result.data.isFavorite ? "Added to favorites" : "Removed from favorites");
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to update favorite");
+    }
+  };
 
   const handleCopy = () => {
     if (!item) return;
@@ -316,6 +330,7 @@ export default function ItemDrawer() {
             ) : (
               <div className="flex items-center gap-1 px-6 py-3">
                 <button
+                  onClick={handleToggleFavorite}
                   className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-muted"
                   style={
                     item.isFavorite

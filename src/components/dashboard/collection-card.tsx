@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import EditCollectionDialog from "@/components/collections/edit-collection-dialog";
 import DeleteCollectionDialog from "@/components/collections/delete-collection-dialog";
-import { deleteCollection } from "@/actions/collections";
+import { deleteCollection, toggleCollectionFavorite } from "@/actions/collections";
 import { toast } from "sonner";
 import { getItemTypeIcon } from "@/lib/constants/item-types";
 import type { CollectionItemType } from "@/lib/db/collections";
@@ -42,6 +42,17 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
 
   const handleCardClick = () => {
     router.push(`/collections/${collection.id}`);
+  };
+
+  const handleToggleFavorite = async () => {
+    const result = await toggleCollectionFavorite(collection.id);
+
+    if (result.success && result.data) {
+      toast.success(result.data.isFavorite ? "Added to favorites" : "Removed from favorites");
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to update favorite");
+    }
   };
 
   const handleDelete = async () => {
@@ -86,7 +97,7 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
                   <Pencil className="h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleToggleFavorite}>
                   <Star className="h-4 w-4" />
                   {collection.isFavorite ? "Unfavorite" : "Favorite"}
                 </DropdownMenuItem>

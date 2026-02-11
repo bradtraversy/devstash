@@ -6,6 +6,7 @@ import {
   updateItem as updateItemQuery,
   deleteItem as deleteItemQuery,
   createItem as createItemQuery,
+  toggleItemFavorite as toggleItemFavoriteQuery,
   VALID_ITEM_TYPES,
   type ItemDetail
 } from '@/lib/db/items';
@@ -83,6 +84,34 @@ export async function deleteItem(
   }
 
   return { success: true };
+}
+
+const toggleFavoriteSchema = z.object({
+  itemId: z.string().min(1, 'Item ID is required'),
+});
+
+export async function toggleItemFavorite(
+  itemId: string
+): Promise<ActionResult<{ isFavorite: boolean }>> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const parsed = toggleFavoriteSchema.safeParse({ itemId });
+
+  if (!parsed.success) {
+    return { success: false, error: 'Invalid item ID' };
+  }
+
+  const isFavorite = await toggleItemFavoriteQuery(session.user.id, parsed.data.itemId);
+
+  if (isFavorite === null) {
+    return { success: false, error: 'Item not found or access denied' };
+  }
+
+  return { success: true, data: { isFavorite } };
 }
 
 const createItemSchema = z.object({
