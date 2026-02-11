@@ -14,6 +14,10 @@ Not Started
 
 ## History
 
+- **Favorites Page** - Star icon in TopBar linking to /favorites, getFavoriteItems and getFavoriteCollections db queries, FavoriteItemRow and FavoriteCollectionRow components with compact VS Code/terminal-style rows, /favorites page with separate items/collections sections, click item opens ItemDrawer, click collection navigates to detail, empty state (Completed)
+
+- **Editor Preferences Settings** - Editor preferences on settings page with font size, tab size, word wrap, minimap, and theme dropdowns/toggles, editorPreferences JSON column on User model with migration, EditorPreferencesProvider context, updateEditorPreferences server action, Monaco editor applies user preferences, auto-save with toast, 19 unit tests (Completed)
+
 - **Settings Page** - Settings page at /settings with Change Password and Delete Account, Settings link in sidebar dropdowns, getUserWithSettings utility, simplified ProfileInfo (Completed)
 
 - **Initial Setup** - Next.js 16, Tailwind CSS v4, TypeScript configured (Completed)
