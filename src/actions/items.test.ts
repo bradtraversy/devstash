@@ -11,18 +11,20 @@ vi.mock('@/lib/db/items', () => ({
   deleteItem: vi.fn(),
   createItem: vi.fn(),
   toggleItemFavorite: vi.fn(),
+  toggleItemPin: vi.fn(),
   VALID_ITEM_TYPES: ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'] as const,
 }));
 
-import { updateItem, deleteItem, createItem, toggleItemFavorite } from './items';
+import { updateItem, deleteItem, createItem, toggleItemFavorite, toggleItemPin } from './items';
 import { auth } from '@/auth';
-import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery } from '@/lib/db/items';
+import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery, toggleItemPin as toggleItemPinQuery } from '@/lib/db/items';
 
 const mockAuth = vi.mocked(auth);
 const mockUpdateItemQuery = vi.mocked(updateItemQuery);
 const mockDeleteItemQuery = vi.mocked(deleteItemQuery);
 const mockCreateItemQuery = vi.mocked(createItemQuery);
 const mockToggleItemFavoriteQuery = vi.mocked(toggleItemFavoriteQuery);
+const mockToggleItemPinQuery = vi.mocked(toggleItemPinQuery);
 
 describe('updateItem server action', () => {
   beforeEach(() => {
@@ -635,5 +637,72 @@ describe('toggleItemFavorite server action', () => {
 
     expect(result.success).toBe(true);
     expect(result.data).toEqual({ isFavorite: false });
+  });
+});
+
+describe('toggleItemPin server action', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns error when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    const result = await toggleItemPin('item-123');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Unauthorized');
+  });
+
+  it('returns error for empty item ID', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+
+    const result = await toggleItemPin('');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Invalid item ID');
+  });
+
+  it('returns error when item not found', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockToggleItemPinQuery.mockResolvedValue(null);
+
+    const result = await toggleItemPin('item-123');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Item not found or access denied');
+  });
+
+  it('returns new pinned state when toggled on', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockToggleItemPinQuery.mockResolvedValue(true);
+
+    const result = await toggleItemPin('item-123');
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ isPinned: true });
+    expect(mockToggleItemPinQuery).toHaveBeenCalledWith('user-123', 'item-123');
+  });
+
+  it('returns new pinned state when toggled off', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123' },
+      expires: new Date().toISOString(),
+    });
+    mockToggleItemPinQuery.mockResolvedValue(false);
+
+    const result = await toggleItemPin('item-123');
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ isPinned: false });
   });
 });

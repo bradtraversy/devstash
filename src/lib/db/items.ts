@@ -614,6 +614,32 @@ export async function toggleItemFavorite(
   return updated.isFavorite;
 }
 
+/**
+ * Toggle isPinned on an item (with ownership check)
+ * Returns the new isPinned value, or null if not found/not owned
+ */
+export async function toggleItemPin(
+  userId: string,
+  itemId: string
+): Promise<boolean | null> {
+  const existing = await prisma.item.findUnique({
+    where: { id: itemId },
+    select: { userId: true, isPinned: true },
+  });
+
+  if (!existing || existing.userId !== userId) {
+    return null;
+  }
+
+  const updated = await prisma.item.update({
+    where: { id: itemId },
+    data: { isPinned: !existing.isPinned },
+    select: { isPinned: true },
+  });
+
+  return updated.isPinned;
+}
+
 export async function createItem(
   userId: string,
   data: CreateItemData

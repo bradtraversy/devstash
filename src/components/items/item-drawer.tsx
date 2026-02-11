@@ -37,7 +37,7 @@ import { getItemTypeIcon } from "@/lib/constants/item-types";
 import { useItemDrawer } from "./item-drawer-provider";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { toast } from "sonner";
-import { updateItem, deleteItem, toggleItemFavorite } from "@/actions/items";
+import { updateItem, deleteItem, toggleItemFavorite, toggleItemPin } from "@/actions/items";
 import { getUserCollections } from "@/actions/collections";
 import DeleteItemDialog from "./delete-item-dialog";
 import CodeEditor from "./code-editor";
@@ -132,6 +132,20 @@ export default function ItemDrawer() {
       router.refresh();
     } else {
       toast.error(result.error || "Failed to update favorite");
+    }
+  };
+
+  const handleTogglePin = async () => {
+    if (!item) return;
+
+    const result = await toggleItemPin(item.id);
+
+    if (result.success && result.data) {
+      setItem({ ...item, isPinned: result.data.isPinned });
+      toast.success(result.data.isPinned ? "Item pinned" : "Item unpinned");
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to update pin");
     }
   };
 
@@ -344,8 +358,19 @@ export default function ItemDrawer() {
                   />
                   Favorite
                 </button>
-                <button className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted">
-                  <Pin className="h-4 w-4" />
+                <button
+                  onClick={handleTogglePin}
+                  className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-muted"
+                  style={
+                    item.isPinned
+                      ? { color: "#3b82f6" }
+                      : { color: "var(--color-muted-foreground)" }
+                  }
+                >
+                  <Pin
+                    className="h-4 w-4"
+                    fill={item.isPinned ? "#3b82f6" : "none"}
+                  />
                   Pin
                 </button>
                 <button

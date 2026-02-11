@@ -1,16 +1,26 @@
-# Current Feature
+# Current Feature: Pinned Items
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add feature goals here -->
+- Create toggleItemPin server action with ownership check and Zod validation
+- Make Pin button in ItemDrawer clickable (exists but has no onClick)
+- Optimistic UI updates for instant feedback on pin/unpin
+- Toast notification on success/error
+- Pinned items sort to top of item listings
+- Follow the existing Favorite Button pattern
+- Items only (not collections)
+- Pin icon on ItemCard remains as static indicator
 
 ## Notes
 
-<!-- Add notes and constraints here -->
+- Follow the same pattern used for toggleItemFavorite
+- The Pin button already exists in the ItemDrawer action bar but is not wired up
+- Dashboard already has a pinned items section that should reflect pinned state
+- getItemsByType query already sorts pinned items first
 
 ## History
 

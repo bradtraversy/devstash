@@ -7,6 +7,7 @@ import {
   deleteItem as deleteItemQuery,
   createItem as createItemQuery,
   toggleItemFavorite as toggleItemFavoriteQuery,
+  toggleItemPin as toggleItemPinQuery,
   VALID_ITEM_TYPES,
   type ItemDetail
 } from '@/lib/db/items';
@@ -112,6 +113,34 @@ export async function toggleItemFavorite(
   }
 
   return { success: true, data: { isFavorite } };
+}
+
+const togglePinSchema = z.object({
+  itemId: z.string().min(1, 'Item ID is required'),
+});
+
+export async function toggleItemPin(
+  itemId: string
+): Promise<ActionResult<{ isPinned: boolean }>> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const parsed = togglePinSchema.safeParse({ itemId });
+
+  if (!parsed.success) {
+    return { success: false, error: 'Invalid item ID' };
+  }
+
+  const isPinned = await toggleItemPinQuery(session.user.id, parsed.data.itemId);
+
+  if (isPinned === null) {
+    return { success: false, error: 'Item not found or access denied' };
+  }
+
+  return { success: true, data: { isPinned } };
 }
 
 const createItemSchema = z.object({
