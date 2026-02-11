@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import FavoriteItemRow from "@/components/favorites/favorite-item-row";
-import FavoriteCollectionRow from "@/components/favorites/favorite-collection-row";
+import FavoritesItemList from "@/components/favorites/favorites-item-list";
+import FavoritesCollectionList from "@/components/favorites/favorites-collection-list";
 import { getSidebarCollections, getFavoriteCollections } from "@/lib/db/collections";
 import { getItemTypesWithCounts, getFavoriteItems } from "@/lib/db/items";
 import { getUserById, getEditorPreferences } from "@/lib/db/users";
@@ -62,35 +62,12 @@ export default async function FavoritesPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Items Section */}
             {favoriteItems.length > 0 && (
-              <section>
-                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  Items ({favoriteItems.length})
-                </h2>
-                <div className="border border-border rounded-md divide-y divide-border bg-card">
-                  {favoriteItems.map((item) => (
-                    <FavoriteItemRow key={item.id} item={item} />
-                  ))}
-                </div>
-              </section>
+              <FavoritesItemList items={favoriteItems} />
             )}
 
-            {/* Collections Section */}
             {favoriteCollections.length > 0 && (
-              <section>
-                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  Collections ({favoriteCollections.length})
-                </h2>
-                <div className="border border-border rounded-md divide-y divide-border bg-card">
-                  {favoriteCollections.map((collection) => (
-                    <FavoriteCollectionRow
-                      key={collection.id}
-                      collection={collection}
-                    />
-                  ))}
-                </div>
-              </section>
+              <FavoritesCollectionList collections={favoriteCollections} />
             )}
           </div>
         )}
