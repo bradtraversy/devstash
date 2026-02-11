@@ -2,25 +2,15 @@
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Add client-side sorting controls to the /favorites page
-- Sort options: Name (A-Z / Z-A), Date (newest / oldest), Item Type (grouped by type)
-- Sorting applies independently to both Items and Collections sections
-- Collections sort by Name and Date only (no item type)
-- Preserve the existing compact list layout and server component data fetching
-- No URL state or server-side changes needed — purely client-side
+<!-- Add feature goals here -->
 
 ## Notes
 
-- Current page is a server component ([page.tsx](src/app/favorites/page.tsx)) that fetches data and renders FavoriteItemRow / FavoriteCollectionRow
-- Need to extract the list rendering into a client component to handle sort state
-- Use a small sort dropdown or toggle buttons in each section header
-- Keep it minimal — match existing dev-focused aesthetic (monospace, compact)
-- ItemWithType has `item.title`, `item.updatedAt`, `item.itemType.name` for sorting
-- FavoriteCollection has `collection.name`, `collection.updatedAt` for sorting
+<!-- Add notes and constraints here -->
 
 ## History
 
@@ -74,3 +64,4 @@ In Progress
 - **Collection Management Actions** - Edit/delete/favorite buttons on /collections/[id] page, 3-dot dropdown on collection cards, EditCollectionDialog and DeleteCollectionDialog modals, updateCollection/deleteCollection server actions and db queries, items NOT deleted when collection deleted, 17 new unit tests (Completed)
 - **Global Search / Command Palette** - Cmd+K/Ctrl+K opens command palette, search across items and collections, grouped results with type icons and item counts, keyboard navigation, TopBar search trigger, SearchProvider context with data pre-fetching, stricter substring matching, 7 new unit tests (Completed)
 - **Pagination** - Reusable Pagination component with numbered pages and prev/next buttons, pagination on /items/[type], /collections, and /collections/[id] pages, server-side pagination with skip/take, pagination constants (ITEMS_PER_PAGE=21, COLLECTIONS_PER_PAGE=21), dashboard limits (DASHBOARD_COLLECTIONS_LIMIT=6, DASHBOARD_RECENT_ITEMS_LIMIT=10) (Completed)
+- **Favorites Sorting** - Client-side sorting on /favorites page, FavoritesItemList component with sort by Name/Date/Type, FavoritesCollectionList component with sort by Name/Date, shadcn Select dropdowns with compact monospace styling, useMemo for sorted lists, default sort by newest (Completed)
