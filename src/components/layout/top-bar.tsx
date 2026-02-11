@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Menu } from "lucide-react";
+import { Search, Menu, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NewItemDialog from "@/components/items/new-item-dialog";
 import NewCollectionDialog from "@/components/collections/new-collection-dialog";
@@ -52,6 +52,11 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/favorites" title="Favorites">
+            <Star className="h-5 w-5" />
+          </Link>
+        </Button>
         <Button variant="outline" size="sm" onClick={() => setNewCollectionOpen(true)}>
           New Collection
         </Button>

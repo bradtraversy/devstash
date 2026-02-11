@@ -569,6 +569,25 @@ export async function getSearchableItems(
   });
 }
 
+/**
+ * Get all favorite items for a user (sorted by updatedAt desc)
+ */
+export async function getFavoriteItems(userId: string): Promise<ItemWithType[]> {
+  const items = await prisma.item.findMany({
+    where: {
+      userId,
+      isFavorite: true,
+    },
+    orderBy: { updatedAt: 'desc' },
+    include: {
+      itemType: true,
+      tags: true,
+    },
+  });
+
+  return items.map(toItemWithType);
+}
+
 export async function createItem(
   userId: string,
   data: CreateItemData
