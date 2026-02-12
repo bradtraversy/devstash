@@ -11,7 +11,8 @@ export function formatRelativeDate(date: Date | string): string {
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  const weeks = Math.floor(diffDays / 7);
+  if (diffDays < 30) return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
 
   return dateObj.toLocaleDateString('en-US', {
     month: 'short',

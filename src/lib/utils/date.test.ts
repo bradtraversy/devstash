@@ -31,7 +31,16 @@ describe('formatRelativeDate', () => {
     );
   });
 
-  it('returns "X weeks ago" for 7-29 days ago', () => {
+  it('returns "1 week ago" for 7-13 days ago', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-06-15T12:00:00Z'));
+
+    expect(formatRelativeDate(new Date('2025-06-08T12:00:00Z'))).toBe(
+      '1 week ago'
+    );
+  });
+
+  it('returns "X weeks ago" for 14-29 days ago', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2025-06-15T12:00:00Z'));
 
