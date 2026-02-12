@@ -1,29 +1,16 @@
-# Current Feature: Homepage Mockup
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Create a static marketing homepage in `prototypes/homepage/` with `index.html`, `styles.css`, `script.js`
-- Hero section with "chaos to order" concept: floating icons (left), pulsing arrow (center), dashboard preview (right)
-- Animated chaos icons that drift, bounce off walls, and repel from mouse cursor
-- Fixed top nav with logo, Features/Pricing links, Sign In/Get Started buttons
-- Features section with 6 cards using item type accent colors
-- AI section with Pro Feature badge, capabilities checklist, and code editor mockup
-- Pricing section with Free vs Pro cards, yearly toggle ($72/yr), Pro highlighted as "Most Popular"
-- CTA section and footer with logo, link columns, dynamic copyright year
-- Scroll fade-in animations and navbar opacity on scroll
-- Responsive: stack hero vertically on mobile, single column grids, arrow rotates 90°
+<!-- Add feature goals here -->
 
 ## Notes
 
-- Dark theme with accent colors: Snippet (#3b82f6), Prompt (#f59e0b), Command (#06b6d4), Note (#22c55e), File (#64748b), Image (#ec4899), URL (#6366f1)
-- This is a standalone static prototype, NOT part of the Next.js app
-- Chaos icons use requestAnimationFrame for animation
-- Arrow has CSS pulse animation
-- Full spec at context/features/homepage-mockup-spec.md
+<!-- Add notes and constraints here -->
 
 ## History
 
@@ -79,3 +66,4 @@ In Progress
 - **Pagination** - Reusable Pagination component with numbered pages and prev/next buttons, pagination on /items/[type], /collections, and /collections/[id] pages, server-side pagination with skip/take, pagination constants (ITEMS_PER_PAGE=21, COLLECTIONS_PER_PAGE=21), dashboard limits (DASHBOARD_COLLECTIONS_LIMIT=6, DASHBOARD_RECENT_ITEMS_LIMIT=10) (Completed)
 - **Favorites Sorting** - Client-side sorting on /favorites page, FavoritesItemList component with sort by Name/Date/Type, FavoritesCollectionList component with sort by Name/Date, shadcn Select dropdowns with compact monospace styling, useMemo for sorted lists, default sort by newest (Completed)
 - **Pinned Items** - toggleItemPin db query and server action with ownership check and Zod validation, wired up ItemDrawer pin button with optimistic state update, blue highlight when pinned, toast feedback, router.refresh(), 5 new unit tests (Completed)
+- **Homepage Mockup** - Static marketing homepage prototype in prototypes/homepage/ with dark theme, hero section featuring chaos-to-order animation (8 floating icons with requestAnimationFrame, mouse repulsion, pulsing arrow, dashboard preview with topbar and content cards), fixed navbar with scroll opacity, 6 feature cards with accent colors, AI section with Pro badge and code editor mockup with syntax highlighting and AI-generated tags demo, pricing section with Free/Pro cards and monthly/yearly toggle, CTA section, footer with dynamic year, scroll fade-in animations via IntersectionObserver, fully responsive mobile layout (Completed)
