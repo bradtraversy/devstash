@@ -1,16 +1,29 @@
-# Current Feature
+# Current Feature: Homepage Mockup
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add feature goals here -->
+- Create a static marketing homepage in `prototypes/homepage/` with `index.html`, `styles.css`, `script.js`
+- Hero section with "chaos to order" concept: floating icons (left), pulsing arrow (center), dashboard preview (right)
+- Animated chaos icons that drift, bounce off walls, and repel from mouse cursor
+- Fixed top nav with logo, Features/Pricing links, Sign In/Get Started buttons
+- Features section with 6 cards using item type accent colors
+- AI section with Pro Feature badge, capabilities checklist, and code editor mockup
+- Pricing section with Free vs Pro cards, yearly toggle ($72/yr), Pro highlighted as "Most Popular"
+- CTA section and footer with logo, link columns, dynamic copyright year
+- Scroll fade-in animations and navbar opacity on scroll
+- Responsive: stack hero vertically on mobile, single column grids, arrow rotates 90°
 
 ## Notes
 
-<!-- Add notes and constraints here -->
+- Dark theme with accent colors: Snippet (#3b82f6), Prompt (#f59e0b), Command (#06b6d4), Note (#22c55e), File (#64748b), Image (#ec4899), URL (#6366f1)
+- This is a standalone static prototype, NOT part of the Next.js app
+- Chaos icons use requestAnimationFrame for animation
+- Arrow has CSS pulse animation
+- Full spec at context/features/homepage-mockup-spec.md
 
 ## History
 
