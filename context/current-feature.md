@@ -2,24 +2,15 @@
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Fix top bar overflow on mobile (header is 590px, overflows 320-375px viewports)
-- Hide "DevStash" logo text below `sm`, keep the "DS" badge only
-- Collapse search bar to icon-only below `sm`, still opens command palette on tap
-- Replace "New Collection" and "New Item" buttons with a single "+" dropdown menu on mobile (below `sm`)
-- Keep Favorites star visible at all sizes
-- Target mobile top bar layout: `☰  [DS]  🔍  ☆  +`
+<!-- Add feature goals here -->
 
 ## Notes
 
-- Actions div (Favorites, New Collection, New Item) is entirely off-screen on mobile
-- No overflow-hidden on header, so content silently overflows
-- At 768px (tablet) it fits fine, issue is below ~640px
-- Use shadcn DropdownMenu for the "+" button
-- Show full layout (text buttons, search bar, logo text) at `sm` (640px) and above
+<!-- Add notes and constraints here -->
 
 ## History
 
@@ -79,3 +70,4 @@ In Progress
 - **Favorites Sorting** - Client-side sorting on /favorites page, FavoritesItemList component with sort by Name/Date/Type, FavoritesCollectionList component with sort by Name/Date, shadcn Select dropdowns with compact monospace styling, useMemo for sorted lists, default sort by newest (Completed)
 - **Pinned Items** - toggleItemPin db query and server action with ownership check and Zod validation, wired up ItemDrawer pin button with optimistic state update, blue highlight when pinned, toast feedback, router.refresh(), 5 new unit tests (Completed)
 - **Homepage Mockup** - Static marketing homepage prototype in prototypes/homepage/ with dark theme, hero section featuring chaos-to-order animation (8 floating icons with requestAnimationFrame, mouse repulsion, pulsing arrow, dashboard preview with topbar and content cards), fixed navbar with scroll opacity, 6 feature cards with accent colors, AI section with Pro badge and code editor mockup with syntax highlighting and AI-generated tags demo, pricing section with Free/Pro cards and monthly/yearly toggle, CTA section, footer with dynamic year, scroll fade-in animations via IntersectionObserver, fully responsive mobile layout (Completed)
+- **Top Bar Mobile Responsive** - Fixed top bar overflow on mobile (590px content in 320-375px viewport), hide "DevStash" logo text below sm keeping DS badge, collapse search bar to icon-only on mobile still opening command palette, replace New Item/New Collection buttons with single + icon DropdownMenu on mobile, reduced gap/padding for small screens, shrink-0 on fixed elements, full layout preserved at sm+ breakpoint (Completed)
