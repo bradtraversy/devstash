@@ -30,10 +30,10 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden md:flex gap-8">
-          <a href="#features" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
+          <a href="/#features" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
             Features
           </a>
-          <a href="#pricing" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
+          <a href="/#pricing" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
             Pricing
           </a>
         </div>
@@ -59,14 +59,14 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="md:hidden flex flex-col gap-2 px-6 pb-6 border-t border-[#1e1e2e]">
           <a
-            href="#features"
+            href="/#features"
             className="text-[#8888a4] text-sm py-2"
             onClick={() => setMobileOpen(false)}
           >
             Features
           </a>
           <a
-            href="#pricing"
+            href="/#pricing"
             className="text-[#8888a4] text-sm py-2"
             onClick={() => setMobileOpen(false)}
           >

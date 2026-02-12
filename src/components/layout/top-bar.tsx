@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Menu, Star, Plus, FolderPlus, FilePlus } from "lucide-react";
+import { Search, Menu, Star, Plus, FolderPlus, FilePlus, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -37,9 +37,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
 
       {/* Logo */}
       <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <span className="text-sm font-bold">DS</span>
-        </div>
+        <FolderOpen className="h-6 w-6 text-primary" />
         <span className="hidden sm:inline text-lg font-semibold">DevStash</span>
       </Link>
 
