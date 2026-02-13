@@ -7,6 +7,7 @@ import ImageThumbnailCard from '@/components/items/image-thumbnail-card';
 import FileListRow from '@/components/items/file-list-row';
 import ItemsPageHeader from '@/components/items/items-page-header';
 import Pagination from '@/components/shared/pagination';
+import ProUpgradeGate from '@/components/shared/pro-upgrade-gate';
 import { getSidebarCollections } from '@/lib/db/collections';
 import { getItemsByType, getItemTypesWithCounts, VALID_ITEM_TYPES } from '@/lib/db/items';
 import { getEditorPreferences } from '@/lib/db/users';
@@ -40,11 +41,33 @@ export default async function ItemsPage({ params, searchParams }: ItemsPageProps
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, email: true, image: true },
+    select: { id: true, name: true, email: true, image: true, isPro: true },
   });
 
   if (!user) {
     redirect('/sign-in');
+  }
+
+  // Pro-only types: file and image require a Pro subscription
+  const isProType = typeName === 'file' || typeName === 'image';
+
+  if (isProType && !user.isPro) {
+    const [itemTypes, sidebarCollections, editorPreferences] = await Promise.all([
+      getItemTypesWithCounts(user.id),
+      getSidebarCollections(user.id),
+      getEditorPreferences(user.id),
+    ]);
+
+    return (
+      <DashboardLayout
+        itemTypes={itemTypes}
+        sidebarCollections={sidebarCollections}
+        user={user}
+        editorPreferences={editorPreferences}
+      >
+        <ProUpgradeGate typeName={typeName} />
+      </DashboardLayout>
+    );
   }
 
   const [paginatedItems, itemTypes, sidebarCollections, editorPreferences] = await Promise.all([

@@ -129,25 +129,6 @@ async function main() {
   })
   console.log(`   ✓ ${devopsCollection.name}`)
 
-  const terminalCommandsCollection = await prisma.collection.create({
-    data: {
-      name: 'Terminal Commands',
-      description: 'Useful shell commands for everyday development',
-      userId: demoUser.id,
-      defaultTypeId: itemTypeMap['command'],
-    },
-  })
-  console.log(`   ✓ ${terminalCommandsCollection.name}`)
-
-  const designResourcesCollection = await prisma.collection.create({
-    data: {
-      name: 'Design Resources',
-      description: 'UI/UX resources and references',
-      userId: demoUser.id,
-      defaultTypeId: itemTypeMap['link'],
-    },
-  })
-  console.log(`   ✓ ${designResourcesCollection.name}`)
 
   // ============================================
   // 4. CREATE ITEMS
@@ -595,27 +576,6 @@ volumes:
   })
   console.log(`   ✓ DevOps: 4 items`)
 
-  // Terminal Commands
-  await prisma.itemCollection.createMany({
-    data: [
-      { itemId: gitUndoCommand.id, collectionId: terminalCommandsCollection.id },
-      { itemId: dockerCleanupCommand.id, collectionId: terminalCommandsCollection.id },
-      { itemId: killPortCommand.id, collectionId: terminalCommandsCollection.id },
-      { itemId: npmOutdatedCommand.id, collectionId: terminalCommandsCollection.id },
-    ],
-  })
-  console.log(`   ✓ Terminal Commands: 4 items`)
-
-  // Design Resources
-  await prisma.itemCollection.createMany({
-    data: [
-      { itemId: tailwindDocsLink.id, collectionId: designResourcesCollection.id },
-      { itemId: shadcnLink.id, collectionId: designResourcesCollection.id },
-      { itemId: radixLink.id, collectionId: designResourcesCollection.id },
-      { itemId: lucideLink.id, collectionId: designResourcesCollection.id },
-    ],
-  })
-  console.log(`   ✓ Design Resources: 4 items`)
 
   // ============================================
   // SUMMARY
@@ -624,7 +584,7 @@ volumes:
   console.log('\n📊 Summary:')
   console.log(`   • 7 system item types`)
   console.log(`   • 1 demo user (demo@devstash.io / 12345678)`)
-  console.log(`   • 5 collections`)
+  console.log(`   • 3 collections`)
   console.log(`   • 17 items total`)
 }
 
