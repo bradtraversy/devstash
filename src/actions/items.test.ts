@@ -15,9 +15,15 @@ vi.mock('@/lib/db/items', () => ({
   VALID_ITEM_TYPES: ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'] as const,
 }));
 
+// Mock the usage module
+vi.mock('@/lib/usage', () => ({
+  canCreateItem: vi.fn(),
+}));
+
 import { updateItem, deleteItem, createItem, toggleItemFavorite, toggleItemPin } from './items';
 import { auth } from '@/auth';
 import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery, toggleItemPin as toggleItemPinQuery } from '@/lib/db/items';
+import { canCreateItem } from '@/lib/usage';
 
 const mockAuth = vi.mocked(auth);
 const mockUpdateItemQuery = vi.mocked(updateItemQuery);
@@ -25,6 +31,7 @@ const mockDeleteItemQuery = vi.mocked(deleteItemQuery);
 const mockCreateItemQuery = vi.mocked(createItemQuery);
 const mockToggleItemFavoriteQuery = vi.mocked(toggleItemFavoriteQuery);
 const mockToggleItemPinQuery = vi.mocked(toggleItemPinQuery);
+const mockCanCreateItem = vi.mocked(canCreateItem);
 
 describe('updateItem server action', () => {
   beforeEach(() => {
@@ -297,6 +304,8 @@ describe('deleteItem server action', () => {
 describe('createItem server action', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: allow item creation
+    mockCanCreateItem.mockResolvedValue(true);
   });
 
   it('returns error when not authenticated', async () => {
@@ -365,6 +374,76 @@ describe('createItem server action', () => {
     expect(result.success).toBe(false);
     expect(result.error).toBe('Validation failed');
     expect(result.fieldErrors?.url).toBeDefined();
+  });
+
+  it('returns error when file type and not Pro', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    });
+
+    const result = await createItem({
+      typeName: 'file',
+      title: 'Test File',
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      tags: [],
+      fileUrl: 'https://example.com/file.pdf',
+      fileName: 'file.pdf',
+      fileSize: 1024,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('File and image uploads require a Pro subscription');
+  });
+
+  it('returns error when image type and not Pro', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    });
+
+    const result = await createItem({
+      typeName: 'image',
+      title: 'Test Image',
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      tags: [],
+      fileUrl: 'https://example.com/image.png',
+      fileName: 'image.png',
+      fileSize: 2048,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('File and image uploads require a Pro subscription');
+  });
+
+  it('returns error when item limit reached', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    });
+    mockCanCreateItem.mockResolvedValue(false);
+
+    const result = await createItem({
+      typeName: 'snippet',
+      title: 'Test',
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      tags: [],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('free tier limit of 50 items');
   });
 
   it('returns error when URL is required for link but not provided', async () => {

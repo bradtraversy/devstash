@@ -12,6 +12,7 @@ import {
   type ItemDetail
 } from '@/lib/db/items';
 import { parseZodErrors, safeUrlSchema } from '@/lib/validation';
+import { canCreateItem } from '@/lib/usage';
 
 const updateItemSchema = z.object({
   title: z.string().trim().min(1, 'Title is required'),
@@ -174,6 +175,18 @@ export async function createItem(
 
   if (!parsed.success) {
     return { success: false, error: 'Validation failed', fieldErrors: parseZodErrors(parsed.error) };
+  }
+
+  // Pro type check: file/image require Pro
+  const isPro = session.user.isPro ?? false;
+  if ((parsed.data.typeName === 'file' || parsed.data.typeName === 'image') && !isPro) {
+    return { success: false, error: 'File and image uploads require a Pro subscription' };
+  }
+
+  // Usage limit check
+  const allowed = await canCreateItem(session.user.id, isPro);
+  if (!allowed) {
+    return { success: false, error: 'You have reached the free tier limit of 50 items. Upgrade to Pro for unlimited items.' };
   }
 
   // Validate URL is required for link type

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { uploadToR2, validateFile } from '@/lib/r2';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +10,19 @@ export async function POST(request: Request) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check Pro status (file uploads require Pro)
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isPro: true },
+    });
+
+    if (!user?.isPro) {
+      return NextResponse.json(
+        { error: 'File uploads require a Pro subscription' },
+        { status: 403 }
+      );
     }
 
     // Check rate limit (10 uploads per hour per user)

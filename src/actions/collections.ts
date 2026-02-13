@@ -12,6 +12,7 @@ import {
   type CollectionForPicker,
 } from '@/lib/db/collections';
 import { parseZodErrors } from '@/lib/validation';
+import { canCreateCollection } from '@/lib/usage';
 
 const createCollectionSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
@@ -40,6 +41,13 @@ export async function createCollection(
 
   if (!parsed.success) {
     return { success: false, error: 'Validation failed', fieldErrors: parseZodErrors(parsed.error) };
+  }
+
+  // Usage limit check
+  const isPro = session.user.isPro ?? false;
+  const allowed = await canCreateCollection(session.user.id, isPro);
+  if (!allowed) {
+    return { success: false, error: 'You have reached the free tier limit of 3 collections. Upgrade to Pro for unlimited collections.' };
   }
 
   try {

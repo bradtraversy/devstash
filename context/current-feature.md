@@ -1,16 +1,29 @@
-# Current Feature
+# Current Feature: Stripe Phase 2 (Webhooks, Feature Gating & UI)
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add feature goals here -->
+- Handle Stripe webhook events to sync subscription status to database
+- Gate item creation behind free tier limits (50 items)
+- Gate collection creation behind free tier limits (3 collections)
+- Gate file/image uploads behind Pro check
+- Add billing section to settings page with usage display and upgrade/manage buttons
+- Show upgrade success toast after checkout redirect
 
 ## Notes
 
-<!-- Add notes and constraints here -->
+- Requires Stripe CLI for local webhook testing (`stripe listen --forward-to localhost:3000/api/webhooks/stripe`)
+- Webhook route uses `request.text()` for raw body - no special Next.js config needed
+- `updateMany` in webhook handlers for idempotent duplicate event handling
+- Payment failures only log warnings - Stripe retries automatically, downgrade only on `subscription.deleted`
+- `checkout.session.completed` uses `metadata.userId`; other handlers use `stripeCustomerId`
+- Customer/subscription fields may be string or object - handle both with typeof checks
+- New files: `src/app/api/webhooks/stripe/route.ts`, `src/components/settings/billing-settings.tsx`
+- Modified files: `src/actions/items.ts`, `src/actions/collections.ts`, `src/app/api/upload/route.ts`, `src/app/settings/page.tsx`
+- Full spec: `context/features/stripe-phase-2-spec.md`
 
 ## History
 

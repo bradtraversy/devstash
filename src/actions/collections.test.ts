@@ -14,6 +14,11 @@ vi.mock('@/lib/db/collections', () => ({
   toggleCollectionFavorite: vi.fn(),
 }));
 
+// Mock the usage module
+vi.mock('@/lib/usage', () => ({
+  canCreateCollection: vi.fn(),
+}));
+
 import { createCollection, updateCollection, deleteCollection, getUserCollections, toggleCollectionFavorite } from './collections';
 import { auth } from '@/auth';
 import {
@@ -23,6 +28,7 @@ import {
   getUserCollections as getUserCollectionsQuery,
   toggleCollectionFavorite as toggleCollectionFavoriteQuery,
 } from '@/lib/db/collections';
+import { canCreateCollection } from '@/lib/usage';
 
 const mockAuth = vi.mocked(auth);
 const mockCreateCollectionQuery = vi.mocked(createCollectionQuery);
@@ -30,10 +36,13 @@ const mockUpdateCollectionQuery = vi.mocked(updateCollectionQuery);
 const mockDeleteCollectionQuery = vi.mocked(deleteCollectionQuery);
 const mockGetUserCollectionsQuery = vi.mocked(getUserCollectionsQuery);
 const mockToggleCollectionFavoriteQuery = vi.mocked(toggleCollectionFavoriteQuery);
+const mockCanCreateCollection = vi.mocked(canCreateCollection);
 
 describe('createCollection server action', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: allow collection creation
+    mockCanCreateCollection.mockResolvedValue(true);
   });
 
   it('returns error when not authenticated', async () => {
@@ -166,6 +175,22 @@ describe('createCollection server action', () => {
       name: 'Test Collection',
       description: null,
     });
+  });
+
+  it('returns error when collection limit reached', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    });
+    mockCanCreateCollection.mockResolvedValue(false);
+
+    const result = await createCollection({
+      name: 'Test Collection',
+      description: null,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('free tier limit of 3 collections');
   });
 
   it('trims whitespace from name', async () => {
