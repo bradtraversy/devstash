@@ -1,27 +1,16 @@
-# Current Feature: Stripe Integration - Phase 1 (Core Infrastructure)
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Install Stripe SDK and initialize in `src/lib/stripe.ts`
-- Create usage limit utilities in `src/lib/usage.ts` (MAX_ITEMS=50, MAX_COLLECTIONS=3 for free tier)
-- Write unit tests for usage limit functions (`src/lib/usage.test.ts`)
-- Add `isPro` to NextAuth session/JWT types and sync from database in auth callbacks
-- Create checkout session API route (`POST /api/stripe/checkout`) with plan mapping
-- Create customer portal API route (`POST /api/stripe/portal`)
+<!-- Add feature goals here -->
 
 ## Notes
 
-- Database already has `isPro`, `stripeCustomerId`, `stripeSubscriptionId` fields on User model
-- Env vars needed: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_MONTHLY`, `STRIPE_PRICE_ID_YEARLY`
-- Price IDs stay server-side only - client sends `plan: 'monthly' | 'yearly'`, API maps to env var
-- No UI changes in this phase - all API routes testable with curl/Postman
-- JWT callback queries `isPro` from DB on every session validation (fast PK lookup)
-- Customer portal requires prior Stripe customer creation (happens during first checkout)
-- Success URL: `/settings?upgraded=true`, Cancel URL: `/settings`
+<!-- Add notes and constraints here -->
 
 ## History
 
@@ -83,3 +72,4 @@ In Progress
 - **Homepage Mockup** - Static marketing homepage prototype in prototypes/homepage/ with dark theme, hero section featuring chaos-to-order animation (8 floating icons with requestAnimationFrame, mouse repulsion, pulsing arrow, dashboard preview with topbar and content cards), fixed navbar with scroll opacity, 6 feature cards with accent colors, AI section with Pro badge and code editor mockup with syntax highlighting and AI-generated tags demo, pricing section with Free/Pro cards and monthly/yearly toggle, CTA section, footer with dynamic year, scroll fade-in animations via IntersectionObserver, fully responsive mobile layout (Completed)
 - **Top Bar Mobile Responsive** - Fixed top bar overflow on mobile (590px content in 320-375px viewport), hide "DevStash" logo text below sm keeping DS badge, collapse search bar to icon-only on mobile still opening command palette, replace New Item/New Collection buttons with single + icon DropdownMenu on mobile, reduced gap/padding for small screens, shrink-0 on fixed elements, full layout preserved at sm+ breakpoint (Completed)
 - **Auth Nav & Dashboard Logo** - Added homepage Navbar to all auth pages (sign-in, register, verify-email, forgot-password, reset-password) via shared (auth)/layout.tsx, replaced DS blue box in dashboard TopBar with FolderOpen icon matching homepage nav, fixed Navbar anchor links to absolute paths (/#features, /#pricing), adjusted auth page min-height for navbar offset (Completed)
+- **Stripe Phase 1 (Core Infrastructure)** - Stripe SDK initialization in src/lib/stripe.ts, usage limit utilities (MAX_ITEMS=50, MAX_COLLECTIONS=3 for free tier) with getUserUsage/canCreateItem/canCreateCollection in src/lib/usage.ts, 9 unit tests, isPro added to NextAuth session/JWT types with DB sync in auth callbacks, checkout session API route (POST /api/stripe/checkout) with monthly/yearly plan-to-priceId mapping and find-or-create Stripe customer, customer portal API route (POST /api/stripe/portal), .env.example with Stripe env vars (Completed)
