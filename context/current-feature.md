@@ -1,16 +1,27 @@
-# Current Feature
+# Current Feature: Stripe Integration - Phase 1 (Core Infrastructure)
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add feature goals here -->
+- Install Stripe SDK and initialize in `src/lib/stripe.ts`
+- Create usage limit utilities in `src/lib/usage.ts` (MAX_ITEMS=50, MAX_COLLECTIONS=3 for free tier)
+- Write unit tests for usage limit functions (`src/lib/usage.test.ts`)
+- Add `isPro` to NextAuth session/JWT types and sync from database in auth callbacks
+- Create checkout session API route (`POST /api/stripe/checkout`) with plan mapping
+- Create customer portal API route (`POST /api/stripe/portal`)
 
 ## Notes
 
-<!-- Add notes and constraints here -->
+- Database already has `isPro`, `stripeCustomerId`, `stripeSubscriptionId` fields on User model
+- Env vars needed: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_MONTHLY`, `STRIPE_PRICE_ID_YEARLY`
+- Price IDs stay server-side only - client sends `plan: 'monthly' | 'yearly'`, API maps to env var
+- No UI changes in this phase - all API routes testable with curl/Postman
+- JWT callback queries `isPro` from DB on every session validation (fast PK lookup)
+- Customer portal requires prior Stripe customer creation (happens during first checkout)
+- Success URL: `/settings?upgraded=true`, Cancel URL: `/settings`
 
 ## History
 

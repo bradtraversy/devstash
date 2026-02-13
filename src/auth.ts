@@ -77,17 +77,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return true
     },
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       // Add user.id to the JWT token on sign in
       if (user?.id) {
         token.id = user.id
       }
+      // Sync isPro from database on every token refresh
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { isPro: true },
+        })
+        token.isPro = dbUser?.isPro ?? false
+      }
       return token
     },
     session({ session, token }) {
-      // Add user.id to the session from the JWT token
+      // Add user.id and isPro to the session from the JWT token
       if (token?.id && session.user) {
         session.user.id = token.id as string
+        session.user.isPro = Boolean(token.isPro)
       }
       return session
     },
