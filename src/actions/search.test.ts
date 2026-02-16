@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import type { Session } from 'next-auth';
 
 // Mock the auth module
 vi.mock('@/auth', () => ({
@@ -19,7 +20,7 @@ import { auth } from '@/auth';
 import { getSearchableItems } from '@/lib/db/items';
 import { getSearchableCollections } from '@/lib/db/collections';
 
-const mockAuth = vi.mocked(auth);
+const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
 const mockGetSearchableItems = vi.mocked(getSearchableItems);
 const mockGetSearchableCollections = vi.mocked(getSearchableCollections);
 
@@ -39,7 +40,7 @@ describe('getSearchData server action', () => {
 
   it('returns error when user id is missing', async () => {
     mockAuth.mockResolvedValue({
-      user: {},
+      user: { id: '', isPro: false },
       expires: new Date().toISOString(),
     });
 
@@ -75,7 +76,7 @@ describe('getSearchData server action', () => {
     ];
 
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockGetSearchableItems.mockResolvedValue(mockItems);
@@ -94,7 +95,7 @@ describe('getSearchData server action', () => {
 
   it('returns empty arrays when user has no data', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockGetSearchableItems.mockResolvedValue([]);
@@ -111,7 +112,7 @@ describe('getSearchData server action', () => {
 
   it('returns error when items query fails', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockGetSearchableItems.mockRejectedValue(new Error('DB error'));
@@ -125,7 +126,7 @@ describe('getSearchData server action', () => {
 
   it('returns error when collections query fails', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockGetSearchableItems.mockResolvedValue([]);
@@ -139,7 +140,7 @@ describe('getSearchData server action', () => {
 
   it('fetches items and collections in parallel', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockGetSearchableItems.mockResolvedValue([]);

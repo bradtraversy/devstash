@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import type { Session } from 'next-auth';
 
 // Mock the auth module
 vi.mock('@/auth', () => ({
@@ -25,7 +26,7 @@ import { auth } from '@/auth';
 import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery, toggleItemPin as toggleItemPinQuery } from '@/lib/db/items';
 import { canCreateItem } from '@/lib/usage';
 
-const mockAuth = vi.mocked(auth);
+const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
 const mockUpdateItemQuery = vi.mocked(updateItemQuery);
 const mockDeleteItemQuery = vi.mocked(deleteItemQuery);
 const mockCreateItemQuery = vi.mocked(createItemQuery);
@@ -56,7 +57,7 @@ describe('updateItem server action', () => {
 
   it('returns validation error for empty title', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
 
@@ -76,7 +77,7 @@ describe('updateItem server action', () => {
 
   it('returns validation error for invalid URL', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
 
@@ -96,7 +97,7 @@ describe('updateItem server action', () => {
 
   it('returns error when item not found', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockUpdateItemQuery.mockResolvedValue(null);
@@ -123,6 +124,9 @@ describe('updateItem server action', () => {
       url: null,
       language: 'javascript',
       contentType: 'TEXT',
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
       isFavorite: false,
       isPinned: false,
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
@@ -133,7 +137,7 @@ describe('updateItem server action', () => {
     };
 
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockUpdateItemQuery.mockResolvedValue(mockItem);
@@ -168,6 +172,9 @@ describe('updateItem server action', () => {
       url: null,
       language: null,
       contentType: 'TEXT',
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
       isFavorite: false,
       isPinned: false,
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
@@ -178,7 +185,7 @@ describe('updateItem server action', () => {
     };
 
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockUpdateItemQuery.mockResolvedValue(mockItem);
@@ -211,6 +218,9 @@ describe('updateItem server action', () => {
       url: null,
       language: null,
       contentType: 'TEXT',
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
       isFavorite: false,
       isPinned: false,
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
@@ -221,7 +231,7 @@ describe('updateItem server action', () => {
     };
 
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockUpdateItemQuery.mockResolvedValue(mockItem);
@@ -264,7 +274,7 @@ describe('deleteItem server action', () => {
 
   it('returns error for empty item ID', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
 
@@ -276,7 +286,7 @@ describe('deleteItem server action', () => {
 
   it('returns error when item not found', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockDeleteItemQuery.mockResolvedValue(false);
@@ -289,7 +299,7 @@ describe('deleteItem server action', () => {
 
   it('returns success when item deleted', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockDeleteItemQuery.mockResolvedValue(true);
@@ -330,7 +340,7 @@ describe('createItem server action', () => {
 
   it('returns validation error for empty title', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
 
@@ -354,7 +364,7 @@ describe('createItem server action', () => {
 
   it('returns validation error for invalid URL', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
 
@@ -448,7 +458,7 @@ describe('createItem server action', () => {
 
   it('returns error when URL is required for link but not provided', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
 
@@ -472,7 +482,7 @@ describe('createItem server action', () => {
 
   it('returns error when creation fails', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockCreateItemQuery.mockResolvedValue(null);
@@ -503,6 +513,9 @@ describe('createItem server action', () => {
       url: null,
       language: 'javascript',
       contentType: 'TEXT',
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
       isFavorite: false,
       isPinned: false,
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
@@ -513,7 +526,7 @@ describe('createItem server action', () => {
     };
 
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockCreateItemQuery.mockResolvedValue(mockItem);
@@ -556,6 +569,9 @@ describe('createItem server action', () => {
       url: null,
       language: null,
       contentType: 'TEXT',
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
       isFavorite: false,
       isPinned: false,
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
@@ -566,7 +582,7 @@ describe('createItem server action', () => {
     };
 
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockCreateItemQuery.mockResolvedValue(mockItem);
@@ -607,6 +623,9 @@ describe('createItem server action', () => {
       url: null,
       language: null,
       contentType: 'TEXT',
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
       isFavorite: false,
       isPinned: false,
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
@@ -617,7 +636,7 @@ describe('createItem server action', () => {
     };
 
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockCreateItemQuery.mockResolvedValue(mockItem);
@@ -668,7 +687,7 @@ describe('toggleItemFavorite server action', () => {
 
   it('returns error for empty item ID', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
 
@@ -680,7 +699,7 @@ describe('toggleItemFavorite server action', () => {
 
   it('returns error when item not found', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockToggleItemFavoriteQuery.mockResolvedValue(null);
@@ -693,7 +712,7 @@ describe('toggleItemFavorite server action', () => {
 
   it('returns new favorite state when toggled on', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockToggleItemFavoriteQuery.mockResolvedValue(true);
@@ -707,7 +726,7 @@ describe('toggleItemFavorite server action', () => {
 
   it('returns new favorite state when toggled off', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockToggleItemFavoriteQuery.mockResolvedValue(false);
@@ -735,7 +754,7 @@ describe('toggleItemPin server action', () => {
 
   it('returns error for empty item ID', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
 
@@ -747,7 +766,7 @@ describe('toggleItemPin server action', () => {
 
   it('returns error when item not found', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockToggleItemPinQuery.mockResolvedValue(null);
@@ -760,7 +779,7 @@ describe('toggleItemPin server action', () => {
 
   it('returns new pinned state when toggled on', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockToggleItemPinQuery.mockResolvedValue(true);
@@ -774,7 +793,7 @@ describe('toggleItemPin server action', () => {
 
   it('returns new pinned state when toggled off', async () => {
     mockAuth.mockResolvedValue({
-      user: { id: 'user-123' },
+      user: { id: 'user-123', isPro: false },
       expires: new Date().toISOString(),
     });
     mockToggleItemPinQuery.mockResolvedValue(false);
