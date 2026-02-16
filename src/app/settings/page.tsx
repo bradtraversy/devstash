@@ -37,6 +37,7 @@ export default async function SettingsPage() {
       sidebarCollections={sidebarCollections}
       user={{ id: user.id, name: user.name, email: user.email, image: user.image }}
       editorPreferences={user.editorPreferences}
+      isPro={session.user.isPro}
     >
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}

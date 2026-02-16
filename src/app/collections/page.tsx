@@ -45,6 +45,7 @@ export default async function CollectionsPage({ searchParams }: CollectionsPageP
       sidebarCollections={sidebarCollections}
       user={user}
       editorPreferences={editorPreferences}
+      isPro={session.user.isPro}
     >
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}

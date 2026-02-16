@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Menu, Star, Plus, FolderPlus, FilePlus, FolderOpen } from "lucide-react";
+import { Search, Menu, Star, Plus, FolderPlus, FilePlus, FolderOpen, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,9 +16,10 @@ import { useSearch } from "@/components/search/search-provider";
 
 interface TopBarProps {
   onMenuClick?: () => void;
+  isPro?: boolean;
 }
 
-export default function TopBar({ onMenuClick }: TopBarProps) {
+export default function TopBar({ onMenuClick, isPro }: TopBarProps) {
   const [newItemOpen, setNewItemOpen] = useState(false);
   const [newCollectionOpen, setNewCollectionOpen] = useState(false);
   const { openSearch } = useSearch();
@@ -67,6 +68,15 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        {!isPro && (
+          <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+            <Link href="/upgrade">
+              <Sparkles className="h-4 w-4 mr-1" />
+              Upgrade
+            </Link>
+          </Button>
+        )}
+
         <Button variant="ghost" size="icon" asChild>
           <Link href="/favorites" title="Favorites">
             <Star className="h-5 w-5" />

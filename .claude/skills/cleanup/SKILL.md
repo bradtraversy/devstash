@@ -12,7 +12,7 @@ Review the codebase for cleanup tasks:
 4. Check for stale TODO comments
 5. Find orphaned/unused files
 6. Check that context files match actual project state
-7. Check if the .env.production has the same variables (not always the same value) as the .env. If something is missing, tell me.
+7. Check if the .env._production has the same variables (not always the same value) as the .env. If something is missing, tell me.
 8. Find `@ts-ignore` comments that might be stale
 
 **Mode: $ARGUMENTS**

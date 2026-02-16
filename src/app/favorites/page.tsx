@@ -44,6 +44,7 @@ export default async function FavoritesPage() {
       sidebarCollections={sidebarCollections}
       user={user}
       editorPreferences={editorPreferences}
+      isPro={session.user.isPro}
     >
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}

@@ -26,6 +26,7 @@ interface DashboardLayoutProps {
   sidebarCollections: SidebarCollections;
   user: User | null;
   editorPreferences?: EditorPreferences;
+  isPro?: boolean;
 }
 
 export default function DashboardLayout({
@@ -34,6 +35,7 @@ export default function DashboardLayout({
   sidebarCollections,
   user,
   editorPreferences,
+  isPro,
 }: DashboardLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -50,7 +52,7 @@ export default function DashboardLayout({
   return (
     <SearchProvider>
       <div className="flex h-screen flex-col">
-        <TopBar onMenuClick={() => setIsMobileSidebarOpen(true)} />
+        <TopBar onMenuClick={() => setIsMobileSidebarOpen(true)} isPro={isPro} />
         <div className="flex flex-1 overflow-hidden">
           {/* Desktop Sidebar */}
           <div className="hidden lg:block">

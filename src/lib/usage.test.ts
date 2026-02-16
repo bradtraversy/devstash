@@ -4,8 +4,6 @@ import {
   getUserUsage,
   canCreateItem,
   canCreateCollection,
-  MAX_ITEMS,
-  MAX_COLLECTIONS,
 } from './usage'
 
 vi.mock('@/lib/prisma', () => ({
