@@ -2,22 +2,19 @@
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Add a language selector dropdown above the code editor content area
-- Dropdown enables syntax highlighting as the user types
-- Works in both the NewItemDialog (create) and ItemDrawer (edit mode)
-- Applies to text content types that use the Monaco editor (snippets, commands)
+<!-- Add feature goals here -->
 
 ## Notes
 
-- Language dropdown should appear above the Monaco editor
-- Selecting a language should immediately update syntax highlighting
-- The selected language should be saved with the item
+<!-- Add notes and constraints here -->
 
 ## History
+
+- **Language Selector Dropdown** - Replaced free-text language input with Select dropdown (31 languages) in NewItemDialog and ItemDrawer edit mode, moved language selector above content editor for immediate syntax highlighting as user types, LANGUAGES constant in editor.ts (Completed)
 
 - **Initial Setup** - Next.js 16, Tailwind CSS v4, TypeScript configured (Completed)
 - **Dashboard UI Phase 1** - ShadCN UI initialization, dashboard route at /dashboard, main layout with dark mode, top bar with search and buttons, sidebar and main placeholders (Completed)
