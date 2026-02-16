@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { createItem, type CreateItemInput } from "@/actions/items";
 import { getUserCollections } from "@/actions/collections";
 import { getItemTypeIcon, ITEM_TYPE_COLORS } from "@/lib/constants/item-types";
+import { LANGUAGES } from "@/lib/constants/editor";
 import CodeEditor from "./code-editor";
 import MarkdownEditor from "./markdown-editor";
 import FileUpload from "./file-upload";
@@ -233,6 +234,24 @@ export default function NewItemDialog({ open, onOpenChange, defaultType }: NewIt
             />
           </div>
 
+          {showLanguageField && (
+            <div className="space-y-2">
+              <Label htmlFor="language">Language</Label>
+              <Select value={language || "plaintext"} onValueChange={setLanguage}>
+                <SelectTrigger id="language">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {showContentField && (
             <div className="space-y-2">
               <Label htmlFor="content">Content</Label>
@@ -249,19 +268,6 @@ export default function NewItemDialog({ open, onOpenChange, defaultType }: NewIt
                   placeholder="Write your content in Markdown..."
                 />
               )}
-            </div>
-          )}
-
-          {showLanguageField && (
-            <div className="space-y-2">
-              <Label htmlFor="language">Language</Label>
-              <Input
-                id="language"
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                placeholder="e.g., javascript, python, bash"
-                disabled={isLoading}
-              />
             </div>
           )}
 

@@ -33,7 +33,15 @@ import {
 } from "lucide-react";
 import { formatFileSize } from "@/lib/r2";
 import { formatLongDate } from "@/lib/utils/date";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getItemTypeIcon } from "@/lib/constants/item-types";
+import { LANGUAGES } from "@/lib/constants/editor";
 import { useItemDrawer } from "./item-drawer-provider";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { toast } from "sonner";
@@ -426,6 +434,25 @@ export default function ItemDrawer() {
                       />
                     </div>
 
+                    {/* Language (snippet/command) */}
+                    {showLanguage && (
+                      <div className="space-y-2">
+                        <Label htmlFor="language">Language</Label>
+                        <Select value={language || "plaintext"} onValueChange={setLanguage}>
+                          <SelectTrigger id="language">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LANGUAGES.map((lang) => (
+                              <SelectItem key={lang.value} value={lang.value}>
+                                {lang.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     {/* Content (text types) */}
                     {showContent && (
                       <div className="space-y-2">
@@ -456,19 +483,6 @@ export default function ItemDrawer() {
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
                           placeholder="https://..."
-                        />
-                      </div>
-                    )}
-
-                    {/* Language (snippet/command) */}
-                    {showLanguage && (
-                      <div className="space-y-2">
-                        <Label htmlFor="language">Language</Label>
-                        <Input
-                          id="language"
-                          value={language}
-                          onChange={(e) => setLanguage(e.target.value)}
-                          placeholder="e.g., javascript, python, bash..."
                         />
                       </div>
                     )}

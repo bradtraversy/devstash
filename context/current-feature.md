@@ -2,15 +2,20 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Add feature goals here -->
+- Add a language selector dropdown above the code editor content area
+- Dropdown enables syntax highlighting as the user types
+- Works in both the NewItemDialog (create) and ItemDrawer (edit mode)
+- Applies to text content types that use the Monaco editor (snippets, commands)
 
 ## Notes
 
-<!-- Add notes and constraints here -->
+- Language dropdown should appear above the Monaco editor
+- Selecting a language should immediately update syntax highlighting
+- The selected language should be saved with the item
 
 ## History
 
