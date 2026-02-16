@@ -1,34 +1,16 @@
-# Current Feature: AI Auto-Tagging
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Create OpenAI client utility (`src/lib/openai.ts`) with `AI_MODEL` constant set to `gpt-5-nano`
-- Use the OpenAI **Responses API** (NOT Chat Completions) — `client.responses.create()` with `instructions` + `input` + `text: { format: { type: 'json_object' } }`
-- Create `generateAutoTags` server action with auth, Pro gating, Zod validation, rate limiting
-- Add AI rate limit config (20 requests/hour per user) to existing rate limit utility
-- Add "Suggest Tags" button (Sparkles icon, ghost variant) near tags input in NewItemDialog and ItemDrawer edit mode
-- Display suggested tags as badges with accept (check) and reject (X) controls per tag
-- Accepted tags get added to the item's tag list
-- Tags are freeform, normalized to lowercase
-- Truncate content to 2000 chars before API call
-- Handle both `{"tags": [...]}` and `[...]` response formats from the model
-- Hide Suggest Tags button for free users (Pro-only UI gating)
-- Server-side Pro gating enforcement in the action
-- Error handling via toast (Pro gating, rate limit, AI service errors)
-- Unit tests for the server action
+<!-- Goals will be populated when a feature is loaded -->
 
 ## Notes
 
-- `OPENAI_API_KEY` already in `.env`
-- Must use Responses API — gpt-5-nano returns empty content with Chat Completions API
-- `max_tokens` not supported by gpt-5-nano — avoid or use `max_output_tokens`
-- Don't use `zodResponseFormat` structured output (excessive token usage) — use `json_object` and parse manually
-- `isPro` available server-side via session but not passed to create/edit UI components — need to pass as prop or fetch client-side for button visibility
-- See `docs/ai-integration-plan.md` for full architectural context
+<!-- Notes will be populated when a feature is loaded -->
 
 ## History
 
@@ -87,3 +69,4 @@ In Progress
 - **Auth Nav & Dashboard Logo** - Added homepage Navbar to all auth pages (sign-in, register, verify-email, forgot-password, reset-password) via shared (auth)/layout.tsx, replaced DS blue box in dashboard TopBar with FolderOpen icon matching homepage nav, fixed Navbar anchor links to absolute paths (/#features, /#pricing), adjusted auth page min-height for navbar offset (Completed)
 - **Stripe Phase 1 (Core Infrastructure)** - Stripe SDK initialization in src/lib/stripe.ts, usage limit utilities (MAX_ITEMS=50, MAX_COLLECTIONS=3 for free tier) with getUserUsage/canCreateItem/canCreateCollection in src/lib/usage.ts, 9 unit tests, isPro added to NextAuth session/JWT types with DB sync in auth callbacks, checkout session API route (POST /api/stripe/checkout) with monthly/yearly plan-to-priceId mapping and find-or-create Stripe customer, customer portal API route (POST /api/stripe/portal), .env.example with Stripe env vars (Completed)
 - **Stripe Phase 2 (Webhooks, Feature Gating & UI)** - Stripe webhook handler at /api/webhooks/stripe for checkout.session.completed, invoice.paid, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted with idempotent updateMany and typeof checks, feature gating on createItem (Pro type check for file/image + 50 item limit), createCollection (3 collection limit), upload route (Pro DB check with 403), BillingSettings component with plan badge, usage counts, upgrade buttons ($8/mo and $72/yr), manage billing portal, upgrade success toast via useSearchParams, wired into settings page between editor and account sections, 4 new unit tests (Completed)
+- **AI Auto-Tagging** - OpenAI client utility (gpt-5-nano via Responses API), generateAutoTags server action with auth/Pro gating/Zod validation/rate limiting (20 req/hr), SuggestTagsButton component with accept/reject badge controls, integrated in NewItemDialog and ItemDrawer edit mode (Pro-only), isPro prop threaded through DashboardLayout/TopBar/ItemsPageHeader/ItemDrawerProvider, content truncation to 2000 chars, handles both {tags:[...]} and [...] response formats, normalizes to lowercase with dedup, 13 unit tests (Completed)
