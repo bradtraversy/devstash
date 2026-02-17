@@ -50,7 +50,7 @@ export default function EditorHeader({
                 key={tab.id}
                 type="button"
                 onClick={() => onTabChange?.(tab.id)}
-                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
                   activeTab === tab.id
                     ? "bg-[#1e1e1e] text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -71,14 +71,14 @@ export default function EditorHeader({
 
       {/* Right side: label, extra buttons, and copy button */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground uppercase tracking-wide">
+        <span className="text-sm text-muted-foreground uppercase tracking-wide">
           {label}
         </span>
         {extraButtons}
         <button
           type="button"
           onClick={onCopy}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           title={copyTitle}
         >
           {copied ? (

@@ -128,7 +128,7 @@ export default function MarkdownEditor({
           <button
             type="button"
             onClick={handleAccept}
-            className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
             title="Use optimized prompt"
           >
             <Check className="h-3.5 w-3.5" />
@@ -139,7 +139,7 @@ export default function MarkdownEditor({
           type="button"
           onClick={handleOptimize}
           disabled={isOptimizing}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
           title="Optimize prompt"
         >
           {isOptimizing ? (
@@ -158,7 +158,7 @@ export default function MarkdownEditor({
     ) : (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground/50 cursor-not-allowed">
+          <span className="flex items-center gap-1.5 text-sm text-muted-foreground/50 cursor-not-allowed">
             <Crown className="h-3.5 w-3.5" />
             <span>Optimize</span>
           </span>
@@ -197,12 +197,12 @@ export default function MarkdownEditor({
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-[#1e1e1e] text-foreground font-mono text-sm p-4 resize-none focus:outline-none placeholder:text-muted-foreground/50 editor-scrollbar overflow-y-auto"
+          className="w-full bg-[#1e1e1e] text-foreground font-mono text-base p-4 resize-none focus:outline-none placeholder:text-muted-foreground/50 editor-scrollbar overflow-y-auto"
           style={{ minHeight: `${minHeight}px`, maxHeight: `${maxHeight}px` }}
         />
       ) : (
         <div
-          className="prose prose-invert prose-sm max-w-none p-4 overflow-y-auto editor-scrollbar"
+          className="prose prose-invert max-w-none p-4 overflow-y-auto editor-scrollbar"
           style={{
             minHeight: `${minHeight}px`,
             maxHeight: `${maxHeight}px`,

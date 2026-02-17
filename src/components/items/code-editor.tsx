@@ -198,7 +198,7 @@ export default function CodeEditor({
         type="button"
         onClick={handleExplain}
         disabled={isExplaining}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
         title="Explain code"
       >
         {isExplaining ? (
@@ -216,7 +216,7 @@ export default function CodeEditor({
     ) : (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground/50 cursor-not-allowed">
+          <span className="flex items-center gap-1.5 text-sm text-muted-foreground/50 cursor-not-allowed">
             <Crown className="h-3.5 w-3.5" />
             <span>Explain</span>
           </span>

@@ -2,15 +2,24 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Goals will be populated when a feature is loaded -->
+Improve font sizes in the item drawer and markdown editor for better readability. The code editor (Monaco) is user-controlled and should not be changed.
+
+1. **Description text** - Bump from `text-sm` (14px) to `text-base` (16px) in item-drawer.tsx view mode
+2. **Markdown editor preview** - Remove `prose-sm` from the prose container in markdown-editor.tsx so it defaults to 16px with better line-height
+3. **Markdown editor textarea** (write mode) - Bump from `text-sm` to `text-base` in markdown-editor.tsx
+4. **URL link text** - Bump from `text-sm` to `text-base` in item-drawer.tsx view mode
+5. **Editor toolbar buttons** - Bump from `text-xs` (12px) to `text-sm` (14px) in editor-header.tsx (Copy, Explain, Optimize, label, tabs, etc.)
 
 ## Notes
 
-<!-- Notes will be populated when a feature is loaded -->
+- The code editor font size is controlled by user editor preferences - do not change
+- Badges/tags at 12px are fine as-is
+- Details metadata (Created/Updated) at 14px is fine as-is
+- Section labels (Description, Content, Tags, etc.) at 14px are fine as-is
 
 ## History
 

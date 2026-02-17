@@ -610,7 +610,7 @@ export default function ItemDrawer() {
                       <p className="text-sm font-medium text-muted-foreground mb-1">
                         Description
                       </p>
-                      <p className="text-sm text-foreground">{item.description}</p>
+                      <p className="text-base text-foreground">{item.description}</p>
                     </div>
                   )}
 
@@ -653,7 +653,7 @@ export default function ItemDrawer() {
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-400 hover:underline break-all"
+                        className="text-base text-blue-400 hover:underline break-all"
                       >
                         {item.url}
                       </a>
