@@ -1,16 +1,27 @@
-# Current Feature
+# Current Feature: AI Prompt Optimizer
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Goals will be populated when a feature is loaded -->
+- Add `optimizePrompt` server action in `src/actions/ai.ts` with auth/Pro gating, Zod validation, rate limiting (reuse existing patterns from `explainCode`/`generateDescription`)
+- Add `showOptimize`, `isPro`, `title`, and `onAcceptOptimized` props to MarkdownEditor for prompt types in read-only mode (mirrors CodeEditor's `showExplain` pattern)
+- Add "Optimize" button (Sparkles icon) in the MarkdownEditor header via `extraButtons` prop on EditorHeader, with Crown icon + tooltip for free users
+- After optimizing, show Original/Optimized tabs in the MarkdownEditor (like Code/Explain tabs in CodeEditor)
+- Show an "Use This" button on the Optimized tab that calls `onAcceptOptimized` to update the item's content via the existing `updateItem` server action
+- Wire up in ItemDrawer: pass `showOptimize`, `isPro`, `title`, and `onAcceptOptimized` handler to MarkdownEditor for prompt type items in read-only view mode
+- The `onAcceptOptimized` handler should save the optimized prompt to the item, show a toast, and refresh the page
+- Write unit tests for the `optimizePrompt` server action
 
 ## Notes
 
-<!-- Notes will be populated when a feature is loaded -->
+- Follow the exact same pattern as "Explain" in CodeEditor (`showExplain` / `extraButtons` / tabs / Crown tooltip)
+- The MarkdownEditor needs `extraButtons` added to its EditorHeader usage (it doesn't have it currently)
+- Only show Optimize for `prompt` type items (not notes), in read-only mode (item drawer view mode)
+- AI prompt: "You are a prompt engineering expert. Analyze the following prompt and return an improved version. Make it clearer, more specific, and more effective. Preserve the original intent. Return a JSON object with an `optimizedPrompt` key."
+- Truncate content to 2000 chars (existing MAX_CONTENT_LENGTH)
 
 ## History
 

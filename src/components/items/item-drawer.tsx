@@ -88,6 +88,8 @@ function DrawerSkeleton() {
 const TEXT_TYPES = ["snippet", "prompt", "command", "note"];
 // Types that have language field
 const LANGUAGE_TYPES = ["snippet", "command"];
+// Types that support AI prompt optimization
+const OPTIMIZE_TYPES = ["prompt"];
 // Types that have file uploads
 const FILE_TYPES = ["file", "image"];
 
@@ -238,11 +240,34 @@ export default function ItemDrawer() {
     }
   };
 
+  const handleAcceptOptimized = async (optimizedContent: string) => {
+    if (!item) return;
+
+    const result = await updateItem(item.id, {
+      title: item.title,
+      description: item.description || null,
+      content: optimizedContent,
+      url: item.url || null,
+      language: item.language || null,
+      tags: item.tags,
+      collectionIds: item.collections.map((c) => c.id),
+    });
+
+    if (result.success && result.data) {
+      setItem(result.data);
+      toast.success("Prompt updated with optimized version");
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to save optimized prompt");
+    }
+  };
+
   const IconComponent = item ? getItemTypeIcon(item.itemType.icon) : null;
   const iconColor = item?.itemType.color;
   const typeName = item?.itemType.name || "";
   const showContent = TEXT_TYPES.includes(typeName);
   const showLanguage = LANGUAGE_TYPES.includes(typeName);
+  const showOptimize = OPTIMIZE_TYPES.includes(typeName);
   const showUrl = typeName === "link";
   const showFileContent = FILE_TYPES.includes(typeName);
   const isImage = typeName === "image";
@@ -609,6 +634,10 @@ export default function ItemDrawer() {
                         <MarkdownEditor
                           value={item.content}
                           readOnly
+                          showOptimize={showOptimize}
+                          isPro={isPro}
+                          title={item.title}
+                          onAcceptOptimized={handleAcceptOptimized}
                         />
                       )}
                     </div>

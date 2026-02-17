@@ -244,6 +244,105 @@ interface ExplainCodeResult {
   error?: string
 }
 
+// ============================================
+// Optimize Prompt
+// ============================================
+
+const optimizePromptSchema = z.object({
+  title: z.string().trim().min(1, 'Title is required'),
+  content: z.string().min(1, 'Content is required'),
+})
+
+export type OptimizePromptInput = z.infer<typeof optimizePromptSchema>
+
+interface OptimizePromptResult {
+  success: boolean
+  data?: string
+  error?: string
+}
+
+export async function optimizePrompt(
+  input: OptimizePromptInput
+): Promise<OptimizePromptResult> {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    return { success: false, error: 'Unauthorized' }
+  }
+
+  // Pro gating
+  const isPro = session.user.isPro ?? false
+  if (!isPro) {
+    return { success: false, error: 'AI features require a Pro subscription' }
+  }
+
+  const parsed = optimizePromptSchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false, error: 'Validation failed' }
+  }
+
+  // Rate limiting
+  const rateLimit = await checkRateLimit('ai', session.user.id)
+  if (!rateLimit.success) {
+    const retryTime = formatRetryTime(rateLimit.retryAfter)
+    return {
+      success: false,
+      error: `Too many AI requests. Please try again in ${retryTime}.`,
+    }
+  }
+
+  const { title, content } = parsed.data
+
+  // Build context for the AI
+  const truncatedContent = content.slice(0, MAX_CONTENT_LENGTH)
+
+  const contextParts = [
+    `Title: ${title}`,
+    `Prompt:\n${truncatedContent}`,
+  ].join('\n')
+
+  try {
+    const client = getOpenAIClient()
+
+    const response = await client.responses.create({
+      model: AI_MODEL,
+      instructions:
+        'You are a prompt engineering expert. Analyze the following prompt and return an improved version. Make it clearer, more specific, and more effective while preserving the original intent. Return a JSON object with an "optimizedPrompt" key containing the improved prompt text. Only return valid JSON.',
+      input: `Optimize the following prompt. Return a JSON object with an "optimizedPrompt" key.\n\n${contextParts}`,
+      text: {
+        format: { type: 'json_object' },
+      },
+    })
+
+    const text = response.output_text
+    if (!text) {
+      return { success: false, error: 'AI returned an empty response' }
+    }
+
+    const parsed_response = JSON.parse(text)
+
+    // Handle both { optimizedPrompt: "..." } and plain string
+    let optimized: string
+    if (typeof parsed_response === 'string') {
+      optimized = parsed_response
+    } else if (parsed_response.optimizedPrompt && typeof parsed_response.optimizedPrompt === 'string') {
+      optimized = parsed_response.optimizedPrompt
+    } else {
+      return { success: false, error: 'AI returned an unexpected format' }
+    }
+
+    const trimmed = optimized.trim()
+    if (trimmed.length === 0) {
+      return { success: false, error: 'AI could not optimize this prompt' }
+    }
+
+    return { success: true, data: trimmed }
+  } catch (error) {
+    console.error('AI prompt optimization failed:', error)
+    return { success: false, error: 'Failed to optimize prompt. Please try again.' }
+  }
+}
+
 export async function explainCode(
   input: ExplainCodeInput
 ): Promise<ExplainCodeResult> {

@@ -18,7 +18,7 @@ vi.mock('@/lib/rate-limit', () => ({
   formatRetryTime: vi.fn((s: number) => `${s} seconds`),
 }))
 
-import { generateAutoTags, generateDescription, explainCode } from './ai'
+import { generateAutoTags, generateDescription, explainCode, optimizePrompt } from './ai'
 import { auth } from '@/auth'
 import { getOpenAIClient } from '@/lib/openai'
 import { checkRateLimit } from '@/lib/rate-limit'
@@ -759,5 +759,229 @@ describe('explainCode server action', () => {
 
     const callArgs = mockCreate.mock.calls[0][0]
     expect(callArgs.text).toBeUndefined()
+  })
+})
+
+// ============================================
+// optimizePrompt tests
+// ============================================
+
+const validOptimizeInput = {
+  title: 'Code Review Prompt',
+  content: 'Review this code and tell me if there are any bugs.',
+}
+
+describe('optimizePrompt server action', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockCheckRateLimit.mockResolvedValue({
+      success: true,
+      remaining: 19,
+      reset: 0,
+      retryAfter: 0,
+    })
+  })
+
+  it('returns error when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null)
+
+    const result = await optimizePrompt(validOptimizeInput)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Unauthorized')
+  })
+
+  it('returns error when user is not Pro', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    })
+
+    const result = await optimizePrompt(validOptimizeInput)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('AI features require a Pro subscription')
+  })
+
+  it('returns error when validation fails (empty title)', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+
+    const result = await optimizePrompt({ ...validOptimizeInput, title: '' })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Validation failed')
+  })
+
+  it('returns error when validation fails (empty content)', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+
+    const result = await optimizePrompt({ ...validOptimizeInput, content: '' })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Validation failed')
+  })
+
+  it('returns error when rate limited', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+    mockCheckRateLimit.mockResolvedValue({
+      success: false,
+      remaining: 0,
+      reset: Date.now() + 60000,
+      retryAfter: 60,
+    })
+
+    const result = await optimizePrompt(validOptimizeInput)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('Too many AI requests')
+    expect(mockCheckRateLimit).toHaveBeenCalledWith('ai', 'user-123')
+  })
+
+  it('returns optimized prompt on success with { optimizedPrompt: "..." } format', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+
+    const mockClient = {
+      responses: {
+        create: vi.fn().mockResolvedValue({
+          output_text: JSON.stringify({ optimizedPrompt: 'Please review the following code for potential bugs, security vulnerabilities, and performance issues. Provide specific line references and suggested fixes.' }),
+        }),
+      },
+    }
+    mockGetOpenAIClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getOpenAIClient>)
+
+    const result = await optimizePrompt(validOptimizeInput)
+
+    expect(result.success).toBe(true)
+    expect(result.data).toBe('Please review the following code for potential bugs, security vulnerabilities, and performance issues. Provide specific line references and suggested fixes.')
+  })
+
+  it('handles plain string response', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+
+    const mockClient = {
+      responses: {
+        create: vi.fn().mockResolvedValue({
+          output_text: JSON.stringify('An improved prompt text.'),
+        }),
+      },
+    }
+    mockGetOpenAIClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getOpenAIClient>)
+
+    const result = await optimizePrompt(validOptimizeInput)
+
+    expect(result.success).toBe(true)
+    expect(result.data).toBe('An improved prompt text.')
+  })
+
+  it('returns error when AI returns empty response', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+
+    const mockClient = {
+      responses: {
+        create: vi.fn().mockResolvedValue({ output_text: '' }),
+      },
+    }
+    mockGetOpenAIClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getOpenAIClient>)
+
+    const result = await optimizePrompt(validOptimizeInput)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('AI returned an empty response')
+  })
+
+  it('returns error when AI returns unexpected format', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+
+    const mockClient = {
+      responses: {
+        create: vi.fn().mockResolvedValue({
+          output_text: JSON.stringify({ result: 123 }),
+        }),
+      },
+    }
+    mockGetOpenAIClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getOpenAIClient>)
+
+    const result = await optimizePrompt(validOptimizeInput)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('AI returned an unexpected format')
+  })
+
+  it('returns error when OpenAI API throws', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+
+    const mockClient = {
+      responses: {
+        create: vi.fn().mockRejectedValue(new Error('API error')),
+      },
+    }
+    mockGetOpenAIClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getOpenAIClient>)
+
+    const result = await optimizePrompt(validOptimizeInput)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Failed to optimize prompt. Please try again.')
+  })
+
+  it('truncates content to 2000 chars', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+
+    const longContent = 'a'.repeat(5000)
+    const mockCreate = vi.fn().mockResolvedValue({
+      output_text: JSON.stringify({ optimizedPrompt: 'Optimized version.' }),
+    })
+    const mockClient = { responses: { create: mockCreate } }
+    mockGetOpenAIClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getOpenAIClient>)
+
+    await optimizePrompt({ ...validOptimizeInput, content: longContent })
+
+    const callInput = mockCreate.mock.calls[0][0].input as string
+    expect(callInput).toContain('a'.repeat(2000))
+    expect(callInput).not.toContain('a'.repeat(2001))
+  })
+
+  it('requests JSON format', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    })
+
+    const mockCreate = vi.fn().mockResolvedValue({
+      output_text: JSON.stringify({ optimizedPrompt: 'Better prompt.' }),
+    })
+    const mockClient = { responses: { create: mockCreate } }
+    mockGetOpenAIClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getOpenAIClient>)
+
+    await optimizePrompt(validOptimizeInput)
+
+    const callArgs = mockCreate.mock.calls[0][0]
+    expect(callArgs.text).toEqual({ format: { type: 'json_object' } })
   })
 })
