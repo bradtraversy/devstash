@@ -18,6 +18,8 @@ interface EditorHeaderProps {
   onTabChange?: (tabId: string) => void;
   // Show macOS dots (default true when no tabs)
   showDots?: boolean;
+  // Extra buttons to render before the copy button
+  extraButtons?: React.ReactNode;
 }
 
 /**
@@ -33,6 +35,7 @@ export default function EditorHeader({
   activeTab,
   onTabChange,
   showDots = true,
+  extraButtons,
 }: EditorHeaderProps) {
   const hasTabs = tabs && tabs.length > 0;
 
@@ -66,11 +69,12 @@ export default function EditorHeader({
         ) : null}
       </div>
 
-      {/* Right side: label and copy button */}
+      {/* Right side: label, extra buttons, and copy button */}
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground uppercase tracking-wide">
           {label}
         </span>
+        {extraButtons}
         <button
           type="button"
           onClick={onCopy}

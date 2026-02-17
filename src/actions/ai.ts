@@ -224,3 +224,93 @@ export async function generateDescription(
     return { success: false, error: 'Failed to generate description. Please try again.' }
   }
 }
+
+// ============================================
+// Explain Code
+// ============================================
+
+const explainCodeSchema = z.object({
+  title: z.string().trim().min(1, 'Title is required'),
+  content: z.string().min(1, 'Content is required'),
+  language: z.string().nullable().optional(),
+  typeName: z.enum(['snippet', 'command']),
+})
+
+export type ExplainCodeInput = z.infer<typeof explainCodeSchema>
+
+interface ExplainCodeResult {
+  success: boolean
+  data?: string
+  error?: string
+}
+
+export async function explainCode(
+  input: ExplainCodeInput
+): Promise<ExplainCodeResult> {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    return { success: false, error: 'Unauthorized' }
+  }
+
+  // Pro gating
+  const isPro = session.user.isPro ?? false
+  if (!isPro) {
+    return { success: false, error: 'AI features require a Pro subscription' }
+  }
+
+  const parsed = explainCodeSchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false, error: 'Validation failed' }
+  }
+
+  // Rate limiting
+  const rateLimit = await checkRateLimit('ai', session.user.id)
+  if (!rateLimit.success) {
+    const retryTime = formatRetryTime(rateLimit.retryAfter)
+    return {
+      success: false,
+      error: `Too many AI requests. Please try again in ${retryTime}.`,
+    }
+  }
+
+  const { title, content, language, typeName } = parsed.data
+
+  // Build context for the AI
+  const truncatedContent = content.slice(0, MAX_CONTENT_LENGTH)
+
+  const contextParts = [
+    `Type: ${typeName}`,
+    `Title: ${title}`,
+    language ? `Language: ${language}` : null,
+    `Code:\n${truncatedContent}`,
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  try {
+    const client = getOpenAIClient()
+
+    const response = await client.responses.create({
+      model: AI_MODEL,
+      instructions:
+        'You are a developer tool assistant that explains code snippets and terminal commands. Provide a clear, concise explanation (200-300 words) in markdown format. Cover what the code does, key concepts used, and any important details. Use markdown headings, bullet points, and inline code formatting where appropriate. Return plain markdown text, NOT JSON.',
+      input: `Explain the following code. Provide a concise explanation in markdown format.\n\n${contextParts}`,
+    })
+
+    const text = response.output_text
+    if (!text) {
+      return { success: false, error: 'AI returned an empty response' }
+    }
+
+    const trimmed = text.trim()
+    if (trimmed.length === 0) {
+      return { success: false, error: 'AI could not generate an explanation for this code' }
+    }
+
+    return { success: true, data: trimmed }
+  } catch (error) {
+    console.error('AI code explanation failed:', error)
+    return { success: false, error: 'Failed to explain code. Please try again.' }
+  }
+}

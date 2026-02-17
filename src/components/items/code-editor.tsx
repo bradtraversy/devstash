@@ -1,12 +1,22 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Editor, { OnMount, loader, Monaco } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Sparkles, Crown, Loader2 } from "lucide-react";
 import { useClipboard } from "@/hooks/use-clipboard";
 import EditorHeader from "./editor-header";
 import { useEditorPreferences } from "@/components/settings/editor-preferences-provider";
 import type { EditorTheme } from "@/lib/constants/editor";
+import { explainCode } from "@/actions/ai";
+import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Configure Monaco to load from CDN
 loader.config({
@@ -77,6 +87,11 @@ interface CodeEditorProps {
   onChange?: (value: string) => void;
   language?: string;
   readOnly?: boolean;
+  // AI Explain props (only for drawer read mode)
+  showExplain?: boolean;
+  isPro?: boolean;
+  title?: string;
+  typeName?: string;
 }
 
 export default function CodeEditor({
@@ -84,10 +99,19 @@ export default function CodeEditor({
   onChange,
   language = "plaintext",
   readOnly = false,
+  showExplain = false,
+  isPro = false,
+  title = "",
+  typeName = "snippet",
 }: CodeEditorProps) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const { copied, copy } = useClipboard();
   const { preferences } = useEditorPreferences();
+
+  // Explain state
+  const [activeView, setActiveView] = useState<"code" | "explain">("code");
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [isExplaining, setIsExplaining] = useState(false);
 
   const handleEditorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -98,6 +122,32 @@ export default function CodeEditor({
   };
 
   const handleCopy = () => copy(value);
+
+  const handleExplain = async () => {
+    if (!isPro) return;
+    if (isExplaining) return;
+
+    setIsExplaining(true);
+    try {
+      const result = await explainCode({
+        title,
+        content: value,
+        language: language || null,
+        typeName: typeName as "snippet" | "command",
+      });
+
+      if (result.success && result.data) {
+        setExplanation(result.data);
+        setActiveView("explain");
+      } else {
+        toast.error(result.error || "Failed to explain code");
+      }
+    } catch {
+      toast.error("Failed to explain code. Please try again.");
+    } finally {
+      setIsExplaining(false);
+    }
+  };
 
   // Map common language aliases to Monaco language IDs
   const getMonacoLanguage = (lang: string): string => {
@@ -132,6 +182,52 @@ export default function CodeEditor({
     maxHeight
   );
 
+  // Show tabs when explanation has been generated
+  const showTabs = showExplain && explanation !== null;
+  const tabs = showTabs
+    ? [
+        { id: "code", label: "Code" },
+        { id: "explain", label: "Explain" },
+      ]
+    : undefined;
+
+  // Build extra buttons for the header
+  const extraButtons = showExplain ? (
+    isPro ? (
+      <button
+        type="button"
+        onClick={handleExplain}
+        disabled={isExplaining}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+        title="Explain code"
+      >
+        {isExplaining ? (
+          <>
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Explaining...</span>
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Explain</span>
+          </>
+        )}
+      </button>
+    ) : (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground/50 cursor-not-allowed">
+            <Crown className="h-3.5 w-3.5" />
+            <span>Explain</span>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>AI features require Pro subscription</p>
+        </TooltipContent>
+      </Tooltip>
+    )
+  ) : null;
+
   return (
     <div className="rounded-lg border border-border overflow-hidden bg-[#1e1e1e]">
       <EditorHeader
@@ -139,44 +235,63 @@ export default function CodeEditor({
         copied={copied}
         onCopy={handleCopy}
         copyTitle="Copy code"
+        tabs={tabs}
+        activeTab={activeView}
+        onTabChange={(id) => setActiveView(id as "code" | "explain")}
+        showDots={!showTabs}
+        extraButtons={extraButtons}
       />
 
-      {/* Monaco Editor */}
-      <Editor
-        height={calculatedHeight}
-        language={monacoLanguage}
-        value={value}
-        onChange={(val) => onChange?.(val ?? "")}
-        onMount={handleEditorMount}
-        theme={getMonacoTheme(preferences.theme)}
-        options={{
-          readOnly,
-          minimap: { enabled: preferences.minimap },
-          scrollBeyondLastLine: false,
-          fontSize: preferences.fontSize,
-          tabSize: preferences.tabSize,
-          lineHeight: lineHeight,
-          padding: { top: 8, bottom: 8 },
-          lineNumbers: "on",
-          lineNumbersMinChars: 3,
-          renderLineHighlight: readOnly ? "none" : "line",
-          cursorStyle: readOnly ? "underline" : "line",
-          scrollbar: {
-            vertical: "auto",
-            horizontal: "auto",
-            verticalScrollbarSize: 10,
-            horizontalScrollbarSize: 10,
-            useShadows: false,
-          },
-          overviewRulerLanes: 0,
-          hideCursorInOverviewRuler: true,
-          overviewRulerBorder: false,
-          wordWrap: preferences.wordWrap ? "on" : "off",
-          folding: false,
-          contextmenu: !readOnly,
-          domReadOnly: readOnly,
-        }}
-      />
+      {/* Code View */}
+      {activeView === "code" && (
+        <Editor
+          height={calculatedHeight}
+          language={monacoLanguage}
+          value={value}
+          onChange={(val) => onChange?.(val ?? "")}
+          onMount={handleEditorMount}
+          theme={getMonacoTheme(preferences.theme)}
+          options={{
+            readOnly,
+            minimap: { enabled: preferences.minimap },
+            scrollBeyondLastLine: false,
+            fontSize: preferences.fontSize,
+            tabSize: preferences.tabSize,
+            lineHeight: lineHeight,
+            padding: { top: 8, bottom: 8 },
+            lineNumbers: "on",
+            lineNumbersMinChars: 3,
+            renderLineHighlight: readOnly ? "none" : "line",
+            cursorStyle: readOnly ? "underline" : "line",
+            scrollbar: {
+              vertical: "auto",
+              horizontal: "auto",
+              verticalScrollbarSize: 10,
+              horizontalScrollbarSize: 10,
+              useShadows: false,
+            },
+            overviewRulerLanes: 0,
+            hideCursorInOverviewRuler: true,
+            overviewRulerBorder: false,
+            wordWrap: preferences.wordWrap ? "on" : "off",
+            folding: false,
+            contextmenu: !readOnly,
+            domReadOnly: readOnly,
+          }}
+        />
+      )}
+
+      {/* Explain View */}
+      {activeView === "explain" && explanation && (
+        <div
+          className="prose prose-invert prose-sm max-w-none p-4 overflow-y-auto editor-scrollbar"
+          style={{ minHeight: `${minHeight}px`, maxHeight: `${maxHeight}px` }}
+        >
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {explanation}
+          </ReactMarkdown>
+        </div>
+      )}
     </div>
   );
 }
