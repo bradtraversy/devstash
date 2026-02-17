@@ -1,28 +1,16 @@
-# Current Feature: AI Description Generator
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Add an icon button next to the description input that generates a concise 1-2 sentence description/summary using AI
-- Works in both NewItemDialog (create) and ItemDrawer edit mode
-- Uses currently entered content (title, content/URL, language, type) — no need to save first
-- Works for all content types (snippets, prompts, commands, notes, links) using whatever info is available
-- Uses the existing OpenAI integration (gpt-5-nano)
-- Pro-only feature (matches AI auto-tagging pattern)
-- Server action with auth/Pro gating, Zod validation, and rate limiting
-- Unit tests for the server action
+<!-- Goals will be populated when a feature is loaded -->
 
 ## Notes
 
-- Follow the same pattern as generateAutoTags (server action, Pro gating, rate limiting)
-- The button should appear next to/near the description input field
-- Should send the title, content (or URL for links), type, and language to the AI
-- AI returns a 1-2 sentence description that populates the description field
-- Truncate content to ~2000 chars before sending (same as auto-tags)
-- Show loading state on the button while generating
+<!-- Notes will be populated when a feature is loaded -->
 
 ## History
 
@@ -82,3 +70,4 @@ In Progress
 - **Stripe Phase 1 (Core Infrastructure)** - Stripe SDK initialization in src/lib/stripe.ts, usage limit utilities (MAX_ITEMS=50, MAX_COLLECTIONS=3 for free tier) with getUserUsage/canCreateItem/canCreateCollection in src/lib/usage.ts, 9 unit tests, isPro added to NextAuth session/JWT types with DB sync in auth callbacks, checkout session API route (POST /api/stripe/checkout) with monthly/yearly plan-to-priceId mapping and find-or-create Stripe customer, customer portal API route (POST /api/stripe/portal), .env.example with Stripe env vars (Completed)
 - **Stripe Phase 2 (Webhooks, Feature Gating & UI)** - Stripe webhook handler at /api/webhooks/stripe for checkout.session.completed, invoice.paid, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted with idempotent updateMany and typeof checks, feature gating on createItem (Pro type check for file/image + 50 item limit), createCollection (3 collection limit), upload route (Pro DB check with 403), BillingSettings component with plan badge, usage counts, upgrade buttons ($8/mo and $72/yr), manage billing portal, upgrade success toast via useSearchParams, wired into settings page between editor and account sections, 4 new unit tests (Completed)
 - **AI Auto-Tagging** - OpenAI client utility (gpt-5-nano via Responses API), generateAutoTags server action with auth/Pro gating/Zod validation/rate limiting (20 req/hr), SuggestTagsButton component with accept/reject badge controls, integrated in NewItemDialog and ItemDrawer edit mode (Pro-only), isPro prop threaded through DashboardLayout/TopBar/ItemsPageHeader/ItemDrawerProvider, content truncation to 2000 chars, handles both {tags:[...]} and [...] response formats, normalizes to lowercase with dedup, 13 unit tests (Completed)
+- **AI Description Generator** - generateDescription server action with auth/Pro gating/Zod validation/rate limiting, GenerateDescriptionButton component with "Describe" label and Sparkles icon, integrated next to Description label in NewItemDialog and ItemDrawer edit mode (Pro-only), uses title/content/URL/language/type context with 2000 char truncation, handles {description:"..."} and plain string AI response formats, 12 new unit tests (Completed)
