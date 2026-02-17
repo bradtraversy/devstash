@@ -2,15 +2,23 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Goals will be populated when a feature is loaded -->
+1. Add sidebar active link highlighting using `usePathname()` in both desktop and mobile sidebars (High)
+2. Add GitHub OAuth button to register page matching sign-in page pattern (High)
+3. Add active state to sidebar collection links for `/collections` and `/collections/[id]` (Medium)
+4. Add "AI Prompt Optimizer" to homepage pricing Pro features list (Medium)
+5. Fix copy button / date text overlap on narrow item cards (Low)
+6. Add GitHub OAuth hint to register page footer (Low)
 
 ## Notes
 
-<!-- Notes will be populated when a feature is loaded -->
+- Sidebar files (`sidebar.tsx`, `mobile-sidebar.tsx`) don't import `usePathname` at all - needs to be added
+- Register form (`register-form.tsx`) is missing the entire GitHub OAuth section that exists in `sign-in-form.tsx`
+- PricingSection.tsx `PRO_FEATURES` array is missing "AI Prompt Optimizer"
+- ItemCard copy button uses `absolute bottom-2 right-2` which can overlap content on narrow viewports
 
 ## History
 

@@ -21,6 +21,7 @@ const PRO_FEATURES = [
   "All item types including Files & Images",
   "AI auto-tagging & summaries",
   "\u201CExplain This Code\u201D",
+  "AI Prompt Optimizer",
   "Data export (JSON/ZIP)",
 ];
 

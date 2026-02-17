@@ -44,7 +44,7 @@ export default function ItemCard({ item }: ItemCardProps) {
       style={borderStyle}
       onClick={() => openDrawer(item.id)}
     >
-      <CardContent className="flex items-start gap-4 p-4">
+      <CardContent className={`flex items-start gap-4 p-4 ${canCopy ? "pb-10" : ""}`}>
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
           style={{ backgroundColor: `${iconColor}20` }}

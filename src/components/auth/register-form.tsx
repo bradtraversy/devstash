@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Github, Loader2 } from "lucide-react";
+import { signInWithGitHub } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,7 +74,7 @@ export function RegisterForm() {
           Enter your details to create your DevStash account
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {error && (
           <div className="mb-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
             {error}
@@ -131,6 +132,24 @@ export function RegisterForm() {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create account
+          </Button>
+        </form>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <form action={signInWithGitHub}>
+          <Button variant="outline" className="w-full" type="submit">
+            <Github className="mr-2 h-4 w-4" />
+            GitHub
           </Button>
         </form>
       </CardContent>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   Star,
@@ -51,6 +52,7 @@ export default function Sidebar({
   sidebarCollections,
   user,
 }: SidebarProps) {
+  const pathname = usePathname();
   const [collectionsExpanded, setCollectionsExpanded] = useState(true);
 
   return (
@@ -92,6 +94,7 @@ export default function Sidebar({
           )}
           {itemTypes.map((type) => {
             const Icon = getItemTypeIcon(type.icon);
+            const isActive = pathname === `/items/${type.name}s`;
 
             return (
               <Link
@@ -99,7 +102,8 @@ export default function Sidebar({
                 href={`/items/${type.name}s`}
                 className={cn(
                   "flex items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent",
-                  isCollapsed && "justify-center"
+                  isCollapsed && "justify-center",
+                  isActive && "bg-accent text-accent-foreground font-medium"
                 )}
                 title={isCollapsed ? type.name : undefined}
               >
@@ -154,7 +158,10 @@ export default function Sidebar({
                         <Link
                           key={collection.id}
                           href={`/collections/${collection.id}`}
-                          className="flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent"
+                          className={cn(
+                            "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent",
+                            pathname === `/collections/${collection.id}` && "bg-accent text-accent-foreground font-medium"
+                          )}
                         >
                           <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
                           <span className="flex-1 truncate">
@@ -178,7 +185,10 @@ export default function Sidebar({
                         <Link
                           key={collection.id}
                           href={`/collections/${collection.id}`}
-                          className="flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent"
+                          className={cn(
+                            "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent",
+                            pathname === `/collections/${collection.id}` && "bg-accent text-accent-foreground font-medium"
+                          )}
                         >
                           <div
                             className="h-3 w-3 rounded-full"
@@ -198,7 +208,10 @@ export default function Sidebar({
                   {/* View all collections link */}
                   <Link
                     href="/collections"
-                    className="mt-2 flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    className={cn(
+                      "mt-2 flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+                      pathname === "/collections" && "bg-accent text-accent-foreground font-medium"
+                    )}
                   >
                     View all collections
                   </Link>
