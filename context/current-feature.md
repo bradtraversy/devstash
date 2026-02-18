@@ -1,34 +1,16 @@
-# Current Feature: Component Refactor
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-### High Impact
-- Extract `ConfirmDeleteDialog` from delete-item-dialog.tsx and delete-collection-dialog.tsx (~75 lines saved)
-- Extract `SidebarNav` from sidebar.tsx and mobile-sidebar.tsx (~80 lines saved)
-- Extract shared pricing constants (`PRO_FEATURES`/`FREE_FEATURES`) into `src/lib/constants/pricing.ts` and `startCheckout` utility into `src/lib/stripe-client.ts` from billing-settings.tsx and upgrade-pricing.tsx (~40 lines saved, fixes PRO_FEATURES divergence bug)
-
-### Medium Impact
-- Extract `DialogFormFooter` (Cancel + Submit with Loader2) from 4 dialog components (~40 lines saved)
-- Extract `ProAiButton` (Sparkles/Crown/Loader2 Pro-gated button) from code-editor.tsx and markdown-editor.tsx (~35 lines saved)
-- Extract `UserMenu` (Profile/Settings/Sign out dropdown) from sidebar.tsx and mobile-sidebar.tsx (~35 lines saved)
-
-### Low Impact
-- Extract `IconCircle` (colored icon in tinted circle) from 5 components (~20 lines saved)
-- Extract `GitHubAuthSection` (divider + GitHub OAuth button) from sign-in-form.tsx and register-form.tsx (~16 lines saved)
-- Extract `FormError` (red error box) from 3 auth form components (~12 lines saved)
-- Extract `SortableSection` (header + sort dropdown + bordered list shell) from both favorites list components (~25 lines saved)
+<!-- Define goals here -->
 
 ## Notes
 
-- Pure refactor — no behavior changes except fixing the PRO_FEATURES divergence bug (upgrade-pricing.tsx missing "AI Prompt Optimizer")
-- New shared components go in `src/components/shared/`
-- New constants go in `src/lib/constants/pricing.ts`
-- New utility goes in `src/lib/stripe-client.ts`
-- Estimated ~280-320 lines eliminated total
+<!-- Additional context here -->
 
 ## History
 
@@ -94,3 +76,4 @@ In Progress
 - **Drawer & Editor Font Sizes** - Improved readability in item drawer and editors: description text and URL links bumped from text-sm (14px) to text-base (16px), markdown editor preview removed prose-sm for 16px default with better line-height, markdown textarea bumped to text-base, editor toolbar buttons (Copy, Explain, Optimize, language label, tabs) bumped from text-xs (12px) to text-sm (14px) across editor-header.tsx, code-editor.tsx, and markdown-editor.tsx (Completed)
 - **UI Polish Fixes** - Sidebar active link highlighting via usePathname() in desktop and mobile sidebars (type links, collection links, "View all collections"), GitHub OAuth button on register page with divider and space-y-4 spacing, "AI Prompt Optimizer" added to homepage pricing Pro features, copy button overlap fix with pb-10 on item cards (Completed)
 - **Action Utils Refactor** - Extracted shared action helpers into src/lib/action-utils.ts: getAuthedSession() replacing 12+ auth check blocks, requirePro() replacing 4 Pro gating blocks, checkAiRateLimit() replacing 4 rate limit blocks, shared ActionResult<T> interface; added validateId() to validation.ts replacing 5 throwaway Zod ID schemas; refactored all 5 action files (items, collections, ai, settings, search), net reduction of ~168 lines, 198 tests passing (Completed)
+- **Component Refactor** - Extracted 9 shared components/utilities across 16 files: ConfirmDeleteDialog, DialogFormFooter, ProAiButton, FormError, GitHubAuthSection, SortableSection (shared components), SidebarNav, UserMenu (layout components), pricing constants and startCheckout utility; fixed PRO_FEATURES divergence bug; net ~450 lines reduced, 198 tests passing (Completed)
