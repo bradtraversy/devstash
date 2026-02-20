@@ -40,11 +40,11 @@ export default function ItemCard({ item }: ItemCardProps) {
 
   return (
     <Card
-      className="group relative bg-card border-border hover:border-muted-foreground/50 transition-colors cursor-pointer"
+      className="group relative bg-card border-border hover:border-muted-foreground/50 transition-colors cursor-pointer py-0"
       style={borderStyle}
       onClick={() => openDrawer(item.id)}
     >
-      <CardContent className={`flex items-start gap-4 p-4 ${canCopy ? "pb-10" : ""}`}>
+      <CardContent className="flex items-start gap-3 px-4 pt-6 pb-14">
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
           style={{ backgroundColor: `${iconColor}20` }}
@@ -68,29 +68,29 @@ export default function ItemCard({ item }: ItemCardProps) {
               {item.description}
             </p>
           )}
-          {item.tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {item.tags.slice(0, 3).map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="text-xs bg-muted text-muted-foreground"
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
         </div>
         <span className="text-xs text-muted-foreground shrink-0">
           {formatRelativeDate(item.updatedAt)}
         </span>
       </CardContent>
+      {item.tags.length > 0 && (
+        <div className="absolute bottom-3 left-4 flex flex-wrap gap-1">
+          {item.tags.slice(0, 3).map((tag) => (
+            <Badge
+              key={tag}
+              variant="secondary"
+              className="text-xs bg-muted text-muted-foreground"
+            >
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
       {canCopy && (
         <Button
           variant="ghost"
           size="icon"
-          className="absolute bottom-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute bottom-3 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={handleCopy}
         >
           {copied ? (

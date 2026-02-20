@@ -70,11 +70,11 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
   return (
     <>
       <Card
-        className="group relative bg-card border-border hover:border-muted-foreground/50 transition-colors cursor-pointer"
+        className="group relative bg-card border-border hover:border-muted-foreground/50 transition-colors cursor-pointer py-0"
         style={borderStyle}
         onClick={handleCardClick}
       >
-        <CardContent className="p-4">
+        <CardContent className="px-4 py-3">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-foreground">{collection.name}</h3>

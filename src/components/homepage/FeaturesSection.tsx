@@ -66,11 +66,11 @@ export default function FeaturesSection() {
           </p>
         </ScrollFadeIn>
 
-        <div className="grid grid-cols-3 gap-6 max-lg:grid-cols-2 max-md:grid-cols-1">
+        <div className="grid grid-cols-3 gap-x-6 gap-y-10 max-lg:grid-cols-2 max-md:grid-cols-1">
           {FEATURES.map((f) => (
             <ScrollFadeIn key={f.title}>
               <div
-                className="bg-[#12121a] border border-[#1e1e2e] rounded-xl p-8 text-left transition-all duration-300 hover:-translate-y-1 group"
+                className="bg-[#12121a] border border-[#1e1e2e] rounded-xl px-6 py-5 text-left transition-all duration-300 hover:-translate-y-1 group"
                 style={{ "--feature-accent": f.accent } as React.CSSProperties}
               >
                 <div

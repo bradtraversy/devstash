@@ -11,8 +11,8 @@ interface StatCardProps {
 
 function StatCard({ title, value, icon, color }: StatCardProps) {
   return (
-    <Card className="bg-card border-border">
-      <CardContent className="flex items-center gap-4 p-4">
+    <Card className="bg-card border-border py-0">
+      <CardContent className="flex items-center gap-4 px-4 py-3">
         <div
           className="flex h-10 w-10 items-center justify-center rounded-lg"
           style={{ backgroundColor: `${color}20` }}
