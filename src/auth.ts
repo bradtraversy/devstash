@@ -63,15 +63,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (account?.provider !== 'credentials' && user.id) {
-        // Check the actual user being signed in (not by email, which may not match)
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
         })
 
         // Block OAuth if this user has a password (credentials account)
-        if (dbUser?.password) {
+        // or if the OAuth email doesn't match the existing user's email
+        const oauthEmail = profile?.email ?? user.email
+        const emailMismatch = dbUser && oauthEmail && dbUser.email !== oauthEmail
+
+        if (dbUser?.password || emailMismatch) {
           // Clean up the bad account link the adapter created
           await prisma.account.deleteMany({
             where: { userId: user.id, provider: account?.provider },
