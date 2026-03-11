@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import AccountSettings from '@/components/settings/account-settings';
 import BillingSettings from '@/components/settings/billing-settings';
+import DataSettings from '@/components/settings/data-settings';
 import EditorSettings from '@/components/settings/editor-settings';
 import { getSidebarCollections } from '@/lib/db/collections';
 import { getItemTypesWithCounts } from '@/lib/db/items';
@@ -55,6 +56,9 @@ export default async function SettingsPage() {
           itemCount={usage.itemCount}
           collectionCount={usage.collectionCount}
         />
+
+        {/* Data Settings */}
+        <DataSettings isPro={isPro} />
 
         {/* Account Settings */}
         <AccountSettings hasPassword={user.hasPassword} />
