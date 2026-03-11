@@ -53,6 +53,7 @@ The docs, spec files, and other resources for this project are available in the 
 - Rate limiting on auth endpoints
 - Stripe subscriptions (Free / Pro tiers)
 - File uploads via Cloudflare R2
+- Import/export data (JSON free, ZIP with files for Pro)
 - Pagination, sorting, and filtering
 - Responsive design (desktop, tablet, mobile)
 

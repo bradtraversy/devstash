@@ -45,3 +45,6 @@ next-env.d.ts
 
 # prisma
 /src/generated/prisma
+
+# personal planning docs
+context/new-feature-list.md
