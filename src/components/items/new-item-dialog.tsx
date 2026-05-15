@@ -173,7 +173,7 @@ export default function NewItemDialog({ open, onOpenChange, defaultType, isPro }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {IconComponent && (
@@ -188,7 +188,8 @@ export default function NewItemDialog({ open, onOpenChange, defaultType, isPro }
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1">
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
             <Select value={typeName} onValueChange={(v) => setTypeName(v as ItemTypeName)}>
@@ -359,7 +360,9 @@ export default function NewItemDialog({ open, onOpenChange, defaultType, isPro }
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-2">
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-border">
             <Button
               type="button"
               variant="outline"
