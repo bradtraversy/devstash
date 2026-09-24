@@ -62,6 +62,9 @@ export function SignInForm() {
       } else if (result.code === "rate_limited") {
         setFormError("Too many sign-in attempts. Please try again in a few minutes.");
         setNeedsVerification(false);
+      } else if (result.code === "unavailable") {
+        setFormError("Sign-in is temporarily unavailable. Please try again in a few minutes.");
+        setNeedsVerification(false);
       } else {
         setFormError("Invalid email or password");
         setNeedsVerification(false);
