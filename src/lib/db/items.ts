@@ -386,6 +386,32 @@ export async function getItemById(
   return toItemDetail(item);
 }
 
+type CollectionReader = {
+  collection: { findMany: typeof prisma.collection.findMany };
+};
+
+/**
+ * Resolves the caller's own collections from a client-supplied id list.
+ * Returns null when any id is missing or belongs to someone else, so the
+ * whole write is refused instead of silently attaching to a foreign collection.
+ */
+async function resolveOwnedCollectionIds(
+  client: CollectionReader,
+  userId: string,
+  collectionIds: string[]
+): Promise<string[] | null> {
+  const unique = [...new Set(collectionIds)];
+  if (unique.length === 0) return [];
+
+  const owned = await client.collection.findMany({
+    where: { id: { in: unique }, userId },
+    select: { id: true },
+  });
+
+  if (owned.length !== unique.length) return null;
+  return owned.map((collection) => collection.id);
+}
+
 export interface UpdateItemData {
   title: string;
   description: string | null;
@@ -414,53 +440,63 @@ export async function updateItem(
     return null;
   }
 
-  // Update collections if provided (delete all existing, then create new)
-  if (data.collectionIds !== undefined) {
-    await prisma.itemCollection.deleteMany({
-      where: { itemId },
-    });
+  return prisma.$transaction(async (tx) => {
+    if (data.collectionIds !== undefined) {
+      const desired = await resolveOwnedCollectionIds(tx, userId, data.collectionIds);
+      if (desired === null) return null;
 
-    if (data.collectionIds.length > 0) {
-      await prisma.itemCollection.createMany({
-        data: data.collectionIds.map((collectionId) => ({
-          itemId,
-          collectionId,
-        })),
+      const current = await tx.itemCollection.findMany({
+        where: { itemId },
+        select: { collectionId: true },
       });
-    }
-  }
+      const currentIds = current.map((row) => row.collectionId);
+      const toRemove = currentIds.filter((id) => !desired.includes(id));
+      const toAdd = desired.filter((id) => !currentIds.includes(id));
 
-  // Update item with tag disconnect/connect-or-create
-  const updated = await prisma.item.update({
-    where: { id: itemId },
-    data: {
-      title: data.title,
-      description: data.description,
-      content: data.content,
-      url: data.url,
-      language: data.language,
-      tags: {
-        set: [], // Disconnect all existing tags
-        connectOrCreate: data.tags.map((tagName) => ({
-          where: { name: tagName },
-          create: { name: tagName },
-        })),
+      if (toRemove.length > 0) {
+        await tx.itemCollection.deleteMany({
+          where: { itemId, collectionId: { in: toRemove } },
+        });
+      }
+      if (toAdd.length > 0) {
+        await tx.itemCollection.createMany({
+          data: toAdd.map((collectionId) => ({ itemId, collectionId })),
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    const updated = await tx.item.update({
+      where: { id: itemId },
+      data: {
+        title: data.title,
+        description: data.description,
+        content: data.content,
+        url: data.url,
+        language: data.language,
+        tags: {
+          set: [], // Disconnect all existing tags
+          connectOrCreate: data.tags.map((tagName) => ({
+            where: { name: tagName },
+            create: { name: tagName },
+          })),
+        },
       },
-    },
-    include: {
-      itemType: true,
-      tags: true,
-      collections: {
-        include: {
-          collection: {
-            select: { id: true, name: true },
+      include: {
+        itemType: true,
+        tags: true,
+        collections: {
+          include: {
+            collection: {
+              select: { id: true, name: true },
+            },
           },
         },
       },
-    },
-  });
+    });
 
-  return toItemDetail(updated);
+    return toItemDetail(updated);
+  });
 }
 
 /**
@@ -664,6 +700,11 @@ export async function createItem(
     contentType = 'FILE';
   }
 
+  const collectionIds = await resolveOwnedCollectionIds(prisma, userId, data.collectionIds ?? []);
+  if (collectionIds === null) {
+    return null;
+  }
+
   const created = await prisma.item.create({
     data: {
       userId,
@@ -683,9 +724,9 @@ export async function createItem(
           create: { name: tagName },
         })),
       },
-      collections: data.collectionIds?.length
+      collections: collectionIds.length
         ? {
-            create: data.collectionIds.map((collectionId) => ({
+            create: collectionIds.map((collectionId) => ({
               collectionId,
             })),
           }
