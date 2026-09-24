@@ -24,3 +24,29 @@ export function ownedFileKey(
 export function isOwnedFileUrl(fileUrl: string | null | undefined, userId: string): boolean {
   return ownedFileKey(fileUrl, userId) !== null;
 }
+
+/**
+ * Resolves the catch-all segments of a download request to an R2 key inside the
+ * caller's namespace. Segments are decoded once more (Next already decoded once)
+ * so encoded dot segments cannot slip past the prefix check.
+ */
+export function ownedDownloadKey(segments: string[], userId: string): string | null {
+  if (!userId || segments.length < 2) return null;
+
+  const decoded: string[] = [];
+  for (const raw of segments) {
+    let segment = raw;
+    try {
+      segment = decodeURIComponent(raw);
+    } catch {
+      return null;
+    }
+    // Legit keys never contain '%', so anything still encoded after one decode is a smuggling attempt
+    // (the URL parser would collapse %2e%2e into a dot segment later).
+    if (segment === '' || segment === '.' || segment === '..' || /[\\/%]/.test(segment)) return null;
+    decoded.push(segment);
+  }
+
+  if (decoded[0] !== userId) return null;
+  return decoded.join('/');
+}
