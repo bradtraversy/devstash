@@ -59,11 +59,18 @@ async function main() {
     }
   }
 
+  // The demo login is for local development. Production gets it only when SEED_DEMO=true is set explicitly.
+  const seedDemo = process.env.SEED_DEMO === 'true' || process.env.NODE_ENV !== 'production'
+  if (!seedDemo) {
+    console.log('\nSkipping demo user and sample data (production without SEED_DEMO=true)')
+    return
+  }
+
   // ============================================
   // 2. CREATE DEMO USER
   // ============================================
   console.log('\n👤 Creating demo user...')
-  const hashedPassword = await bcrypt.hash('12345678', 12)
+  const hashedPassword = await bcrypt.hash(process.env.SEED_DEMO_PASSWORD || '12345678', 12)
 
   const demoUser = await prisma.user.upsert({
     where: { email: 'demo@devstash.io' },
