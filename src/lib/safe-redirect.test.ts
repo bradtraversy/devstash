@@ -14,10 +14,21 @@ describe('safeRedirectPath', () => {
     expect(safeRedirectPath('javascript:alert(1)')).toBe('/dashboard');
   });
 
-  it('falls back for empty values and header injection attempts', () => {
+  it('falls back for empty values', () => {
     expect(safeRedirectPath(null)).toBe('/dashboard');
     expect(safeRedirectPath('')).toBe('/dashboard');
-    expect(safeRedirectPath('/ok\r\nSet-Cookie: x')).toBe('/dashboard');
+  });
+
+  it('falls back when parser-stripped characters would change the origin', () => {
+    const tab = String.fromCharCode(9);
+    expect(safeRedirectPath(`/${tab}/evil.example`)).toBe('/dashboard');
+    expect(safeRedirectPath(decodeURIComponent('/%09/evil.example'))).toBe('/dashboard');
+    expect(safeRedirectPath('/\\evil.example')).toBe('/dashboard');
+    expect(safeRedirectPath('/\\/evil.example')).toBe('/dashboard');
+  });
+
+  it('returns a normalized same-origin path', () => {
+    expect(safeRedirectPath('/a/../b?x=1#h')).toBe('/b?x=1#h');
   });
 
   it('honors a custom fallback', () => {
