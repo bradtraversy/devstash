@@ -21,7 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm run lint && npm test && npm run build",
+    "verify": "npm run db:generate && npm run typecheck && npm run lint && npm test && npm run build",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "prisma": {
