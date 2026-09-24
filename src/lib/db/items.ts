@@ -252,6 +252,10 @@ export async function getRecentItems(
 export const VALID_ITEM_TYPES = ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'] as const;
 export type ValidItemType = typeof VALID_ITEM_TYPES[number];
 
+export function isFileType(typeName: string): boolean {
+  return typeName === 'file' || typeName === 'image';
+}
+
 export interface PaginatedItems {
   items: ItemWithType[];
   totalCount: number;
@@ -696,7 +700,7 @@ export async function createItem(
   let contentType: 'TEXT' | 'FILE' | 'URL' = 'TEXT';
   if (data.typeName === 'link') {
     contentType = 'URL';
-  } else if (data.typeName === 'file' || data.typeName === 'image') {
+  } else if (isFileType(data.typeName)) {
     contentType = 'FILE';
   }
 
