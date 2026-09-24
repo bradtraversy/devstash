@@ -3,6 +3,7 @@ import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient, ContentType } from '../src/generated/prisma/client'
 import bcrypt from 'bcryptjs'
+import { isLocalDatabaseUrl } from '../src/lib/local-db'
 
 const connectionString = process.env.DATABASE_URL
 
@@ -59,10 +60,10 @@ async function main() {
     }
   }
 
-  // The demo login is for local development. Production gets it only when SEED_DEMO=true is set explicitly.
-  const seedDemo = process.env.SEED_DEMO === 'true' || process.env.NODE_ENV !== 'production'
+  // NODE_ENV is unset when the seed runs from a shell, so the guard keys on the database host instead.
+  const seedDemo = process.env.SEED_DEMO === 'true' || isLocalDatabaseUrl(connectionString)
   if (!seedDemo) {
-    console.log('\nSkipping demo user and sample data (production without SEED_DEMO=true)')
+    console.log('\nSkipping demo user and sample data: DATABASE_URL is not local and SEED_DEMO is not set')
     return
   }
 

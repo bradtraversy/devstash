@@ -14,7 +14,6 @@ async function main() {
     process.exit(1)
   }
 
-  // This script deletes every non-demo account. It only runs against a local database and only with --yes.
   if (!isLocalDatabaseUrl(connectionString)) {
     console.error('Refusing to run: DATABASE_URL does not point at a local development database.')
     process.exit(1)
