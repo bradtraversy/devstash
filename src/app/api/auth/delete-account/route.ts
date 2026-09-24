@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { stripe } from '@/lib/stripe'
 
 export async function DELETE() {
   try {
@@ -11,6 +12,24 @@ export async function DELETE() {
         { error: 'Unauthorized' },
         { status: 401 }
       )
+    }
+
+    // Cancel billing first so a deleted account cannot keep renewing with no portal to stop it.
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { stripeSubscriptionId: true },
+    })
+
+    if (user?.stripeSubscriptionId) {
+      try {
+        await stripe.subscriptions.cancel(user.stripeSubscriptionId)
+      } catch (error) {
+        console.error('Subscription cancel failed during account deletion:', error)
+        return NextResponse.json(
+          { error: 'We could not cancel your subscription. Please try again or contact support.' },
+          { status: 502 }
+        )
+      }
     }
 
     // Delete the user - cascade will handle related data
