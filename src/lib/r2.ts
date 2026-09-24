@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
+import { ownedFileKey } from '@/lib/file-urls';
 
 // File constraints from spec
 export const FILE_CONSTRAINTS = {
@@ -137,19 +138,21 @@ export async function uploadToR2(
 }
 
 /**
- * Delete file from R2 by URL
+ * Delete file from R2 by URL. Refuses any URL outside the caller's own namespace,
+ * since the URL is stored from client input.
  */
-export async function deleteFromR2(fileUrl: string): Promise<void> {
+export async function deleteFromR2(fileUrl: string, userId: string): Promise<void> {
   const client = getR2Client();
   const bucketName = process.env.R2_BUCKET_NAME;
-  const publicUrl = process.env.R2_PUBLIC_URL;
 
-  if (!bucketName || !publicUrl) {
+  if (!bucketName) {
     throw new Error('R2 bucket configuration missing');
   }
 
-  // Extract key from URL
-  const key = fileUrl.replace(`${publicUrl}/`, '');
+  const key = ownedFileKey(fileUrl, userId);
+  if (!key) {
+    throw new Error('File URL is outside the user namespace');
+  }
 
   await client.send(
     new DeleteObjectCommand({

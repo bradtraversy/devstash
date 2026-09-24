@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { VALID_ITEM_TYPES } from '@/lib/db/items';
 import { MAX_ITEMS, MAX_COLLECTIONS } from '@/lib/usage';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
+import { isOwnedFileUrl } from '@/lib/file-urls';
 
 const importItemSchema = z.object({
   title: z.string().min(1),
@@ -268,8 +269,10 @@ export async function importData(
         if (collId) itemCollectionIds.push(collId);
       }
 
-      // Preserve file references for file/image types (Pro users only)
-      const isFileType = item.type === 'file' || item.type === 'image';
+      // Preserve file references for file/image types (Pro users only), and only
+      // when the URL points at this user's own upload namespace.
+      const isFileType =
+        (item.type === 'file' || item.type === 'image') && isOwnedFileUrl(item.fileUrl, userId);
 
       await tx.item.create({
         data: {

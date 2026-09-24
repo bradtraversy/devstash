@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getUserExportData } from '@/lib/db/export';
+import { isOwnedFileUrl } from '@/lib/file-urls';
 import archiver from 'archiver';
 import { PassThrough } from 'stream';
 
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
 
   // Fetch and add files from R2 for file/image items
   const fileItems = data.items.filter((item) =>
-    (item.type === 'file' || item.type === 'image') && item.fileUrl
+    (item.type === 'file' || item.type === 'image') && isOwnedFileUrl(item.fileUrl, session.user.id)
   );
 
   for (const item of fileItems) {

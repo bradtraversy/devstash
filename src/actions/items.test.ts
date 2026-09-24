@@ -318,6 +318,117 @@ describe('createItem server action', () => {
     mockCanCreateItem.mockResolvedValue(true);
   });
 
+  describe('file references', () => {
+    const PUBLIC = 'https://pub-test.r2.dev';
+    const createdFile = {
+      id: 'item-file',
+      title: 'Notes',
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      contentType: 'FILE',
+      fileUrl: `${PUBLIC}/user-123/1700000000-notes.pdf`,
+      fileName: 'notes.pdf',
+      fileSize: 1024,
+      isFavorite: false,
+      isPinned: false,
+      itemType: { name: 'file', icon: 'File', color: '#6b7280' },
+      tags: [],
+      collections: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeEach(() => {
+      vi.stubEnv('R2_PUBLIC_URL', PUBLIC);
+      mockAuth.mockResolvedValue({
+        user: { id: 'user-123', isPro: true },
+        expires: new Date().toISOString(),
+      });
+      mockCreateItemQuery.mockResolvedValue(createdFile);
+    });
+
+    it('rejects a file URL outside the caller upload namespace', async () => {
+      const result = await createItem({
+        typeName: 'file',
+        title: 'Notes',
+        description: null,
+        content: null,
+        url: null,
+        language: null,
+        tags: [],
+        fileUrl: `${PUBLIC}/user-victim/1700000000-secret.pdf`,
+        fileName: 'secret.pdf',
+        fileSize: 1024,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Invalid file reference');
+      expect(result.fieldErrors?.fileUrl).toBeDefined();
+      expect(mockCreateItemQuery).not.toHaveBeenCalled();
+    });
+
+    it('rejects a file URL on a foreign host', async () => {
+      const result = await createItem({
+        typeName: 'image',
+        title: 'Meta',
+        description: null,
+        content: null,
+        url: null,
+        language: null,
+        tags: [],
+        fileUrl: 'http://169.254.169.254/latest/meta-data/',
+        fileName: 'meta.png',
+        fileSize: 1,
+      });
+
+      expect(result.success).toBe(false);
+      expect(mockCreateItemQuery).not.toHaveBeenCalled();
+    });
+
+    it('accepts a file URL inside the caller upload namespace', async () => {
+      const result = await createItem({
+        typeName: 'file',
+        title: 'Notes',
+        description: null,
+        content: null,
+        url: null,
+        language: null,
+        tags: [],
+        fileUrl: `${PUBLIC}/user-123/1700000000-notes.pdf`,
+        fileName: 'notes.pdf',
+        fileSize: 1024,
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockCreateItemQuery).toHaveBeenCalledWith(
+        'user-123',
+        expect.objectContaining({ fileUrl: `${PUBLIC}/user-123/1700000000-notes.pdf` })
+      );
+    });
+
+    it('drops file fields on non-file item types', async () => {
+      await createItem({
+        typeName: 'snippet',
+        title: 'Code',
+        description: null,
+        content: 'console.log(1)',
+        url: null,
+        language: 'javascript',
+        tags: [],
+        fileUrl: 'https://evil.example/anything.pdf',
+        fileName: 'anything.pdf',
+        fileSize: 5,
+      });
+
+      expect(mockCreateItemQuery).toHaveBeenCalledWith(
+        'user-123',
+        expect.objectContaining({ fileUrl: null, fileName: null, fileSize: null })
+      );
+    });
+  });
+
   it('returns error when not authenticated', async () => {
     mockAuth.mockResolvedValue(null);
 

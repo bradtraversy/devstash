@@ -11,6 +11,7 @@ import {
   type ItemDetail
 } from '@/lib/db/items';
 import { parseZodErrors, safeUrlSchema, validateId } from '@/lib/validation';
+import { isOwnedFileUrl } from '@/lib/file-urls';
 import { canCreateItem } from '@/lib/usage';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 
@@ -149,6 +150,22 @@ export async function createItem(
   // Validate URL is required for link type
   if (parsed.data.typeName === 'link' && !parsed.data.url) {
     return { success: false, error: 'URL is required for links', fieldErrors: { url: ['URL is required'] } };
+  }
+
+  // A file reference is only valid when it points at this user's own upload namespace.
+  const isFileType = parsed.data.typeName === 'file' || parsed.data.typeName === 'image';
+  if (isFileType) {
+    if (parsed.data.fileUrl && !isOwnedFileUrl(parsed.data.fileUrl, session.user.id)) {
+      return {
+        success: false,
+        error: 'Invalid file reference',
+        fieldErrors: { fileUrl: ['File must be uploaded through DevStash'] },
+      };
+    }
+  } else {
+    parsed.data.fileUrl = null;
+    parsed.data.fileName = null;
+    parsed.data.fileSize = null;
   }
 
   const created = await createItemQuery(session.user.id, parsed.data);
