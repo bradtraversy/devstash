@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "pre-push: running npm run verify"
+exec npm run verify

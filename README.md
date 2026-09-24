@@ -153,6 +153,10 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run db:seed` | Seed system item types |
 | `npm run db:studio` | Open Prisma Studio |
 
+## Quality Gate
+
+`npm run verify` runs the typecheck, lint, unit tests, and production build in one command. A pre-push hook (installed automatically by `npm install` through the `prepare` script) refuses any push that fails it, and the GitHub Actions workflow in `.github/workflows/ci.yml` runs the identical command on every push and pull request.
+
 ## Project Structure
 
 ```
