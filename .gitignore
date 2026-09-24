@@ -48,3 +48,7 @@ next-env.d.ts
 
 # personal planning docs
 context/new-feature-list.md
+
+# Audit reports (fine-tooth and the course auditor agent)
+Audits/
+docs/audit-results/
