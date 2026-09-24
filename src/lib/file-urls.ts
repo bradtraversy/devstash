@@ -1,4 +1,20 @@
 /**
+ * The configured R2 public URL without trailing slashes, so every place that
+ * builds or checks a file URL agrees on the prefix.
+ */
+export function r2PublicUrl(): string | null {
+  const value = process.env.R2_PUBLIC_URL?.replace(/\/+$/, '');
+  return value || null;
+}
+
+// Uploaded keys are `${userId}/${timestamp}-${sanitized name}` and never contain
+// separators or percent signs, so anything else in a segment is a smuggling attempt
+// (the URL parser would turn %2e%2e or a backslash into a dot segment later).
+function isSafeSegment(segment: string): boolean {
+  return segment !== '' && segment !== '.' && segment !== '..' && !/[\\/%]/.test(segment);
+}
+
+/**
  * Returns the R2 object key for a URL inside the caller's own namespace
  * (`${R2_PUBLIC_URL}/${userId}/...`), or null for any other URL.
  */
@@ -6,7 +22,7 @@ export function ownedFileKey(
   fileUrl: string | null | undefined,
   userId: string
 ): string | null {
-  const publicUrl = process.env.R2_PUBLIC_URL?.replace(/\/+$/, '');
+  const publicUrl = r2PublicUrl();
   if (!fileUrl || !publicUrl || !userId) return null;
 
   const prefix = `${publicUrl}/${userId}/`;
@@ -14,9 +30,7 @@ export function ownedFileKey(
 
   const rest = fileUrl.slice(prefix.length);
   if (!rest || /[?#]/.test(rest)) return null;
-  if (rest.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')) {
-    return null;
-  }
+  if (!rest.split('/').every(isSafeSegment)) return null;
 
   return `${userId}/${rest}`;
 }
@@ -41,9 +55,7 @@ export function ownedDownloadKey(segments: string[], userId: string): string | n
     } catch {
       return null;
     }
-    // Legit keys never contain '%', so anything still encoded after one decode is a smuggling attempt
-    // (the URL parser would collapse %2e%2e into a dot segment later).
-    if (segment === '' || segment === '.' || segment === '..' || /[\\/%]/.test(segment)) return null;
+    if (!isSafeSegment(segment)) return null;
     decoded.push(segment);
   }
 

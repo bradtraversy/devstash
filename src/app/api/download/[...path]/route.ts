@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { ownedDownloadKey } from '@/lib/file-urls';
+import { ownedDownloadKey, r2PublicUrl } from '@/lib/file-urls';
 
 export async function GET(
   _request: Request,
@@ -14,7 +14,7 @@ export async function GET(
     }
 
     const { path } = await params;
-    const publicUrl = process.env.R2_PUBLIC_URL;
+    const publicUrl = r2PublicUrl();
 
     if (!publicUrl) {
       return NextResponse.json(
@@ -28,10 +28,7 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const fileUrl = new URL(`${publicUrl.replace(/\/+$/, '')}/${key}`);
-    if (!fileUrl.pathname.startsWith(`/${session.user.id}/`)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const fileUrl = `${publicUrl}/${key}`;
 
     // Fetch from R2
     const response = await fetch(fileUrl);
