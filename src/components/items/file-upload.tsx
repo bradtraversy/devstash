@@ -85,21 +85,35 @@ export default function FileUpload({
             }
           };
 
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              const response = JSON.parse(xhr.responseText);
-              if (response.success) {
-                resolve(response.data);
-              } else {
-                reject(new Error(response.error || "Upload failed"));
-              }
-            } else {
-              const response = JSON.parse(xhr.responseText);
-              reject(new Error(response.error || "Upload failed"));
+          // A thrown exception inside an XHR handler never settles the promise, so parse defensively.
+          const parseBody = (): { success?: boolean; data?: UploadedFile; error?: string } | null => {
+            try {
+              return JSON.parse(xhr.responseText);
+            } catch {
+              return null;
             }
           };
 
+          xhr.onload = () => {
+            const body = parseBody();
+            if (xhr.status >= 200 && xhr.status < 300) {
+              if (body?.success && body.data) {
+                resolve(body.data);
+              } else {
+                reject(new Error(body?.error || "Upload failed"));
+              }
+              return;
+            }
+            if (xhr.status === 413) {
+              reject(new Error(`File is too large for the server (max ${maxSizeMB} MB)`));
+              return;
+            }
+            reject(new Error(body?.error || xhr.statusText || "Upload failed"));
+          };
+
           xhr.onerror = () => reject(new Error("Network error"));
+          xhr.onabort = () => reject(new Error("Upload cancelled"));
+          xhr.ontimeout = () => reject(new Error("Upload timed out"));
         });
 
         xhr.open("POST", "/api/upload");
@@ -115,7 +129,7 @@ export default function FileUpload({
         setUploadProgress(0);
       }
     },
-    [itemType, validateFile, onUploadComplete, onUploadError]
+    [itemType, validateFile, onUploadComplete, onUploadError, maxSizeMB]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
