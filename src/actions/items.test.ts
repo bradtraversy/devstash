@@ -14,6 +14,7 @@ vi.mock('@/lib/db/items', () => ({
   toggleItemFavorite: vi.fn(),
   toggleItemPin: vi.fn(),
   VALID_ITEM_TYPES: ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'] as const,
+  isFileType: (name: string) => name === 'file' || name === 'image',
 }));
 
 // Mock the usage module

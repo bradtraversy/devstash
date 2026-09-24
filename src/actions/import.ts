@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { VALID_ITEM_TYPES } from '@/lib/db/items';
+import { VALID_ITEM_TYPES, isFileType } from '@/lib/db/items';
 import { MAX_ITEMS, MAX_COLLECTIONS } from '@/lib/usage';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 import { isOwnedFileUrl } from '@/lib/file-urls';
@@ -260,7 +260,7 @@ export async function importData(
       // Determine contentType
       let contentType: 'TEXT' | 'FILE' | 'URL' = 'TEXT';
       if (item.type === 'link') contentType = 'URL';
-      else if (item.type === 'file' || item.type === 'image') contentType = 'FILE';
+      else if (isFileType(item.type)) contentType = 'FILE';
 
       // Resolve collection IDs for this item
       const itemCollectionIds: string[] = [];
@@ -271,8 +271,7 @@ export async function importData(
 
       // Preserve file references for file/image types (Pro users only), and only
       // when the URL points at this user's own upload namespace.
-      const isFileType =
-        (item.type === 'file' || item.type === 'image') && isOwnedFileUrl(item.fileUrl, userId);
+      const keepFile = isFileType(item.type) && isOwnedFileUrl(item.fileUrl, userId);
 
       await tx.item.create({
         data: {
@@ -286,9 +285,9 @@ export async function importData(
           contentType,
           isFavorite: item.isFavorite,
           isPinned: item.isPinned,
-          fileUrl: isFileType ? item.fileUrl : null,
-          fileName: isFileType ? item.fileName : null,
-          fileSize: isFileType ? item.fileSize : null,
+          fileUrl: keepFile ? item.fileUrl : null,
+          fileName: keepFile ? item.fileName : null,
+          fileSize: keepFile ? item.fileSize : null,
           tags: {
             connectOrCreate: item.tags.map((tagName) => ({
               where: { name: tagName },

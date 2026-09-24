@@ -8,6 +8,7 @@ import {
   toggleItemFavorite as toggleItemFavoriteQuery,
   toggleItemPin as toggleItemPinQuery,
   VALID_ITEM_TYPES,
+  isFileType,
   type ItemDetail
 } from '@/lib/db/items';
 import { parseZodErrors, safeUrlSchema, validateId } from '@/lib/validation';
@@ -137,7 +138,8 @@ export async function createItem(
 
   // Pro type check: file/image require Pro
   const isPro = session.user.isPro ?? false;
-  if ((parsed.data.typeName === 'file' || parsed.data.typeName === 'image') && !isPro) {
+  const fileBacked = isFileType(parsed.data.typeName);
+  if (fileBacked && !isPro) {
     return { success: false, error: 'File and image uploads require a Pro subscription' };
   }
 
@@ -153,8 +155,7 @@ export async function createItem(
   }
 
   // A file reference is only valid when it points at this user's own upload namespace.
-  const isFileType = parsed.data.typeName === 'file' || parsed.data.typeName === 'image';
-  if (isFileType) {
+  if (fileBacked) {
     if (parsed.data.fileUrl && !isOwnedFileUrl(parsed.data.fileUrl, session.user.id)) {
       return {
         success: false,
