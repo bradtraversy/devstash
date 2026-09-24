@@ -12,6 +12,9 @@ function getRedis(): Redis | null {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN
 
   if (!url || !token) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Upstash Redis is not configured; refusing to run production without rate limiting')
+    }
     console.warn('Upstash Redis not configured - rate limiting disabled')
     return null
   }
@@ -20,46 +23,76 @@ function getRedis(): Redis | null {
   return redis
 }
 
+// Limits that protect credentials fail closed on a Redis error; everything else fails open.
+const FAIL_CLOSED: ReadonlySet<RateLimitType> = new Set(['login', 'resetPassword'])
+
+type KeyBy = 'ip' | 'ip+id' | 'id'
+
 // Rate limit configurations for different endpoints
 export const rateLimitConfigs = {
-  // Login: 5 attempts per 15 minutes (keyed by IP + email)
+  // Login: 5 attempts per 15 minutes per IP and email
   login: {
     limiter: Ratelimit.slidingWindow(5, '15 m'),
     prefix: 'ratelimit:login',
+    keyBy: 'ip+id',
   },
-  // Register: 3 attempts per hour (keyed by IP)
+  // Register: 3 attempts per hour per IP
   register: {
     limiter: Ratelimit.slidingWindow(3, '1 h'),
     prefix: 'ratelimit:register',
+    keyBy: 'ip',
   },
-  // Forgot password: 3 attempts per hour (keyed by IP)
+  // Forgot password: 3 attempts per hour per IP
   forgotPassword: {
     limiter: Ratelimit.slidingWindow(3, '1 h'),
     prefix: 'ratelimit:forgot-password',
+    keyBy: 'ip',
   },
-  // Reset password: 5 attempts per 15 minutes (keyed by IP)
+  // Reset password: 5 attempts per 15 minutes per IP
   resetPassword: {
     limiter: Ratelimit.slidingWindow(5, '15 m'),
     prefix: 'ratelimit:reset-password',
+    keyBy: 'ip',
   },
-  // Resend verification: 3 attempts per 15 minutes (keyed by IP + email)
+  // Resend verification: 3 attempts per 15 minutes per IP and email
   resendVerification: {
     limiter: Ratelimit.slidingWindow(3, '15 m'),
     prefix: 'ratelimit:resend-verification',
+    keyBy: 'ip+id',
   },
-  // File upload: 10 uploads per hour (keyed by user ID)
+  // File upload: 10 uploads per hour per user, regardless of IP
   upload: {
     limiter: Ratelimit.slidingWindow(10, '1 h'),
     prefix: 'ratelimit:upload',
+    keyBy: 'id',
   },
-  // AI requests: 20 per hour (keyed by user ID)
+  // AI requests: 20 per hour per user, regardless of IP
   ai: {
     limiter: Ratelimit.slidingWindow(20, '1 h'),
     prefix: 'ratelimit:ai',
+    keyBy: 'id',
   },
-} as const
+} as const satisfies Record<string, { limiter: unknown; prefix: string; keyBy: KeyBy }>
 
 export type RateLimitType = keyof typeof rateLimitConfigs
+
+// One Ratelimit per type so the library's in-memory cache survives between calls.
+const limiters = new Map<RateLimitType, Ratelimit>()
+
+function getLimiter(type: RateLimitType, redisClient: Redis): Ratelimit {
+  const existing = limiters.get(type)
+  if (existing) return existing
+  const config = rateLimitConfigs[type]
+  const created = new Ratelimit({ redis: redisClient, limiter: config.limiter, prefix: config.prefix })
+  limiters.set(type, created)
+  return created
+}
+
+function buildKey(keyBy: KeyBy, ip: string, identifier?: string): string {
+  if (keyBy === 'id' && identifier) return identifier
+  if (keyBy === 'ip+id' && identifier) return `${ip}:${identifier}`
+  return ip
+}
 
 interface RateLimitResult {
   success: boolean
@@ -100,7 +133,7 @@ export async function checkRateLimit(
 ): Promise<RateLimitResult> {
   const redisClient = getRedis()
 
-  // Fail open if Redis is not configured
+  // Development without Redis: fail open (production throws in getRedis)
   if (!redisClient) {
     return {
       success: true,
@@ -112,18 +145,10 @@ export async function checkRateLimit(
 
   const config = rateLimitConfigs[type]
   const ip = await getClientIP()
-
-  // Build the key: prefix:ip or prefix:ip:identifier
-  const key = identifier ? `${ip}:${identifier}` : ip
+  const key = buildKey(config.keyBy, ip, identifier)
 
   try {
-    const ratelimit = new Ratelimit({
-      redis: redisClient,
-      limiter: config.limiter,
-      prefix: config.prefix,
-    })
-
-    const result = await ratelimit.limit(key)
+    const result = await getLimiter(type, redisClient).limit(key)
 
     return {
       success: result.success,
@@ -132,14 +157,11 @@ export async function checkRateLimit(
       retryAfter: result.success ? 0 : Math.ceil((result.reset - Date.now()) / 1000),
     }
   } catch (error) {
-    // Fail open on errors
     console.error('Rate limit check failed:', error)
-    return {
-      success: true,
-      remaining: -1,
-      reset: 0,
-      retryAfter: 0,
+    if (FAIL_CLOSED.has(type)) {
+      return { success: false, remaining: 0, reset: Date.now() + 60_000, retryAfter: 60 }
     }
+    return { success: true, remaining: -1, reset: 0, retryAfter: 0 }
   }
 }
 
