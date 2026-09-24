@@ -15,6 +15,7 @@ vi.mock('@/lib/db/items', () => ({
   toggleItemPin: vi.fn(),
   VALID_ITEM_TYPES: ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'] as const,
   isFileType: (name: string) => name === 'file' || name === 'image',
+  UnknownCollectionError: class UnknownCollectionError extends Error {},
 }));
 
 // Mock the usage module
@@ -24,7 +25,7 @@ vi.mock('@/lib/usage', () => ({
 
 import { updateItem, deleteItem, createItem, toggleItemFavorite, toggleItemPin } from './items';
 import { auth } from '@/auth';
-import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery, toggleItemPin as toggleItemPinQuery } from '@/lib/db/items';
+import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery, toggleItemPin as toggleItemPinQuery, UnknownCollectionError } from '@/lib/db/items';
 import { canCreateItem } from '@/lib/usage';
 
 const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
@@ -914,5 +915,64 @@ describe('toggleItemPin server action', () => {
 
     expect(result.success).toBe(true);
     expect(result.data).toEqual({ isPinned: false });
+  });
+});
+
+describe('item action error mapping', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    });
+  });
+
+  const payload = {
+    title: 'Test',
+    description: null,
+    content: null,
+    url: null,
+    language: null,
+    tags: [],
+  };
+
+  it('reports a stale or foreign collection id as a field error', async () => {
+    const error = new UnknownCollectionError();
+    error.message = 'One of the selected collections no longer exists';
+    mockUpdateItemQuery.mockRejectedValue(error);
+
+    const result = await updateItem('item-123', { ...payload, collectionIds: ['deleted-collection'] });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('One of the selected collections no longer exists');
+    expect(result.fieldErrors?.collectionIds).toBeDefined();
+  });
+
+  it('returns a failure result instead of throwing on unexpected database errors', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockUpdateItemQuery.mockRejectedValue(new Error('connection reset'));
+
+    const result = await updateItem('item-123', payload);
+
+    expect(result).toEqual({ success: false, error: 'Failed to update item' });
+  });
+
+  it('maps create failures the same way', async () => {
+    mockCanCreateItem.mockResolvedValue(true);
+    const error = new UnknownCollectionError();
+    error.message = 'One of the selected collections no longer exists';
+    mockCreateItemQuery.mockRejectedValue(error);
+
+    const result = await createItem({
+      typeName: 'snippet',
+      ...payload,
+      collectionIds: ['deleted-collection'],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.fieldErrors?.collectionIds).toBeDefined();
   });
 });
