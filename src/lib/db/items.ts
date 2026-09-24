@@ -486,7 +486,7 @@ export async function deleteItem(
   if (existing.fileUrl) {
     try {
       const { deleteFromR2 } = await import('@/lib/r2');
-      await deleteFromR2(existing.fileUrl);
+      await deleteFromR2(existing.fileUrl, userId);
     } catch (error) {
       // Log but don't fail - the DB record should still be deleted
       console.error('Failed to delete file from R2:', error);

@@ -297,6 +297,85 @@ describe('importData server action', () => {
     expect(result.data?.itemsImported).toBe(1);
   });
 
+  it('keeps only file references inside the importer upload namespace', async () => {
+    vi.stubEnv('R2_PUBLIC_URL', 'https://pub-test.r2.dev');
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    });
+
+    const json = JSON.stringify({
+      version: 1,
+      items: [
+        {
+          title: 'Mine',
+          type: 'file',
+          content: null,
+          fileUrl: 'https://pub-test.r2.dev/user-123/1700000000-mine.pdf',
+          fileName: 'mine.pdf',
+          fileSize: 10,
+          tags: [],
+          collections: [],
+        },
+        {
+          title: 'Theirs',
+          type: 'file',
+          content: null,
+          fileUrl: 'https://pub-test.r2.dev/user-victim/1700000000-theirs.pdf',
+          fileName: 'theirs.pdf',
+          fileSize: 10,
+          tags: [],
+          collections: [],
+        },
+        {
+          title: 'Internal',
+          type: 'image',
+          content: null,
+          fileUrl: 'http://169.254.169.254/latest/meta-data/',
+          fileName: 'meta.png',
+          fileSize: 10,
+          tags: [],
+          collections: [],
+        },
+      ],
+      collections: [],
+    });
+
+    vi.mocked(prisma.item.count).mockResolvedValue(0);
+    vi.mocked(prisma.collection.count).mockResolvedValue(0);
+    vi.mocked(prisma.item.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.collection.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.itemType.findMany).mockResolvedValue([
+      { id: 'type-file', name: 'file', icon: 'File', color: '#6b7280', isSystem: true, userId: null },
+      { id: 'type-image', name: 'image', icon: 'Image', color: '#ec4899', isSystem: true, userId: null },
+    ]);
+
+    const itemCreate = vi.fn().mockResolvedValue({ id: 'new-item' });
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: unknown) => {
+      const txClient = {
+        collection: {
+          findMany: vi.fn().mockResolvedValue([]),
+          create: vi.fn().mockResolvedValue({ id: 'new-coll', name: 'Test' }),
+        },
+        item: { create: itemCreate },
+      };
+      return (fn as (tx: typeof txClient) => Promise<void>)(txClient);
+    });
+
+    const result = await importData(json, false);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.itemsImported).toBe(3);
+    const created = itemCreate.mock.calls.map((call) => call[0].data);
+    expect(created.find((d) => d.title === 'Mine')).toMatchObject({
+      fileUrl: 'https://pub-test.r2.dev/user-123/1700000000-mine.pdf',
+      fileName: 'mine.pdf',
+      fileSize: 10,
+    });
+    expect(created.find((d) => d.title === 'Theirs')).toMatchObject({ fileUrl: null, fileName: null, fileSize: null });
+    expect(created.find((d) => d.title === 'Internal')).toMatchObject({ fileUrl: null, fileName: null, fileSize: null });
+  });
+
   it('enforces free tier item limit', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-123', isPro: false },
