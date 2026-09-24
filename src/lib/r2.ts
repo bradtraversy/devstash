@@ -3,7 +3,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
-import { ownedFileKey } from '@/lib/file-urls';
+import { ownedFileKey, r2PublicUrl } from '@/lib/file-urls';
 
 // File constraints from spec
 export const FILE_CONSTRAINTS = {
@@ -113,7 +113,7 @@ export async function uploadToR2(
 ): Promise<{ fileUrl: string; key: string }> {
   const client = getR2Client();
   const bucketName = process.env.R2_BUCKET_NAME;
-  const publicUrl = process.env.R2_PUBLIC_URL;
+  const publicUrl = r2PublicUrl();
 
   if (!bucketName || !publicUrl) {
     throw new Error('R2 bucket configuration missing');
