@@ -19,11 +19,12 @@ import {
 } from "@/components/ui/card";
 import FormError from "@/components/shared/form-error";
 import GitHubAuthSection from "@/components/shared/github-auth-section";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 export function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = safeRedirectPath(searchParams.get("callbackUrl"));
   const error = searchParams.get("error");
   const registered = searchParams.get("registered");
 
