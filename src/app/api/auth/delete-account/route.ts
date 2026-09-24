@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 
 export async function DELETE() {
   try {
@@ -22,7 +22,7 @@ export async function DELETE() {
 
     if (user?.stripeSubscriptionId) {
       try {
-        await stripe.subscriptions.cancel(user.stripeSubscriptionId)
+        await getStripe().subscriptions.cancel(user.stripeSubscriptionId)
       } catch (error) {
         console.error('Subscription cancel failed during account deletion:', error)
         return NextResponse.json(
