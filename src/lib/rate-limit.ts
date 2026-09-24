@@ -23,56 +23,61 @@ function getRedis(): Redis | null {
   return redis
 }
 
-// Limits that protect credentials fail closed on a Redis error; everything else fails open.
-const FAIL_CLOSED: ReadonlySet<RateLimitType> = new Set(['login', 'resetPassword'])
-
 type KeyBy = 'ip' | 'ip+id' | 'id'
 
-// Rate limit configurations for different endpoints
+// Rate limit configurations for different endpoints. failClosed limits protect credentials and
+// deny on a Redis error; the rest fail open.
 export const rateLimitConfigs = {
   // Login: 5 attempts per 15 minutes per IP and email
   login: {
     limiter: Ratelimit.slidingWindow(5, '15 m'),
     prefix: 'ratelimit:login',
     keyBy: 'ip+id',
+    failClosed: true,
   },
   // Register: 3 attempts per hour per IP
   register: {
     limiter: Ratelimit.slidingWindow(3, '1 h'),
     prefix: 'ratelimit:register',
     keyBy: 'ip',
+    failClosed: false,
   },
   // Forgot password: 3 attempts per hour per IP
   forgotPassword: {
     limiter: Ratelimit.slidingWindow(3, '1 h'),
     prefix: 'ratelimit:forgot-password',
     keyBy: 'ip',
+    failClosed: false,
   },
   // Reset password: 5 attempts per 15 minutes per IP
   resetPassword: {
     limiter: Ratelimit.slidingWindow(5, '15 m'),
     prefix: 'ratelimit:reset-password',
     keyBy: 'ip',
+    failClosed: true,
   },
   // Resend verification: 3 attempts per 15 minutes per IP and email
   resendVerification: {
     limiter: Ratelimit.slidingWindow(3, '15 m'),
     prefix: 'ratelimit:resend-verification',
     keyBy: 'ip+id',
+    failClosed: false,
   },
   // File upload: 10 uploads per hour per user, regardless of IP
   upload: {
     limiter: Ratelimit.slidingWindow(10, '1 h'),
     prefix: 'ratelimit:upload',
     keyBy: 'id',
+    failClosed: false,
   },
   // AI requests: 20 per hour per user, regardless of IP
   ai: {
     limiter: Ratelimit.slidingWindow(20, '1 h'),
     prefix: 'ratelimit:ai',
     keyBy: 'id',
+    failClosed: false,
   },
-} as const satisfies Record<string, { limiter: unknown; prefix: string; keyBy: KeyBy }>
+} as const satisfies Record<string, { limiter: unknown; prefix: string; keyBy: KeyBy; failClosed: boolean }>
 
 export type RateLimitType = keyof typeof rateLimitConfigs
 
@@ -158,7 +163,7 @@ export async function checkRateLimit(
     }
   } catch (error) {
     console.error('Rate limit check failed:', error)
-    if (FAIL_CLOSED.has(type)) {
+    if (config.failClosed) {
       return { success: false, remaining: 0, reset: Date.now() + 60_000, retryAfter: 60 }
     }
     return { success: true, remaining: -1, reset: 0, retryAfter: 0 }
