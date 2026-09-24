@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
+import { isLocalDatabaseUrl } from '../src/lib/local-db'
 
 const DEMO_EMAIL = 'demo@devstash.io'
 
@@ -10,6 +11,17 @@ async function main() {
 
   if (!connectionString) {
     console.error('DATABASE_URL environment variable is not set')
+    process.exit(1)
+  }
+
+  // This script deletes every non-demo account. It only runs against a local database and only with --yes.
+  if (!isLocalDatabaseUrl(connectionString)) {
+    console.error('Refusing to run: DATABASE_URL does not point at a local development database.')
+    process.exit(1)
+  }
+
+  if (!process.argv.includes('--yes')) {
+    console.error('This deletes every user except the demo account. Re-run with --yes to confirm.')
     process.exit(1)
   }
 
