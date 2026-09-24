@@ -26,6 +26,7 @@ import {
   authorizeCredentials,
   EmailNotVerifiedSignin,
   RateLimitedSignin,
+  SignInUnavailable,
 } from './credentials'
 
 const mockFindUnique = vi.mocked(prisma.user.findUnique)
@@ -74,6 +75,15 @@ describe('authorizeCredentials', () => {
     await expect(attempt).rejects.toMatchObject({ code: 'rate_limited' })
     expect(mockFindUnique).not.toHaveBeenCalled()
     expect(mockCompare).not.toHaveBeenCalled()
+  })
+
+  it('throws a typed unavailable error when the rate limiter itself fails', async () => {
+    mockCheckRateLimit.mockRejectedValue(new Error('Upstash Redis is not configured'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const attempt = authorizeCredentials({ email: 'a@b.c', password: 'x' })
+    await expect(attempt).rejects.toBeInstanceOf(SignInUnavailable)
+    await expect(attempt).rejects.toMatchObject({ code: 'unavailable' })
+    expect(mockFindUnique).not.toHaveBeenCalled()
   })
 
   it('returns null for an unknown user or a user without a password', async () => {

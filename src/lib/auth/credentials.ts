@@ -11,6 +11,10 @@ export class EmailNotVerifiedSignin extends CredentialsSignin {
   code = 'email_not_verified'
 }
 
+export class SignInUnavailable extends CredentialsSignin {
+  code = 'unavailable'
+}
+
 export interface AuthorizedUser {
   id: string
   email: string
@@ -31,7 +35,13 @@ export async function authorizeCredentials(
   }
 
   // Counted before any database or bcrypt work so a guess costs the attacker a slot, not us CPU.
-  const rateLimit = await checkRateLimit('login', email)
+  let rateLimit
+  try {
+    rateLimit = await checkRateLimit('login', email)
+  } catch (error) {
+    console.error('Login rate limit unavailable:', error)
+    throw new SignInUnavailable()
+  }
   if (!rateLimit.success) {
     throw new RateLimitedSignin()
   }
