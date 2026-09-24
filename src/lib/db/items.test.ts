@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getItemById, deleteItem, updateItem, createItem } from './items';
+import { getItemById, deleteItem, updateItem, createItem, UnknownCollectionError } from './items';
 
 // Mock Prisma client
 vi.mock('@/lib/prisma', () => {
@@ -253,9 +253,9 @@ describe('updateItem collection membership', () => {
   it('refuses to attach a collection the caller does not own', async () => {
     mockCollectionFindMany.mockResolvedValue([{ id: 'mine' }] as never);
 
-    const result = await updateItem('user-1', 'item-1', { ...updatePayload, collectionIds: ['mine', 'victims'] });
-
-    expect(result).toBeNull();
+    await expect(
+      updateItem('user-1', 'item-1', { ...updatePayload, collectionIds: ['mine', 'victims'] })
+    ).rejects.toBeInstanceOf(UnknownCollectionError);
     expect(mockCollectionFindMany).toHaveBeenCalledWith({
       where: { id: { in: ['mine', 'victims'] }, userId: 'user-1' },
       select: { id: true },
@@ -322,9 +322,9 @@ describe('createItem collection membership', () => {
   it('refuses to create into a collection the caller does not own', async () => {
     mockCollectionFindMany.mockResolvedValue([] as never);
 
-    const result = await createItem('user-1', { ...payload, collectionIds: ['victims'] });
-
-    expect(result).toBeNull();
+    await expect(createItem('user-1', { ...payload, collectionIds: ['victims'] })).rejects.toBeInstanceOf(
+      UnknownCollectionError
+    );
     expect(mockItemCreate).not.toHaveBeenCalled();
   });
 

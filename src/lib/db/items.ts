@@ -394,16 +394,24 @@ type CollectionReader = {
   collection: { findMany: typeof prisma.collection.findMany };
 };
 
+/** Thrown when a write names a collection the caller does not own or that no longer exists. */
+export class UnknownCollectionError extends Error {
+  constructor() {
+    super('One of the selected collections no longer exists');
+    this.name = 'UnknownCollectionError';
+  }
+}
+
 /**
  * Resolves the caller's own collections from a client-supplied id list.
- * Returns null when any id is missing or belongs to someone else, so the
- * whole write is refused instead of silently attaching to a foreign collection.
+ * Throws when any id is missing or belongs to someone else, so the whole
+ * write is refused instead of silently attaching to a foreign collection.
  */
 async function resolveOwnedCollectionIds(
   client: CollectionReader,
   userId: string,
   collectionIds: string[]
-): Promise<string[] | null> {
+): Promise<string[]> {
   const unique = [...new Set(collectionIds)];
   if (unique.length === 0) return [];
 
@@ -412,7 +420,7 @@ async function resolveOwnedCollectionIds(
     select: { id: true },
   });
 
-  if (owned.length !== unique.length) return null;
+  if (owned.length !== unique.length) throw new UnknownCollectionError();
   return owned.map((collection) => collection.id);
 }
 
@@ -447,7 +455,6 @@ export async function updateItem(
   return prisma.$transaction(async (tx) => {
     if (data.collectionIds !== undefined) {
       const desired = await resolveOwnedCollectionIds(tx, userId, data.collectionIds);
-      if (desired === null) return null;
 
       const current = await tx.itemCollection.findMany({
         where: { itemId },
@@ -705,9 +712,6 @@ export async function createItem(
   }
 
   const collectionIds = await resolveOwnedCollectionIds(prisma, userId, data.collectionIds ?? []);
-  if (collectionIds === null) {
-    return null;
-  }
 
   const created = await prisma.item.create({
     data: {
