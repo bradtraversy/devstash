@@ -22,12 +22,10 @@ Read the following to get the full context of the project:
 
 ## Neon Database
 
-When using the Neon MCP tools:
+Production runs on the Neon project `devstash` (ID: `shiny-math-70461865`, Postgres 18, us-east-1), branch `production`, database `neondb`.
 
-- **Project:** `devstash` (ID: `rough-wave-01978094`)
-- **Default Branch:** `development` (ID: `br-snowy-wave-ahmwgmj3`)
-- **Database:** `neondb`
+**IMPORTANT:** Never run queries or migrations against the Neon production branch unless explicitly instructed to do so. When using the Neon MCP tools, work on a non-production branch.
 
-**IMPORTANT:** Always use the development branch for all database operations. Never run queries against the production branch (`br-flat-butterfly-ah9tlloi`) unless explicitly instructed to do so.
+Local development uses the Docker Postgres 18 container `devstash-db` on `localhost:5432` (the `DATABASE_URL` in `.env`), restored from a production dump. Use it for all local database work, including `prisma migrate dev`.
 
 **IMPORTANT:** Do not add Claude to any commit messages
