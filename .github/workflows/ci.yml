@@ -10,8 +10,21 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
-      # Prisma loads its config eagerly and requires a URL to exist. Nothing connects during verify.
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
     steps:
       - uses: actions/checkout@v4
@@ -20,4 +33,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Applies every committed migration to an empty database, so a broken or uncommitted migration fails here instead of in the Vercel production build.
+      - run: npx prisma migrate deploy
+      # Exit code 2 means schema.prisma was edited without a migration.
+      - run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
       - run: npm run verify
