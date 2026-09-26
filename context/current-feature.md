@@ -6,11 +6,7 @@ Not Started
 
 ## Goals
 
-<!-- Define goals here -->
-
 ## Notes
-
-<!-- Additional context here -->
 
 ## History
 
@@ -80,3 +76,4 @@ Not Started
 - **Vercel Analytics** - Installed @vercel/analytics package, added Analytics component to root layout for page view tracking across all pages (Completed)
 - **Audit Hardening** - Dependency update (Next 16.3.6, React 19.3, Prisma 7.10), verify gate with pre-push hook and CI, and fixes from the 2026-09-24 code audit: login rate limit inside authorize with typed error codes, file references restricted to the caller's upload namespace, collection ownership on item writes with a transactional membership diff, removal of the signIn callback that deleted GitHub links, guarded seed and cleanup scripts, Stripe cancel on account delete, same-origin post-login redirects, download path hardening, rate limiter fail-closed for credential limits, upload error handling, lazy Stripe and Resend clients, signed-in users redirected off the auth pages (Completed)
 - **CI Database & Dependabot** - Postgres 18 service container in the CI workflow, `prisma migrate deploy` against an empty database and a `migrate diff` drift check before verify, monthly grouped Dependabot updates for npm and GitHub Actions (Completed)
+- **Route Handler Tests** - Vitest coverage for the seven auth route handlers (register, verify, resend-verification, forgot-password, reset-password, change-password, delete-account) and the upload, download, export, and items/[id] handlers, plus direct unit tests for validation.ts, tokens.ts, and action-utils.ts; locks rate limit before body parse, enumeration-safe responses, token expiry and single use, OAuth-only guards, Pro gating, R2 namespace and traversal rejection, and Stripe cancel-before-delete; Stripe routes and the NextAuth catch-all left out; 115 new tests (383 total) (Completed)
