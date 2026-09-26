@@ -69,7 +69,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@types/archiver": "^7.0.0",
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^24.13.6",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
