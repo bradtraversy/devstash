@@ -1,12 +1,23 @@
-# Current Feature
+# Current Feature: Public Collections Phase 1
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
+- One Prisma migration adds visibility, slug, shortId, and publishedAt to Collection, handle to User, position to ItemCollection with a (collectionId, position) index, the CollectionSlugHistory table, and a partial unique index on system item types, with backfill SQL in the migration file
+- Backfills produce unique per-user slugs, globally unique 8-character short ids, unique handles, and contiguous 0-based positions ordered by addedAt then itemId, proven by the unique constraints added after the backfill and by invariant queries on the Docker restore
+- slugs.ts and short-id.ts helpers with tests, including a test that fails when a top-level app route is missing from the reserved handle list
+- createCollection assigns slug and short id; createItem, updateItem, importData, and the seed write positions that append at the end; getItemsByCollection orders by position
+- No visible feature, no new environment variables, `prisma migrate diff` clean, `npm run verify` passes
+
 ## Notes
+
+- Spec: `context/features/public-collections-phase-1-spec.md`; product spec in the vault at `Projects/Live/DevStash/SPEC.md`
+- Branch: `feature/public-collections`, long-lived across all five phases, one commit per phase, no push until proven locally (decided 2026-09-24)
+- Per-user tags are out of scope and become their own feature after public collections
+- Production migration runs only through the production build after the feature merges
 
 ## History
 

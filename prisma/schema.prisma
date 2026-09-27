@@ -22,7 +22,8 @@ model User {
   isPro                Boolean   @default(false)
   stripeCustomerId     String?   @unique
   stripeSubscriptionId String?   @unique
-  editorPreferences    Json?     // User's Monaco editor preferences
+  editorPreferences    Json? // User's Monaco editor preferences
+  handle               String?   @unique
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
@@ -32,6 +33,7 @@ model User {
   itemTypes   ItemType[]
   accounts    Account[]
   sessions    Session[]
+  slugHistory CollectionSlugHistory[]
 
   @@map("users")
 }
@@ -148,13 +150,23 @@ model ItemType {
 // ============================================
 // COLLECTION
 // ============================================
+enum CollectionVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
 model Collection {
-  id          String   @id @default(cuid())
+  id          String               @id @default(cuid())
   name        String
-  description String?  @db.Text
-  isFavorite  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  description String?              @db.Text
+  isFavorite  Boolean              @default(false)
+  visibility  CollectionVisibility @default(PRIVATE)
+  slug        String // Unique per user, derived from the name
+  shortId     String               @unique // 8 chars of [a-z0-9], never reissued
+  publishedAt DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   // Relations
   userId        String
@@ -163,12 +175,32 @@ model Collection {
   defaultType   ItemType? @relation(fields: [defaultTypeId], references: [id])
 
   // Many-to-many with items
-  items ItemCollection[]
+  items       ItemCollection[]
+  slugHistory CollectionSlugHistory[]
 
+  @@unique([userId, slug])
   @@index([userId])
   @@index([userId, isFavorite])
   @@index([userId, updatedAt])
   @@map("collections")
+}
+
+// ============================================
+// COLLECTION SLUG HISTORY
+// ============================================
+model CollectionSlugHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  oldSlug      String
+  collectionId String
+  createdAt    DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, oldSlug])
+  @@index([collectionId])
+  @@map("collection_slug_history")
 }
 
 // ============================================
@@ -177,12 +209,14 @@ model Collection {
 model ItemCollection {
   itemId       String
   collectionId String
+  position     Int // 0-based order within the collection; appended at the end, gaps allowed
   addedAt      DateTime @default(now())
 
   item       Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
   collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
   @@id([itemId, collectionId])
+  @@index([collectionId, position])
   @@map("item_collections")
 }
 

@@ -42,6 +42,7 @@ const user = {
   stripeCustomerId: null,
   stripeSubscriptionId: null,
   editorPreferences: null,
+  handle: null,
   createdAt: NOW,
   updatedAt: NOW,
 }

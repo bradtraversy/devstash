@@ -25,6 +25,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 import { previewImport, importData } from './import';
+import { SHORT_ID_PATTERN } from '@/lib/short-id';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -450,5 +451,85 @@ describe('importData server action', () => {
     // Only 1 collection can fit (3 - 2 = 1)
     expect(result.data?.collectionsImported).toBe(1);
     expect(result.data?.collectionsSkipped).toBe(1);
+  });
+});
+
+describe('importData collection slugs and item positions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('slugs new collections past existing slugs and appends items in file order', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    });
+
+    const json = JSON.stringify({
+      version: 1,
+      items: [
+        { title: 'First', type: 'snippet', content: 'a', tags: [], collections: ['React Patterns'] },
+        { title: 'Second', type: 'snippet', content: 'b', tags: [], collections: ['React Patterns', 'AI Workflows'] },
+        { title: 'Third', type: 'snippet', content: 'c', tags: [], collections: ['AI Workflows', 'AI Workflows'] },
+      ],
+      collections: [
+        { name: 'React Patterns', description: null, isFavorite: false },
+        { name: 'AI Workflows', description: null, isFavorite: false },
+      ],
+    });
+
+    vi.mocked(prisma.item.count).mockResolvedValue(0);
+    vi.mocked(prisma.collection.count).mockResolvedValue(0);
+    vi.mocked(prisma.item.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.collection.findMany).mockResolvedValue([{ name: 'React Patterns' }] as never);
+    vi.mocked(prisma.itemType.findMany).mockResolvedValue([
+      { id: 'type-1', name: 'snippet', icon: 'Code', color: '#3b82f6', isSystem: true, userId: null },
+    ]);
+
+    const collectionCreate = vi.fn().mockResolvedValue({ id: 'new-coll', name: 'AI Workflows' });
+    const membershipFindFirst = vi.fn().mockResolvedValue({ position: 4 });
+    const itemCreate = vi.fn().mockResolvedValue({ id: 'new-item' });
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: unknown) => {
+      const txClient = {
+        collection: {
+          findMany: vi.fn().mockResolvedValue([
+            { id: 'existing', name: 'React Patterns', slug: 'react-patterns' },
+            { id: 'other', name: 'Old AI', slug: 'ai-workflows' },
+          ]),
+          create: collectionCreate,
+        },
+        itemCollection: { findFirst: membershipFindFirst },
+        item: { create: itemCreate },
+      };
+      return (fn as (tx: typeof txClient) => Promise<void>)(txClient);
+    });
+
+    const result = await importData(json, false);
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ itemsImported: 3, collectionsImported: 1, itemsSkipped: 0, collectionsSkipped: 1 });
+    expect(collectionCreate).toHaveBeenCalledTimes(1);
+    expect(collectionCreate.mock.calls[0][0].data).toMatchObject({
+      name: 'AI Workflows',
+      slug: 'ai-workflows-2',
+      shortId: expect.stringMatching(SHORT_ID_PATTERN),
+    });
+
+    // The existing collection is read once for its last position, then counted up in memory.
+    expect(membershipFindFirst).toHaveBeenCalledTimes(1);
+    expect(membershipFindFirst).toHaveBeenCalledWith({
+      where: { collectionId: 'existing' },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    });
+    const memberships = itemCreate.mock.calls.map((call) => call[0].data.collections?.create);
+    expect(memberships).toEqual([
+      [{ collectionId: 'existing', position: 5 }],
+      [
+        { collectionId: 'existing', position: 6 },
+        { collectionId: 'new-coll', position: 0 },
+      ],
+      [{ collectionId: 'new-coll', position: 1 }],
+    ]);
   });
 });

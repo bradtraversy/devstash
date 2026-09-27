@@ -323,38 +323,28 @@ export async function getItemsByCollection(
   limit: number = 21
 ): Promise<PaginatedItems> {
   const skip = (page - 1) * limit;
+  const where = { collectionId, item: { userId } };
 
-  const [items, totalCount] = await Promise.all([
-    prisma.item.findMany({
-      where: {
-        userId,
-        collections: {
-          some: { collectionId },
-        },
-      },
-      orderBy: [
-        { isPinned: 'desc' },
-        { updatedAt: 'desc' },
-      ],
+  const [memberships, totalCount] = await Promise.all([
+    prisma.itemCollection.findMany({
+      where,
+      orderBy: [{ position: 'asc' }, { addedAt: 'asc' }, { itemId: 'asc' }],
       skip,
       take: limit,
       include: {
-        itemType: true,
-        tags: true,
-      },
-    }),
-    prisma.item.count({
-      where: {
-        userId,
-        collections: {
-          some: { collectionId },
+        item: {
+          include: {
+            itemType: true,
+            tags: true,
+          },
         },
       },
     }),
+    prisma.itemCollection.count({ where }),
   ]);
 
   return {
-    items: items.map(toItemWithType),
+    items: memberships.map((membership) => toItemWithType(membership.item)),
     totalCount,
     totalPages: Math.ceil(totalCount / limit),
     currentPage: page,
@@ -424,6 +414,32 @@ async function resolveOwnedCollectionIds(
   return owned.map((collection) => collection.id);
 }
 
+export type PositionReader = {
+  itemCollection: { findFirst: typeof prisma.itemCollection.findFirst };
+};
+
+/** Position after the last item in a collection, so a new membership appends at the end. */
+export async function nextPosition(client: PositionReader, collectionId: string): Promise<number> {
+  const last = await client.itemCollection.findFirst({
+    where: { collectionId },
+    orderBy: { position: 'desc' },
+    select: { position: true },
+  });
+
+  return last ? last.position + 1 : 0;
+}
+
+async function appendPositions(
+  client: PositionReader,
+  collectionIds: string[]
+): Promise<{ collectionId: string; position: number }[]> {
+  const rows: { collectionId: string; position: number }[] = [];
+  for (const collectionId of collectionIds) {
+    rows.push({ collectionId, position: await nextPosition(client, collectionId) });
+  }
+  return rows;
+}
+
 export interface UpdateItemData {
   title: string;
   description: string | null;
@@ -470,8 +486,9 @@ export async function updateItem(
         });
       }
       if (toAdd.length > 0) {
+        const positions = await appendPositions(tx, toAdd);
         await tx.itemCollection.createMany({
-          data: toAdd.map((collectionId) => ({ itemId, collectionId })),
+          data: positions.map(({ collectionId, position }) => ({ itemId, collectionId, position })),
           skipDuplicates: true,
         });
       }
@@ -711,46 +728,50 @@ export async function createItem(
     contentType = 'FILE';
   }
 
-  const collectionIds = await resolveOwnedCollectionIds(prisma, userId, data.collectionIds ?? []);
+  const created = await prisma.$transaction(async (tx) => {
+    const collectionIds = await resolveOwnedCollectionIds(tx, userId, data.collectionIds ?? []);
+    const positions = await appendPositions(tx, collectionIds);
 
-  const created = await prisma.item.create({
-    data: {
-      userId,
-      itemTypeId: itemType.id,
-      title: data.title,
-      description: data.description,
-      content: data.content,
-      url: data.url,
-      language: data.language,
-      contentType,
-      fileUrl: data.fileUrl ?? null,
-      fileName: data.fileName ?? null,
-      fileSize: data.fileSize ?? null,
-      tags: {
-        connectOrCreate: data.tags.map((tagName) => ({
-          where: { name: tagName },
-          create: { name: tagName },
-        })),
+    return tx.item.create({
+      data: {
+        userId,
+        itemTypeId: itemType.id,
+        title: data.title,
+        description: data.description,
+        content: data.content,
+        url: data.url,
+        language: data.language,
+        contentType,
+        fileUrl: data.fileUrl ?? null,
+        fileName: data.fileName ?? null,
+        fileSize: data.fileSize ?? null,
+        tags: {
+          connectOrCreate: data.tags.map((tagName) => ({
+            where: { name: tagName },
+            create: { name: tagName },
+          })),
+        },
+        collections: positions.length
+          ? {
+              create: positions.map(({ collectionId, position }) => ({
+                collectionId,
+                position,
+              })),
+            }
+          : undefined,
       },
-      collections: collectionIds.length
-        ? {
-            create: collectionIds.map((collectionId) => ({
-              collectionId,
-            })),
-          }
-        : undefined,
-    },
-    include: {
-      itemType: true,
-      tags: true,
-      collections: {
-        include: {
-          collection: {
-            select: { id: true, name: true },
+      include: {
+        itemType: true,
+        tags: true,
+        collections: {
+          include: {
+            collection: {
+              select: { id: true, name: true },
+            },
           },
         },
       },
-    },
+    });
   });
 
   return {
