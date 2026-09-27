@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getCollectionById, updateCollection, deleteCollection } from './collections';
+import { getCollectionById, updateCollection, deleteCollection, createCollection } from './collections';
+import { SHORT_ID_PATTERN } from '@/lib/short-id';
 
 // Mock Prisma client
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     collection: {
       findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
@@ -225,5 +228,73 @@ describe('deleteCollection', () => {
     expect(mockFindFirst).toHaveBeenCalledWith({
       where: { id: 'col-1', userId: 'user-1' },
     });
+  });
+});
+
+describe('createCollection', () => {
+  const mockFindMany = vi.mocked(prisma.collection.findMany);
+  const mockCreate = vi.mocked(prisma.collection.create);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFindMany.mockResolvedValue([] as never);
+    mockCreate.mockImplementation((async (args: { data: Record<string, unknown> }) => ({
+      ...basePrismaCollection,
+      ...args.data,
+    })) as never);
+  });
+
+  it('derives the slug from the name and assigns a short id', async () => {
+    const result = await createCollection('user-1', { name: 'React Patterns', description: null });
+
+    expect(result.name).toBe('React Patterns');
+    expect(mockFindMany).toHaveBeenCalledWith({ where: { userId: 'user-1' }, select: { slug: true } });
+    expect(mockCreate).toHaveBeenCalledWith({
+      data: {
+        userId: 'user-1',
+        name: 'React Patterns',
+        description: null,
+        slug: 'react-patterns',
+        shortId: expect.stringMatching(SHORT_ID_PATTERN),
+      },
+    });
+  });
+
+  it('suffixes the slug when the user already has it', async () => {
+    mockFindMany.mockResolvedValue([{ slug: 'react-patterns' }, { slug: 'react-patterns-2' }] as never);
+
+    await createCollection('user-1', { name: 'React Patterns', description: null });
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ slug: 'react-patterns-3' }),
+    });
+  });
+
+  it('falls back to "collection" for a reserved name', async () => {
+    await createCollection('user-1', { name: 'New', description: null });
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ slug: 'collection' }),
+    });
+  });
+
+  it('retries once with fresh values after a unique violation', async () => {
+    mockCreate.mockRejectedValueOnce({ code: 'P2002' });
+
+    const result = await createCollection('user-1', { name: 'React Patterns', description: null });
+
+    expect(result.name).toBe('React Patterns');
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+    const [first, second] = mockCreate.mock.calls.map((call) => (call[0] as { data: { shortId: string } }).data.shortId);
+    expect(first).not.toBe(second);
+  });
+
+  it('rethrows other errors without retrying', async () => {
+    mockCreate.mockRejectedValueOnce(new Error('connection lost'));
+
+    await expect(createCollection('user-1', { name: 'React Patterns', description: null })).rejects.toThrow(
+      'connection lost'
+    );
+    expect(mockCreate).toHaveBeenCalledTimes(1);
   });
 });

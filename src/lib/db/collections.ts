@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma';
+import { collectionSlugBase, uniqueSlug } from '@/lib/slugs';
+import { generateShortId } from '@/lib/short-id';
 
 // Maximum allowed limit for queries to prevent abuse
 const MAX_QUERY_LIMIT = 100;
@@ -425,17 +427,43 @@ export async function getCollectionById(
   };
 }
 
-export async function createCollection(
-  userId: string,
-  data: CreateCollectionData
-): Promise<CreatedCollection> {
-  const created = await prisma.collection.create({
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 'P2002';
+}
+
+async function insertCollection(userId: string, data: CreateCollectionData) {
+  const existing = await prisma.collection.findMany({
+    where: { userId },
+    select: { slug: true },
+  });
+  const slug = uniqueSlug(
+    collectionSlugBase(data.name),
+    existing.map((collection) => collection.slug)
+  );
+
+  return prisma.collection.create({
     data: {
       userId,
       name: data.name,
       description: data.description,
+      slug,
+      shortId: generateShortId(),
     },
   });
+}
+
+export async function createCollection(
+  userId: string,
+  data: CreateCollectionData
+): Promise<CreatedCollection> {
+  let created: Awaited<ReturnType<typeof insertCollection>>;
+  try {
+    created = await insertCollection(userId, data);
+  } catch (error) {
+    // A short id collision or a concurrent create with the same name; one retry recomputes both.
+    if (!isUniqueViolation(error)) throw error;
+    created = await insertCollection(userId, data);
+  }
 
   return {
     id: created.id,

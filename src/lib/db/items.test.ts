@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getItemById, deleteItem, updateItem, createItem, UnknownCollectionError } from './items';
+import {
+  getItemById,
+  deleteItem,
+  updateItem,
+  createItem,
+  getItemsByCollection,
+  UnknownCollectionError,
+} from './items';
 
 // Mock Prisma client
 vi.mock('@/lib/prisma', () => {
@@ -18,6 +25,8 @@ vi.mock('@/lib/prisma', () => {
     },
     itemCollection: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
+      count: vi.fn(),
       deleteMany: vi.fn(),
       createMany: vi.fn(),
     },
@@ -222,6 +231,8 @@ const mockItemCreate = vi.mocked(prisma.item.create);
 const mockItemTypeFindFirst = vi.mocked(prisma.itemType.findFirst);
 const mockCollectionFindMany = vi.mocked(prisma.collection.findMany);
 const mockMembershipFindMany = vi.mocked(prisma.itemCollection.findMany);
+const mockMembershipFindFirst = vi.mocked(prisma.itemCollection.findFirst);
+const mockMembershipCount = vi.mocked(prisma.itemCollection.count);
 const mockMembershipDeleteMany = vi.mocked(prisma.itemCollection.deleteMany);
 const mockMembershipCreateMany = vi.mocked(prisma.itemCollection.createMany);
 const mockTransaction = vi.mocked(prisma.$transaction);
@@ -248,6 +259,7 @@ describe('updateItem collection membership', () => {
     mockTransaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
     mockFindUnique.mockResolvedValue({ userId: 'user-1' } as never);
     mockItemUpdate.mockResolvedValue(updatedRow as never);
+    mockMembershipFindFirst.mockResolvedValue(null);
   });
 
   it('refuses to attach a collection the caller does not own', async () => {
@@ -277,7 +289,25 @@ describe('updateItem collection membership', () => {
       where: { itemId: 'item-1', collectionId: { in: ['a'] } },
     });
     expect(mockMembershipCreateMany).toHaveBeenCalledWith({
-      data: [{ itemId: 'item-1', collectionId: 'c' }],
+      data: [{ itemId: 'item-1', collectionId: 'c', position: 0 }],
+      skipDuplicates: true,
+    });
+  });
+
+  it('appends a new membership after the last position in that collection', async () => {
+    mockCollectionFindMany.mockResolvedValue([{ id: 'a' }, { id: 'b' }] as never);
+    mockMembershipFindMany.mockResolvedValue([{ collectionId: 'a' }] as never);
+    mockMembershipFindFirst.mockResolvedValue({ position: 4 } as never);
+
+    await updateItem('user-1', 'item-1', { ...updatePayload, collectionIds: ['a', 'b'] });
+
+    expect(mockMembershipFindFirst).toHaveBeenCalledWith({
+      where: { collectionId: 'b' },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    });
+    expect(mockMembershipCreateMany).toHaveBeenCalledWith({
+      data: [{ itemId: 'item-1', collectionId: 'b', position: 5 }],
       skipDuplicates: true,
     });
   });
@@ -305,8 +335,10 @@ describe('updateItem collection membership', () => {
 describe('createItem collection membership', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTransaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
     mockItemTypeFindFirst.mockResolvedValue({ id: 'type-1', name: 'snippet' } as never);
     mockItemCreate.mockResolvedValue({ ...basePrismaItem, tags: [], collections: [] } as never);
+    mockMembershipFindFirst.mockResolvedValue(null);
   });
 
   const payload = {
@@ -339,8 +371,89 @@ describe('createItem collection membership', () => {
     });
     expect(mockItemCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ collections: { create: [{ collectionId: 'mine' }] } }),
+        data: expect.objectContaining({ collections: { create: [{ collectionId: 'mine', position: 0 }] } }),
       })
     );
+  });
+
+  it('resolves collections, reads positions, and inserts on the transaction client', async () => {
+    // A distinct tx client proves the reads and the insert all run inside the transaction.
+    const tx = {
+      collection: { findMany: vi.fn().mockResolvedValue([{ id: 'a' }, { id: 'b' }]) },
+      itemCollection: {
+        findFirst: vi.fn().mockResolvedValueOnce({ position: 2 }).mockResolvedValueOnce(null),
+      },
+      item: { create: vi.fn().mockResolvedValue({ ...basePrismaItem, tags: [], collections: [] }) },
+    };
+    mockTransaction.mockImplementation((async (fn: (client: typeof tx) => Promise<unknown>) => fn(tx)) as never);
+
+    await createItem('user-1', { ...payload, collectionIds: ['a', 'b'] });
+
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+    expect(mockCollectionFindMany).not.toHaveBeenCalled();
+    expect(mockMembershipFindFirst).not.toHaveBeenCalled();
+    expect(mockItemCreate).not.toHaveBeenCalled();
+    expect(tx.itemCollection.findFirst).toHaveBeenCalledTimes(2);
+    expect(tx.item.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          collections: {
+            create: [
+              { collectionId: 'a', position: 3 },
+              { collectionId: 'b', position: 0 },
+            ],
+          },
+        }),
+      })
+    );
+  });
+
+  it('leaves collections undefined when none are given', async () => {
+    await createItem('user-1', payload);
+
+    expect(mockMembershipFindFirst).not.toHaveBeenCalled();
+    expect(mockItemCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ collections: undefined }) })
+    );
+  });
+});
+
+describe('getItemsByCollection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockMembershipFindMany.mockResolvedValue([
+      { itemId: 'item-1', collectionId: 'col-1', position: 0, addedAt: mockDate, item: basePrismaItem },
+    ] as never);
+    mockMembershipCount.mockResolvedValue(1);
+  });
+
+  it('reads memberships in position order and maps the items', async () => {
+    const result = await getItemsByCollection('user-1', 'col-1');
+
+    expect(mockMembershipFindMany).toHaveBeenCalledWith({
+      where: { collectionId: 'col-1', item: { userId: 'user-1' } },
+      orderBy: [{ position: 'asc' }, { addedAt: 'asc' }, { itemId: 'asc' }],
+      skip: 0,
+      take: 21,
+      include: { item: { include: { itemType: true, tags: true } } },
+    });
+    expect(mockMembershipCount).toHaveBeenCalledWith({
+      where: { collectionId: 'col-1', item: { userId: 'user-1' } },
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({ id: 'item-1', title: 'useAuth Hook', tags: ['react', 'hooks'] });
+    expect(result.totalCount).toBe(1);
+    expect(result.totalPages).toBe(1);
+    expect(result.currentPage).toBe(1);
+  });
+
+  it('paginates through the join table', async () => {
+    mockMembershipCount.mockResolvedValue(45);
+
+    const result = await getItemsByCollection('user-1', 'col-1', 3, 20);
+
+    expect(mockMembershipFindMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 40, take: 20 }));
+    expect(result.totalPages).toBe(3);
+    expect(result.currentPage).toBe(3);
   });
 });

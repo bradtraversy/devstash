@@ -4,6 +4,8 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient, ContentType } from '../src/generated/prisma/client'
 import bcrypt from 'bcryptjs'
 import { isLocalDatabaseUrl } from '../src/lib/local-db'
+import { collectionSlugBase, slugify, uniqueSlug } from '../src/lib/slugs'
+import { generateShortId } from '../src/lib/short-id'
 
 const connectionString = process.env.DATABASE_URL
 
@@ -73,10 +75,21 @@ async function main() {
   console.log('\n👤 Creating demo user...')
   const hashedPassword = await bcrypt.hash(process.env.SEED_DEMO_PASSWORD || '12345678', 12)
 
+  // A restored production database may already have a user whose handle is "demo".
+  const otherUsers = await prisma.user.findMany({
+    where: { email: { not: 'demo@devstash.io' }, handle: { not: null } },
+    select: { handle: true },
+  })
+  const handle = uniqueSlug(
+    slugify('demo'),
+    otherUsers.flatMap((user) => (user.handle ? [user.handle] : []))
+  )
+
   const demoUser = await prisma.user.upsert({
     where: { email: 'demo@devstash.io' },
     update: {
       name: 'Demo User',
+      handle,
       password: hashedPassword,
       isPro: false,
       stripeCustomerId: null,
@@ -86,12 +99,13 @@ async function main() {
     create: {
       email: 'demo@devstash.io',
       name: 'Demo User',
+      handle,
       password: hashedPassword,
       isPro: false,
       emailVerified: new Date(),
     },
   })
-  console.log(`   ✓ Demo user: ${demoUser.email}`)
+  console.log(`   ✓ Demo user: ${demoUser.email} (@${demoUser.handle})`)
 
   // ============================================
   // 2b. CLEAN UP EXISTING DEMO USER DATA
@@ -116,6 +130,8 @@ async function main() {
   const reactPatternsCollection = await prisma.collection.create({
     data: {
       name: 'React Patterns',
+      slug: collectionSlugBase('React Patterns'),
+      shortId: generateShortId(),
       description: 'Reusable React patterns and hooks',
       userId: demoUser.id,
       defaultTypeId: itemTypeMap['snippet'],
@@ -127,6 +143,8 @@ async function main() {
   const aiWorkflowsCollection = await prisma.collection.create({
     data: {
       name: 'AI Workflows',
+      slug: collectionSlugBase('AI Workflows'),
+      shortId: generateShortId(),
       description: 'AI prompts and workflow automations',
       userId: demoUser.id,
       defaultTypeId: itemTypeMap['prompt'],
@@ -138,6 +156,8 @@ async function main() {
   const devopsCollection = await prisma.collection.create({
     data: {
       name: 'DevOps',
+      slug: collectionSlugBase('DevOps'),
+      shortId: generateShortId(),
       description: 'Infrastructure and deployment resources',
       userId: demoUser.id,
     },
@@ -563,9 +583,9 @@ volumes:
   // React Patterns
   await prisma.itemCollection.createMany({
     data: [
-      { itemId: useDebounceSnippet.id, collectionId: reactPatternsCollection.id },
-      { itemId: useLocalStorageSnippet.id, collectionId: reactPatternsCollection.id },
-      { itemId: compoundComponentSnippet.id, collectionId: reactPatternsCollection.id },
+      { itemId: useDebounceSnippet.id, collectionId: reactPatternsCollection.id, position: 0 },
+      { itemId: useLocalStorageSnippet.id, collectionId: reactPatternsCollection.id, position: 1 },
+      { itemId: compoundComponentSnippet.id, collectionId: reactPatternsCollection.id, position: 2 },
     ],
   })
   console.log(`   ✓ React Patterns: 3 items`)
@@ -573,9 +593,9 @@ volumes:
   // AI Workflows
   await prisma.itemCollection.createMany({
     data: [
-      { itemId: codeReviewPrompt.id, collectionId: aiWorkflowsCollection.id },
-      { itemId: docGenerationPrompt.id, collectionId: aiWorkflowsCollection.id },
-      { itemId: refactoringPrompt.id, collectionId: aiWorkflowsCollection.id },
+      { itemId: codeReviewPrompt.id, collectionId: aiWorkflowsCollection.id, position: 0 },
+      { itemId: docGenerationPrompt.id, collectionId: aiWorkflowsCollection.id, position: 1 },
+      { itemId: refactoringPrompt.id, collectionId: aiWorkflowsCollection.id, position: 2 },
     ],
   })
   console.log(`   ✓ AI Workflows: 3 items`)
@@ -583,10 +603,10 @@ volumes:
   // DevOps
   await prisma.itemCollection.createMany({
     data: [
-      { itemId: dockerComposeSnippet.id, collectionId: devopsCollection.id },
-      { itemId: deployCommand.id, collectionId: devopsCollection.id },
-      { itemId: dockerDocsLink.id, collectionId: devopsCollection.id },
-      { itemId: githubActionsLink.id, collectionId: devopsCollection.id },
+      { itemId: dockerComposeSnippet.id, collectionId: devopsCollection.id, position: 0 },
+      { itemId: deployCommand.id, collectionId: devopsCollection.id, position: 1 },
+      { itemId: dockerDocsLink.id, collectionId: devopsCollection.id, position: 2 },
+      { itemId: githubActionsLink.id, collectionId: devopsCollection.id, position: 3 },
     ],
   })
   console.log(`   ✓ DevOps: 4 items`)

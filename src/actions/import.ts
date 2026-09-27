@@ -2,7 +2,9 @@
 
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { VALID_ITEM_TYPES, isFileType } from '@/lib/db/items';
+import { VALID_ITEM_TYPES, isFileType, nextPosition } from '@/lib/db/items';
+import { collectionSlugBase, uniqueSlug } from '@/lib/slugs';
+import { generateShortId } from '@/lib/short-id';
 import { MAX_ITEMS, MAX_COLLECTIONS } from '@/lib/usage';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 import { isOwnedFileUrl } from '@/lib/file-urls';
@@ -196,11 +198,20 @@ export async function importData(
     // Map existing collections
     const allExistingCollections = await tx.collection.findMany({
       where: { userId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, slug: true },
     });
+    const takenSlugs = allExistingCollections.map((c) => c.slug);
     for (const c of allExistingCollections) {
       collectionNameToId.set(c.name, c.id);
     }
+
+    // Next free position per collection, so imported items append in file order.
+    const nextPositions = new Map<string, number>();
+    const takePosition = async (collectionId: string): Promise<number> => {
+      const position = nextPositions.get(collectionId) ?? (await nextPosition(tx, collectionId));
+      nextPositions.set(collectionId, position + 1);
+      return position;
+    };
 
     for (let i = 0; i < data.collections.length; i++) {
       const collection = data.collections[i];
@@ -215,15 +226,20 @@ export async function importData(
         continue;
       }
 
+      const slug = uniqueSlug(collectionSlugBase(collection.name), takenSlugs);
       const created = await tx.collection.create({
         data: {
           userId,
           name: collection.name,
           description: collection.description,
           isFavorite: collection.isFavorite,
+          slug,
+          shortId: generateShortId(),
         },
       });
 
+      takenSlugs.push(slug);
+      nextPositions.set(created.id, 0);
       collectionNameToId.set(collection.name, created.id);
       collectionsImported++;
     }
@@ -266,7 +282,11 @@ export async function importData(
       const itemCollectionIds: string[] = [];
       for (const collName of item.collections) {
         const collId = collectionNameToId.get(collName);
-        if (collId) itemCollectionIds.push(collId);
+        if (collId && !itemCollectionIds.includes(collId)) itemCollectionIds.push(collId);
+      }
+      const memberships: { collectionId: string; position: number }[] = [];
+      for (const collectionId of itemCollectionIds) {
+        memberships.push({ collectionId, position: await takePosition(collectionId) });
       }
 
       // Preserve file references for file/image types (Pro users only), and only
@@ -294,11 +314,9 @@ export async function importData(
               create: { name: tagName },
             })),
           },
-          collections: itemCollectionIds.length > 0
+          collections: memberships.length > 0
             ? {
-                create: itemCollectionIds.map((collectionId) => ({
-                  collectionId,
-                })),
+                create: memberships,
               }
             : undefined,
         },

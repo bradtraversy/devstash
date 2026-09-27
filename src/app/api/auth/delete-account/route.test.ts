@@ -36,6 +36,7 @@ const user = {
   stripeCustomerId: 'cus_1',
   stripeSubscriptionId: 'sub_1',
   editorPreferences: null,
+  handle: null,
   createdAt: NOW,
   updatedAt: NOW,
 }
