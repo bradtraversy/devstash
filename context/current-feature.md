@@ -1,23 +1,16 @@
-# Current Feature: Public Collections Phase 1
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- One Prisma migration adds visibility, slug, shortId, and publishedAt to Collection, handle to User, position to ItemCollection with a (collectionId, position) index, the CollectionSlugHistory table, and a partial unique index on system item types, with backfill SQL in the migration file
-- Backfills produce unique per-user slugs, globally unique 8-character short ids, unique handles, and contiguous 0-based positions ordered by addedAt then itemId, proven by the unique constraints added after the backfill and by invariant queries on the Docker restore
-- slugs.ts and short-id.ts helpers with tests, including a test that fails when a top-level app route is missing from the reserved handle list
-- createCollection assigns slug and short id; createItem, updateItem, importData, and the seed write positions that append at the end; getItemsByCollection orders by position
-- No visible feature, no new environment variables, `prisma migrate diff` clean, `npm run verify` passes
+<!-- Define goals here -->
 
 ## Notes
 
-- Spec: `context/features/public-collections-phase-1-spec.md`; product spec in the vault at `Projects/Live/DevStash/SPEC.md`
-- Branch: `feature/public-collections`, long-lived across all five phases, one commit per phase, no push until proven locally (decided 2026-09-24)
-- Per-user tags are out of scope and become their own feature after public collections
-- Production migration runs only through the production build after the feature merges
+<!-- Additional context here -->
 
 ## History
 
@@ -88,3 +81,4 @@ In Progress
 - **Audit Hardening** - Dependency update (Next 16.3.6, React 19.3, Prisma 7.10), verify gate with pre-push hook and CI, and fixes from the 2026-09-24 code audit: login rate limit inside authorize with typed error codes, file references restricted to the caller's upload namespace, collection ownership on item writes with a transactional membership diff, removal of the signIn callback that deleted GitHub links, guarded seed and cleanup scripts, Stripe cancel on account delete, same-origin post-login redirects, download path hardening, rate limiter fail-closed for credential limits, upload error handling, lazy Stripe and Resend clients, signed-in users redirected off the auth pages (Completed)
 - **CI Database & Dependabot** - Postgres 18 service container in the CI workflow, `prisma migrate deploy` against an empty database and a `migrate diff` drift check before verify, monthly grouped Dependabot updates for npm and GitHub Actions (Completed)
 - **Route Handler Tests** - Vitest coverage for the seven auth route handlers (register, verify, resend-verification, forgot-password, reset-password, change-password, delete-account) and the upload, download, export, and items/[id] handlers, plus direct unit tests for validation.ts, tokens.ts, and action-utils.ts; locks rate limit before body parse, enumeration-safe responses, token expiry and single use, OAuth-only guards, Pro gating, R2 namespace and traversal rejection, and Stripe cancel-before-delete; Stripe routes and the NextAuth catch-all left out; 115 new tests (383 total) (Completed)
+- **Public Collections Phase 1** - One migration adding visibility, slug, shortId, and publishedAt to Collection, handle to User, position to ItemCollection with a (collectionId, position) index, the CollectionSlugHistory table, and a partial unique index on system item types, with the backfills in the migration file (per-row random short ids, one slugify rule shared by SQL and TypeScript, per-user slug and global handle dedupe walking oldest first, positions by addedAt then itemId) so the unique constraints prove them; slugs.ts and short-id.ts helpers with a test that fails when an app route is missing from RESERVED_HANDLES; createCollection assigns slug and short id with one retry on a unique violation; createItem, updateItem, importData, and the seed append join rows at the end of each collection; getItemsByCollection reads through the join in position order; verified on the Docker production restore and an empty database with the CI drift check clean; 49 new tests (432 total) (Completed)
