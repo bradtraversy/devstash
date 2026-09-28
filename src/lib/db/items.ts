@@ -1,4 +1,13 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma/client';
+import type { CollectionVisibility } from '@/lib/constants/visibility';
+
+/** Display order of a collection's items; the reorder in collections.ts walks the same order. */
+export const COLLECTION_ITEM_ORDER: Prisma.ItemCollectionOrderByWithRelationInput[] = [
+  { position: 'asc' },
+  { addedAt: 'asc' },
+  { itemId: 'asc' },
+];
 
 // Maximum allowed limit for queries to prevent abuse
 const MAX_QUERY_LIMIT = 100;
@@ -52,7 +61,7 @@ export interface ItemDetail {
   isPinned: boolean;
   itemType: ItemType;
   tags: string[];
-  collections: { id: string; name: string }[];
+  collections: { id: string; name: string; visibility: CollectionVisibility }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -78,7 +87,7 @@ type PrismaItemWithType = {
 type PrismaItemWithDetail = PrismaItemWithType & {
   language: string | null;
   contentType: string;
-  collections: { collection: { id: string; name: string } }[];
+  collections: { collection: { id: string; name: string; visibility: CollectionVisibility } }[];
 };
 
 /**
@@ -133,6 +142,7 @@ function toItemDetail(item: PrismaItemWithDetail): ItemDetail {
     collections: item.collections.map((ic) => ({
       id: ic.collection.id,
       name: ic.collection.name,
+      visibility: ic.collection.visibility,
     })),
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
@@ -328,7 +338,7 @@ export async function getItemsByCollection(
   const [memberships, totalCount] = await Promise.all([
     prisma.itemCollection.findMany({
       where,
-      orderBy: [{ position: 'asc' }, { addedAt: 'asc' }, { itemId: 'asc' }],
+      orderBy: COLLECTION_ITEM_ORDER,
       skip,
       take: limit,
       include: {
@@ -366,7 +376,7 @@ export async function getItemById(
       collections: {
         include: {
           collection: {
-            select: { id: true, name: true },
+            select: { id: true, name: true, visibility: true },
           },
         },
       },
@@ -516,7 +526,7 @@ export async function updateItem(
         collections: {
           include: {
             collection: {
-              select: { id: true, name: true },
+              select: { id: true, name: true, visibility: true },
             },
           },
         },
@@ -766,7 +776,7 @@ export async function createItem(
         collections: {
           include: {
             collection: {
-              select: { id: true, name: true },
+              select: { id: true, name: true, visibility: true },
             },
           },
         },
@@ -796,6 +806,7 @@ export async function createItem(
     collections: created.collections.map((ic) => ({
       id: ic.collection.id,
       name: ic.collection.name,
+      visibility: ic.collection.visibility,
     })),
     createdAt: created.createdAt,
     updatedAt: created.updatedAt,

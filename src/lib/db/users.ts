@@ -3,6 +3,7 @@ import {
   type EditorPreferences,
   mergeWithDefaults,
 } from '@/lib/constants/editor';
+import { dedupePrefix, handleBase, uniqueSlug } from '@/lib/slugs';
 
 export interface DashboardUser {
   id: string;
@@ -23,6 +24,7 @@ export async function getUserById(userId: string): Promise<DashboardUser | null>
 
 export interface UserWithSettings extends DashboardUser {
   hasPassword: boolean;
+  handle: string | null;
   createdAt: Date;
   editorPreferences: EditorPreferences;
 }
@@ -39,6 +41,7 @@ export async function getUserWithSettings(userId: string): Promise<UserWithSetti
       email: true,
       image: true,
       password: true,
+      handle: true,
       createdAt: true,
       editorPreferences: true,
     },
@@ -52,6 +55,7 @@ export async function getUserWithSettings(userId: string): Promise<UserWithSetti
     email: user.email,
     image: user.image,
     hasPassword: !!user.password,
+    handle: user.handle,
     createdAt: user.createdAt,
     editorPreferences: mergeWithDefaults(user.editorPreferences as Partial<EditorPreferences> | null),
   };
@@ -75,6 +79,48 @@ export async function updateEditorPreferences(
   } catch {
     return false;
   }
+}
+
+export type HandleClient = {
+  user: {
+    findUnique: typeof prisma.user.findUnique;
+    findMany: typeof prisma.user.findMany;
+    update: typeof prisma.user.update;
+  };
+};
+
+/**
+ * Returns the user's handle, generating one from the email local part the first time
+ * a collection leaves private. The unique constraint on handle guards the race.
+ */
+export async function ensureUserHandle(client: HandleClient, userId: string): Promise<string> {
+  const user = await client.user.findUnique({
+    where: { id: userId },
+    select: { handle: true, email: true },
+  });
+
+  if (!user) throw new Error('User not found');
+  if (user.handle) return user.handle;
+
+  const base = handleBase(user.email);
+  const taken = await client.user.findMany({
+    where: { handle: { startsWith: dedupePrefix(base) } },
+    select: { handle: true },
+  });
+  const handle = uniqueSlug(
+    base,
+    taken.flatMap((row) => (row.handle ? [row.handle] : []))
+  );
+
+  await client.user.update({ where: { id: userId }, data: { handle } });
+  return handle;
+}
+
+/**
+ * Set the user's handle. A unique violation propagates so the action can report it.
+ */
+export async function updateUserHandle(userId: string, handle: string): Promise<void> {
+  await prisma.user.update({ where: { id: userId }, data: { handle } });
 }
 
 /**

@@ -1,6 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { collectionSlugBase, uniqueSlug } from '@/lib/slugs';
 import { generateShortId } from '@/lib/short-id';
+import { isUniqueViolation } from '@/lib/db/errors';
+import { ensureUserHandle } from '@/lib/db/users';
+import { COLLECTION_ITEM_ORDER } from '@/lib/db/items';
+import type { CollectionVisibility } from '@/lib/constants/visibility';
 
 // Maximum allowed limit for queries to prevent abuse
 const MAX_QUERY_LIMIT = 100;
@@ -33,6 +37,7 @@ export interface CollectionItemType {
 export interface CollectionWithTypes {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   isFavorite: boolean;
   itemCount: number;
@@ -161,6 +166,7 @@ export async function getRecentCollections(
     return {
       id: collection.id,
       name: collection.name,
+      slug: collection.slug,
       description: collection.description,
       isFavorite: collection.isFavorite,
       itemCount: collection._count.items,
@@ -256,15 +262,35 @@ export interface CreateCollectionData {
 export interface CreatedCollection {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   isFavorite: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
-/**
- * Create a new collection for a user
- */
+type CollectionRow = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  isFavorite: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function toCreatedCollection(row: CollectionRow): CreatedCollection {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    description: row.description,
+    isFavorite: row.isFavorite,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
 export interface CollectionForPicker {
   id: string;
   name: string;
@@ -347,6 +373,7 @@ export async function getAllCollections(
       return {
         id: collection.id,
         name: collection.name,
+        slug: collection.slug,
         description: collection.description,
         isFavorite: collection.isFavorite,
         itemCount: collection._count.items,
@@ -365,6 +392,11 @@ export async function getAllCollections(
 export interface CollectionDetail {
   id: string;
   name: string;
+  slug: string;
+  shortId: string;
+  visibility: CollectionVisibility;
+  publishedAt: Date | null;
+  ownerHandle: string | null;
   description: string | null;
   isFavorite: boolean;
   itemCount: number;
@@ -384,6 +416,9 @@ export async function getCollectionById(
   const collection = await prisma.collection.findFirst({
     where: { id: collectionId, userId },
     include: {
+      user: {
+        select: { handle: true },
+      },
       _count: {
         select: { items: true },
       },
@@ -417,6 +452,11 @@ export async function getCollectionById(
   return {
     id: collection.id,
     name: collection.name,
+    slug: collection.slug,
+    shortId: collection.shortId,
+    visibility: collection.visibility,
+    publishedAt: collection.publishedAt,
+    ownerHandle: collection.user.handle,
     description: collection.description,
     isFavorite: collection.isFavorite,
     itemCount: collection._count.items,
@@ -427,28 +467,31 @@ export async function getCollectionById(
   };
 }
 
-function isUniqueViolation(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 'P2002';
-}
-
 async function insertCollection(userId: string, data: CreateCollectionData) {
-  const existing = await prisma.collection.findMany({
-    where: { userId },
-    select: { slug: true },
-  });
-  const slug = uniqueSlug(
-    collectionSlugBase(data.name),
-    existing.map((collection) => collection.slug)
-  );
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.collection.findMany({
+      where: { userId },
+      select: { slug: true },
+    });
+    const slug = uniqueSlug(
+      collectionSlugBase(data.name),
+      existing.map((collection) => collection.slug)
+    );
 
-  return prisma.collection.create({
-    data: {
-      userId,
-      name: data.name,
-      description: data.description,
-      slug,
-      shortId: generateShortId(),
-    },
+    const created = await tx.collection.create({
+      data: {
+        userId,
+        name: data.name,
+        description: data.description,
+        slug,
+        shortId: generateShortId(),
+      },
+    });
+
+    // The slug is live again, so a retired collection's redirect for it must not linger.
+    await tx.collectionSlugHistory.deleteMany({ where: { userId, oldSlug: slug } });
+
+    return created;
   });
 }
 
@@ -465,54 +508,175 @@ export async function createCollection(
     created = await insertCollection(userId, data);
   }
 
-  return {
-    id: created.id,
-    name: created.name,
-    description: created.description,
-    isFavorite: created.isFavorite,
-    createdAt: created.createdAt,
-    updatedAt: created.updatedAt,
-  };
+  return toCreatedCollection(created);
 }
 
 export interface UpdateCollectionData {
   name: string;
   description: string | null;
+  slug?: string;
 }
 
 /**
- * Update a collection (with ownership check)
+ * Update a collection (with ownership check). A changed slug records the old one in
+ * slug history and reclaims the new one from history. A unique violation on the
+ * new slug propagates so the action can report it.
  */
 export async function updateCollection(
   collectionId: string,
   userId: string,
   data: UpdateCollectionData
 ): Promise<CreatedCollection | null> {
-  // First verify ownership
-  const existing = await prisma.collection.findFirst({
-    where: { id: collectionId, userId },
-  });
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.collection.findFirst({
+      where: { id: collectionId, userId },
+      select: { slug: true },
+    });
 
-  if (!existing) {
-    return null;
+    if (!existing) {
+      return null;
+    }
+
+    const slugChanged = data.slug !== undefined && data.slug !== existing.slug;
+
+    if (slugChanged) {
+      await tx.collectionSlugHistory.deleteMany({ where: { userId, oldSlug: data.slug } });
+      await tx.collectionSlugHistory.upsert({
+        where: { userId_oldSlug: { userId, oldSlug: existing.slug } },
+        create: { userId, oldSlug: existing.slug, collectionId },
+        update: { collectionId, createdAt: new Date() },
+      });
+    }
+
+    const updated = await tx.collection.update({
+      where: { id: collectionId },
+      data: {
+        name: data.name,
+        description: data.description,
+        ...(slugChanged ? { slug: data.slug } : {}),
+      },
+    });
+
+    return toCreatedCollection(updated);
+  });
+}
+
+export interface VisibilityUpdate {
+  visibility: CollectionVisibility;
+  publishedAt: Date | null;
+  handle: string | null;
+}
+
+async function applyVisibility(
+  collectionId: string,
+  userId: string,
+  visibility: CollectionVisibility
+): Promise<VisibilityUpdate | null> {
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.collection.findFirst({
+      where: { id: collectionId, userId },
+      select: { publishedAt: true },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
+    const leavingPrivate = visibility !== 'PRIVATE';
+
+    const updated = await tx.collection.update({
+      where: { id: collectionId },
+      data: {
+        visibility,
+        ...(leavingPrivate && !existing.publishedAt ? { publishedAt: new Date() } : {}),
+      },
+      select: { visibility: true, publishedAt: true },
+    });
+
+    let handle: string | null;
+    if (leavingPrivate) {
+      handle = await ensureUserHandle(tx, userId);
+    } else {
+      const user = await tx.user.findUnique({ where: { id: userId }, select: { handle: true } });
+      handle = user?.handle ?? null;
+    }
+
+    return { visibility: updated.visibility, publishedAt: updated.publishedAt, handle };
+  });
+}
+
+/**
+ * Set a collection's visibility (with ownership check). The first time it leaves
+ * private, publishedAt is stamped and the owner gets a handle if they have none.
+ */
+export async function setCollectionVisibility(
+  collectionId: string,
+  userId: string,
+  visibility: CollectionVisibility
+): Promise<VisibilityUpdate | null> {
+  try {
+    return await applyVisibility(collectionId, userId, visibility);
+  } catch (error) {
+    // Two first publishes generating the same handle at once; the second attempt sees the first.
+    if (!isUniqueViolation(error)) throw error;
+    return applyVisibility(collectionId, userId, visibility);
   }
+}
 
-  const updated = await prisma.collection.update({
-    where: { id: collectionId },
-    data: {
-      name: data.name,
-      description: data.description,
-    },
+export type MoveDirection = 'up' | 'down';
+
+/**
+ * Move an item one step within a collection (with ownership check).
+ * Positions are rewritten as 0..n-1 in display order, so gaps and ties from
+ * concurrent adds are repaired on the first move. Returns false when the
+ * collection or the item is not found; a move past either end is a no-op.
+ */
+export async function moveCollectionItem(
+  collectionId: string,
+  userId: string,
+  itemId: string,
+  direction: MoveDirection
+): Promise<boolean> {
+  return prisma.$transaction(async (tx) => {
+    // The update proves ownership and holds the collection's row lock for the rest of the transaction.
+    const owned = await tx.collection.updateMany({
+      where: { id: collectionId, userId },
+      data: { updatedAt: new Date() },
+    });
+
+    if (owned.count === 0) {
+      return false;
+    }
+
+    const rows = await tx.itemCollection.findMany({
+      where: { collectionId },
+      orderBy: COLLECTION_ITEM_ORDER,
+      select: { itemId: true, position: true },
+    });
+
+    const index = rows.findIndex((row) => row.itemId === itemId);
+    if (index === -1) {
+      return false;
+    }
+
+    const order = rows.map((row) => row.itemId);
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target >= 0 && target < order.length) {
+      [order[index], order[target]] = [order[target], order[index]];
+    }
+
+    const current = new Map(rows.map((row) => [row.itemId, row.position]));
+    for (const [position, id] of order.entries()) {
+      if (current.get(id) !== position) {
+        await tx.itemCollection.update({
+          where: { itemId_collectionId: { itemId: id, collectionId } },
+          data: { position },
+        });
+      }
+    }
+
+    return true;
   });
-
-  return {
-    id: updated.id,
-    name: updated.name,
-    description: updated.description,
-    isFavorite: updated.isFavorite,
-    createdAt: updated.createdAt,
-    updatedAt: updated.updatedAt,
-  };
 }
 
 /**

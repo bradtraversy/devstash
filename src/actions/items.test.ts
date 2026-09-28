@@ -227,7 +227,7 @@ describe('updateItem server action', () => {
       isPinned: false,
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
       tags: [],
-      collections: [{ id: 'coll-1', name: 'React' }],
+      collections: [{ id: 'coll-1', name: 'React', visibility: 'PRIVATE' as const }],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -743,7 +743,7 @@ describe('createItem server action', () => {
       isPinned: false,
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
       tags: [],
-      collections: [{ id: 'coll-1', name: 'React' }],
+      collections: [{ id: 'coll-1', name: 'React', visibility: 'PRIVATE' as const }],
       createdAt: new Date(),
       updatedAt: new Date(),
     };

@@ -5,6 +5,7 @@ import AccountSettings from '@/components/settings/account-settings';
 import BillingSettings from '@/components/settings/billing-settings';
 import DataSettings from '@/components/settings/data-settings';
 import EditorSettings from '@/components/settings/editor-settings';
+import HandleSettings from '@/components/settings/handle-settings';
 import { getSidebarCollections } from '@/lib/db/collections';
 import { getItemTypesWithCounts } from '@/lib/db/items';
 import { getUserWithSettings } from '@/lib/db/users';
@@ -46,6 +47,9 @@ export default async function SettingsPage() {
           <h1 className="text-2xl font-bold text-foreground">Settings</h1>
           <p className="text-muted-foreground">Manage your account settings</p>
         </div>
+
+        {/* Handle Settings */}
+        <HandleSettings handle={user.handle} />
 
         {/* Editor Settings */}
         <EditorSettings />
