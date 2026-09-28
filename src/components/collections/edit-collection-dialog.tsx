@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -15,15 +15,19 @@ import { Pencil } from "lucide-react";
 import DialogFormFooter from "@/components/shared/dialog-form-footer";
 import { toast } from "sonner";
 import { updateCollection, type UpdateCollectionInput } from "@/actions/collections";
+import { MAX_SLUG_LENGTH } from "@/lib/slugs";
+
+interface EditableCollection {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+}
 
 interface EditCollectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  collection: {
-    id: string;
-    name: string;
-    description: string | null;
-  };
+  collection: EditableCollection;
 }
 
 export default function EditCollectionDialog({
@@ -31,53 +35,11 @@ export default function EditCollectionDialog({
   onOpenChange,
   collection,
 }: EditCollectionDialogProps) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState(collection.name);
-  const [description, setDescription] = useState(collection.description || "");
-
-  useEffect(() => {
-    if (open) {
-      setName(collection.name);
-      setDescription(collection.description || "");
-    }
-  }, [open, collection]);
 
   const handleClose = () => {
     if (!isLoading) {
       onOpenChange(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const input: UpdateCollectionInput = {
-        id: collection.id,
-        name,
-        description: description || null,
-      };
-
-      const result = await updateCollection(input);
-
-      if (result.success) {
-        toast.success("Collection updated successfully");
-        onOpenChange(false);
-        router.refresh();
-      } else {
-        if (result.fieldErrors) {
-          const firstError = Object.values(result.fieldErrors)[0]?.[0];
-          toast.error(firstError || result.error || "Failed to update collection");
-        } else {
-          toast.error(result.error || "Failed to update collection");
-        }
-      }
-    } catch {
-      toast.error("An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -93,36 +55,129 @@ export default function EditCollectionDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter collection name"
-              required
-              disabled={isLoading}
-              maxLength={100}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter collection description"
-              disabled={isLoading}
-              rows={3}
-              maxLength={500}
-            />
-          </div>
-
-          <DialogFormFooter isLoading={isLoading} onCancel={handleClose} submitLabel="Save" />
-        </form>
+        <EditCollectionForm
+          collection={collection}
+          isLoading={isLoading}
+          setIsLoading={setIsLoading}
+          onCancel={handleClose}
+          onSaved={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface EditCollectionFormProps {
+  collection: EditableCollection;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+  onCancel: () => void;
+  onSaved: () => void;
+}
+
+// Mounted only while the dialog is open, so the fields start from the collection on every open.
+function EditCollectionForm({
+  collection,
+  isLoading,
+  setIsLoading,
+  onCancel,
+  onSaved,
+}: EditCollectionFormProps) {
+  const router = useRouter();
+  const [name, setName] = useState(collection.name);
+  const [slug, setSlug] = useState(collection.slug);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [description, setDescription] = useState(collection.description || "");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const input: UpdateCollectionInput = {
+        id: collection.id,
+        name,
+        slug,
+        description: description || null,
+      };
+
+      const result = await updateCollection(input);
+
+      if (result.success) {
+        toast.success("Collection updated successfully");
+        onSaved();
+        router.refresh();
+      } else {
+        if (result.fieldErrors?.slug) {
+          setSlugError(result.fieldErrors.slug[0]);
+        } else if (result.fieldErrors) {
+          const firstError = Object.values(result.fieldErrors)[0]?.[0];
+          toast.error(firstError || result.error || "Failed to update collection");
+        } else {
+          toast.error(result.error || "Failed to update collection");
+        }
+      }
+    } catch {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Name *</Label>
+        <Input
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter collection name"
+          required
+          disabled={isLoading}
+          maxLength={100}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="slug">Slug</Label>
+        <Input
+          id="slug"
+          value={slug}
+          onChange={(e) => {
+            setSlug(e.target.value.toLowerCase());
+            setSlugError(null);
+          }}
+          placeholder="collection-slug"
+          required
+          disabled={isLoading}
+          maxLength={MAX_SLUG_LENGTH}
+          className="font-mono"
+          aria-invalid={slugError ? true : undefined}
+        />
+        {slugError ? (
+          <p className="text-sm text-destructive">{slugError}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Lowercase letters, numbers, and hyphens. Changing it redirects the old URL.
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Enter collection description"
+          disabled={isLoading}
+          rows={3}
+          maxLength={500}
+        />
+      </div>
+
+      <DialogFormFooter isLoading={isLoading} onCancel={onCancel} submitLabel="Save" />
+    </form>
   );
 }

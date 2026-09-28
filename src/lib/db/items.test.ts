@@ -78,7 +78,7 @@ const basePrismaItem = {
       itemId: 'item-1',
       collectionId: 'col-1',
       addedAt: mockDate,
-      collection: { id: 'col-1', name: 'React Patterns' },
+      collection: { id: 'col-1', name: 'React Patterns', visibility: 'PRIVATE' },
     },
   ],
 };
@@ -108,7 +108,7 @@ describe('getItemById', () => {
       isPinned: false,
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
       tags: ['react', 'hooks'],
-      collections: [{ id: 'col-1', name: 'React Patterns' }],
+      collections: [{ id: 'col-1', name: 'React Patterns', visibility: 'PRIVATE' }],
       createdAt: mockDate,
       updatedAt: mockDate,
     });
@@ -151,13 +151,13 @@ describe('getItemById', () => {
           itemId: 'item-1',
           collectionId: 'col-1',
           addedAt: mockDate,
-          collection: { id: 'col-1', name: 'React Patterns' },
+          collection: { id: 'col-1', name: 'React Patterns', visibility: 'PRIVATE' },
         },
         {
           itemId: 'item-1',
           collectionId: 'col-2',
           addedAt: mockDate,
-          collection: { id: 'col-2', name: 'Interview Prep' },
+          collection: { id: 'col-2', name: 'Interview Prep', visibility: 'PRIVATE' },
         },
       ],
     } as never);
@@ -165,8 +165,8 @@ describe('getItemById', () => {
     const result = await getItemById('user-1', 'item-1');
 
     expect(result?.collections).toEqual([
-      { id: 'col-1', name: 'React Patterns' },
-      { id: 'col-2', name: 'Interview Prep' },
+      { id: 'col-1', name: 'React Patterns', visibility: 'PRIVATE' },
+      { id: 'col-2', name: 'Interview Prep', visibility: 'PRIVATE' },
     ]);
   });
 
@@ -183,7 +183,7 @@ describe('getItemById', () => {
         collections: {
           include: {
             collection: {
-              select: { id: true, name: true },
+              select: { id: true, name: true, visibility: true },
             },
           },
         },

@@ -13,6 +13,8 @@ vi.mock('@/lib/db/collections', () => ({
   deleteCollection: vi.fn(),
   getUserCollections: vi.fn(),
   toggleCollectionFavorite: vi.fn(),
+  setCollectionVisibility: vi.fn(),
+  moveCollectionItem: vi.fn(),
 }));
 
 // Mock the usage module
@@ -20,7 +22,15 @@ vi.mock('@/lib/usage', () => ({
   canCreateCollection: vi.fn(),
 }));
 
-import { createCollection, updateCollection, deleteCollection, getUserCollections, toggleCollectionFavorite } from './collections';
+import {
+  createCollection,
+  updateCollection,
+  deleteCollection,
+  getUserCollections,
+  toggleCollectionFavorite,
+  setCollectionVisibility,
+  moveCollectionItem,
+} from './collections';
 import { auth } from '@/auth';
 import {
   createCollection as createCollectionQuery,
@@ -28,6 +38,8 @@ import {
   deleteCollection as deleteCollectionQuery,
   getUserCollections as getUserCollectionsQuery,
   toggleCollectionFavorite as toggleCollectionFavoriteQuery,
+  setCollectionVisibility as setCollectionVisibilityQuery,
+  moveCollectionItem as moveCollectionItemQuery,
 } from '@/lib/db/collections';
 import { canCreateCollection } from '@/lib/usage';
 
@@ -37,6 +49,8 @@ const mockUpdateCollectionQuery = vi.mocked(updateCollectionQuery);
 const mockDeleteCollectionQuery = vi.mocked(deleteCollectionQuery);
 const mockGetUserCollectionsQuery = vi.mocked(getUserCollectionsQuery);
 const mockToggleCollectionFavoriteQuery = vi.mocked(toggleCollectionFavoriteQuery);
+const mockSetCollectionVisibilityQuery = vi.mocked(setCollectionVisibilityQuery);
+const mockMoveCollectionItemQuery = vi.mocked(moveCollectionItemQuery);
 const mockCanCreateCollection = vi.mocked(canCreateCollection);
 
 describe('createCollection server action', () => {
@@ -127,6 +141,7 @@ describe('createCollection server action', () => {
       id: 'collection-123',
       name: 'Test Collection',
       description: 'A test description',
+      slug: 'test-collection',
       isFavorite: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -156,6 +171,7 @@ describe('createCollection server action', () => {
       id: 'collection-123',
       name: 'Test Collection',
       description: null,
+      slug: 'test-collection',
       isFavorite: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -199,6 +215,7 @@ describe('createCollection server action', () => {
       id: 'collection-123',
       name: 'Test Collection',
       description: null,
+      slug: 'test-collection',
       isFavorite: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -355,6 +372,7 @@ describe('updateCollection server action', () => {
       id: 'collection-123',
       name: 'Updated Name',
       description: 'Updated description',
+      slug: 'test-collection',
       isFavorite: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -528,5 +546,197 @@ describe('toggleCollectionFavorite server action', () => {
 
     expect(result.success).toBe(true);
     expect(result.data).toEqual({ isFavorite: false });
+  });
+});
+
+describe('updateCollection slug validation', () => {
+  const session = {
+    user: { id: 'user-123', isPro: false },
+    expires: new Date().toISOString(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuth.mockResolvedValue(session);
+    mockUpdateCollectionQuery.mockResolvedValue({
+      id: 'collection-123',
+      name: 'Test',
+      slug: 'hooks',
+      description: null,
+      isFavorite: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  });
+
+  it('rejects a malformed slug with a field error', async () => {
+    const result = await updateCollection({ id: 'collection-123', name: 'Test', slug: 'Bad Slug' });
+
+    expect(result.success).toBe(false);
+    expect(result.fieldErrors?.slug).toEqual(['Use lowercase letters, numbers, and hyphens']);
+    expect(mockUpdateCollectionQuery).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reserved slug', async () => {
+    const result = await updateCollection({ id: 'collection-123', name: 'Test', slug: 'raw' });
+
+    expect(result.success).toBe(false);
+    expect(result.fieldErrors?.slug).toEqual(['That name is reserved']);
+  });
+
+  it('passes the normalized slug to the query', async () => {
+    const result = await updateCollection({ id: 'collection-123', name: 'Test', slug: '  Hooks ' });
+
+    expect(result.success).toBe(true);
+    expect(mockUpdateCollectionQuery).toHaveBeenCalledWith('collection-123', 'user-123', {
+      name: 'Test',
+      description: null,
+      slug: 'hooks',
+    });
+  });
+
+  it('leaves the slug undefined when it is not sent', async () => {
+    await updateCollection({ id: 'collection-123', name: 'Test' });
+
+    expect(mockUpdateCollectionQuery).toHaveBeenCalledWith('collection-123', 'user-123', {
+      name: 'Test',
+      description: null,
+      slug: undefined,
+    });
+  });
+
+  it('maps a unique violation to a slug field error', async () => {
+    mockUpdateCollectionQuery.mockRejectedValue({ code: 'P2002' });
+
+    const result = await updateCollection({ id: 'collection-123', name: 'Test', slug: 'taken' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Validation failed');
+    expect(result.fieldErrors?.slug).toEqual(['Another collection already uses this slug']);
+  });
+});
+
+describe('setCollectionVisibility server action', () => {
+  const session = {
+    user: { id: 'user-123', isPro: false },
+    expires: new Date().toISOString(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuth.mockResolvedValue(session);
+  });
+
+  it('returns error when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    const result = await setCollectionVisibility({ id: 'collection-123', visibility: 'PUBLIC' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Unauthorized');
+    expect(mockSetCollectionVisibilityQuery).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown visibility value', async () => {
+    const result = await setCollectionVisibility({
+      id: 'collection-123',
+      visibility: 'FRIENDS' as never,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Validation failed');
+    expect(result.fieldErrors?.visibility).toBeDefined();
+    expect(mockSetCollectionVisibilityQuery).not.toHaveBeenCalled();
+  });
+
+  it('returns not found when the query returns null', async () => {
+    mockSetCollectionVisibilityQuery.mockResolvedValue(null);
+
+    const result = await setCollectionVisibility({ id: 'collection-123', visibility: 'UNLISTED' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Collection not found');
+  });
+
+  it('returns the visibility update on success', async () => {
+    const publishedAt = new Date();
+    mockSetCollectionVisibilityQuery.mockResolvedValue({ visibility: 'PUBLIC', publishedAt, handle: 'brad' });
+
+    const result = await setCollectionVisibility({ id: 'collection-123', visibility: 'PUBLIC' });
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ visibility: 'PUBLIC', publishedAt, handle: 'brad' });
+    expect(mockSetCollectionVisibilityQuery).toHaveBeenCalledWith('collection-123', 'user-123', 'PUBLIC');
+  });
+
+  it('returns a generic error when the query throws', async () => {
+    mockSetCollectionVisibilityQuery.mockRejectedValue(new Error('DB error'));
+
+    const result = await setCollectionVisibility({ id: 'collection-123', visibility: 'PUBLIC' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Failed to update visibility');
+  });
+});
+
+describe('moveCollectionItem server action', () => {
+  const session = {
+    user: { id: 'user-123', isPro: false },
+    expires: new Date().toISOString(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuth.mockResolvedValue(session);
+  });
+
+  it('returns error when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    const result = await moveCollectionItem({ collectionId: 'collection-123', itemId: 'item-1', direction: 'up' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Unauthorized');
+    expect(mockMoveCollectionItemQuery).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown direction', async () => {
+    const result = await moveCollectionItem({
+      collectionId: 'collection-123',
+      itemId: 'item-1',
+      direction: 'sideways' as never,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Validation failed');
+    expect(result.fieldErrors?.direction).toBeDefined();
+    expect(mockMoveCollectionItemQuery).not.toHaveBeenCalled();
+  });
+
+  it('returns not found when the query returns false', async () => {
+    mockMoveCollectionItemQuery.mockResolvedValue(false);
+
+    const result = await moveCollectionItem({ collectionId: 'collection-123', itemId: 'item-1', direction: 'down' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Item not found in this collection');
+  });
+
+  it('moves the item with the session user as owner', async () => {
+    mockMoveCollectionItemQuery.mockResolvedValue(true);
+
+    const result = await moveCollectionItem({ collectionId: 'collection-123', itemId: 'item-1', direction: 'down' });
+
+    expect(result.success).toBe(true);
+    expect(mockMoveCollectionItemQuery).toHaveBeenCalledWith('collection-123', 'user-123', 'item-1', 'down');
+  });
+
+  it('returns a generic error when the query throws', async () => {
+    mockMoveCollectionItemQuery.mockRejectedValue(new Error('DB error'));
+
+    const result = await moveCollectionItem({ collectionId: 'collection-123', itemId: 'item-1', direction: 'up' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Failed to move item');
   });
 });

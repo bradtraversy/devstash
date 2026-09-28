@@ -30,7 +30,7 @@ const item: ItemDetail = {
   isPinned: false,
   itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
   tags: ['react'],
-  collections: [{ id: 'col-1', name: 'React Patterns' }],
+  collections: [{ id: 'col-1', name: 'React Patterns', visibility: 'PRIVATE' }],
   createdAt: NOW,
   updatedAt: NOW,
 }

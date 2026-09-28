@@ -30,6 +30,8 @@ import {
   Save,
   Download,
   File,
+  Globe,
+  Link2,
 } from "lucide-react";
 import { formatFileSize } from "@/lib/r2";
 import { formatLongDate } from "@/lib/utils/date";
@@ -743,8 +745,21 @@ export default function ItemDrawer() {
                           <Badge
                             key={collection.id}
                             variant="secondary"
-                            className="text-xs"
+                            className="text-xs gap-1"
+                            title={
+                              collection.visibility === "PUBLIC"
+                                ? "Public collection"
+                                : collection.visibility === "UNLISTED"
+                                  ? "Unlisted collection"
+                                  : undefined
+                            }
                           >
+                            {collection.visibility === "PUBLIC" && (
+                              <Globe className="h-3 w-3" />
+                            )}
+                            {collection.visibility === "UNLISTED" && (
+                              <Link2 className="h-3 w-3" />
+                            )}
                             {collection.name}
                           </Badge>
                         ))}

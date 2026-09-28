@@ -23,6 +23,7 @@ interface CollectionCardProps {
   collection: {
     id: string;
     name: string;
+    slug: string;
     description: string | null;
     isFavorite: boolean;
     itemCount: number;

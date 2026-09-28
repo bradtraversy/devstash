@@ -1,10 +1,9 @@
 import { redirect, notFound } from 'next/navigation';
 import { auth } from '@/auth';
 import DashboardLayout from '@/components/layout/dashboard-layout';
-import ItemCard from '@/components/dashboard/item-card';
-import ImageThumbnailCard from '@/components/items/image-thumbnail-card';
-import FileListRow from '@/components/items/file-list-row';
 import CollectionActions from '@/components/collections/collection-actions';
+import CollectionItemRow from '@/components/collections/collection-item-row';
+import VisibilityControl from '@/components/collections/visibility-control';
 import Pagination from '@/components/shared/pagination';
 import { getSidebarCollections, getCollectionById } from '@/lib/db/collections';
 import { getItemTypesWithCounts, getItemsByCollection } from '@/lib/db/items';
@@ -50,13 +49,6 @@ export default async function CollectionDetailPage({ params, searchParams }: Col
   ]);
 
   const { items, totalPages } = paginatedItems;
-
-  // Separate items by type for different rendering
-  const fileItems = items.filter((item) => item.itemType.name === 'file');
-  const imageItems = items.filter((item) => item.itemType.name === 'image');
-  const otherItems = items.filter(
-    (item) => item.itemType.name !== 'file' && item.itemType.name !== 'image'
-  );
 
   return (
     <DashboardLayout
@@ -104,45 +96,25 @@ export default async function CollectionDetailPage({ params, searchParams }: Col
           )}
         </div>
 
-        {/* Items */}
+        {/* Sharing */}
+        <VisibilityControl
+          key={collection.id}
+          collection={collection}
+          handle={collection.ownerHandle}
+        />
+
+        {/* Items in position order */}
         {items.length > 0 ? (
-          <div className="space-y-8">
-            {/* Regular items grid */}
-            {otherItems.length > 0 && (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {otherItems.map((item) => (
-                  <ItemCard key={item.id} item={item} />
-                ))}
-              </div>
-            )}
-
-            {/* Image gallery */}
-            {imageItems.length > 0 && (
-              <div>
-                {otherItems.length > 0 && (
-                  <h2 className="mb-4 text-lg font-medium text-foreground">Images</h2>
-                )}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {imageItems.map((item) => (
-                    <ImageThumbnailCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* File list */}
-            {fileItems.length > 0 && (
-              <div>
-                {(otherItems.length > 0 || imageItems.length > 0) && (
-                  <h2 className="mb-4 text-lg font-medium text-foreground">Files</h2>
-                )}
-                <div className="flex flex-col gap-2">
-                  {fileItems.map((item) => (
-                    <FileListRow key={item.id} item={item} />
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="divide-y divide-border rounded-lg border border-border bg-card">
+            {items.map((item, index) => (
+              <CollectionItemRow
+                key={item.id}
+                item={item}
+                collectionId={collectionId}
+                isFirst={currentPage === 1 && index === 0}
+                isLast={currentPage >= totalPages && index === items.length - 1}
+              />
+            ))}
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-card p-8 text-center">

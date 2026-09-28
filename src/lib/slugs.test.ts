@@ -6,6 +6,9 @@ import {
   slugify,
   isValidSlug,
   collectionSlugBase,
+  handleBase,
+  dedupePrefix,
+  HANDLE_FALLBACK,
   uniqueSlug,
   RESERVED_HANDLES,
   RESERVED_SLUGS,
@@ -124,6 +127,51 @@ describe('RESERVED_HANDLES', () => {
   it('holds only lowercase names a handle could otherwise take', () => {
     for (const handle of RESERVED_HANDLES) {
       expect(handle === '_next' || isValidSlug(handle)).toBe(true);
+    }
+  });
+});
+
+describe('handleBase', () => {
+  it.each([
+    ['brad@traversymedia.com', 'brad'],
+    ['Brad.Traversy+dev@example.com', 'brad-traversy-dev'],
+    ['no-at-sign', 'no-at-sign'],
+  ])('derives %s to %s', (email, expected) => {
+    expect(handleBase(email)).toBe(expected);
+  });
+
+  it('falls back for a reserved local part', () => {
+    expect(handleBase('admin@example.com')).toBe(HANDLE_FALLBACK);
+    expect(handleBase('api@example.com')).toBe(HANDLE_FALLBACK);
+  });
+
+  it('falls back for a local part with no slug characters', () => {
+    expect(handleBase('!!!@example.com')).toBe(HANDLE_FALLBACK);
+    expect(handleBase('@example.com')).toBe(HANDLE_FALLBACK);
+  });
+
+  it('never returns a reserved handle', () => {
+    // _next slugifies to next, which is allowed; every other reserved name falls back.
+    for (const reserved of RESERVED_HANDLES) {
+      expect(RESERVED_HANDLES.has(handleBase(`${reserved}@example.com`))).toBe(false);
+    }
+  });
+});
+
+describe('dedupePrefix', () => {
+  it('returns a short base unchanged', () => {
+    expect(dedupePrefix('brad')).toBe('brad');
+  });
+
+  it('is a prefix of every candidate uniqueSlug can produce for a long base', () => {
+    const base = 'a'.repeat(60) + '-b';
+    const prefix = dedupePrefix(base);
+    const taken = new Set<string>();
+    for (let i = 0; i < 20; i++) {
+      const candidate = uniqueSlug(base, taken);
+      expect(candidate.startsWith(prefix)).toBe(true);
+      expect(candidate.length).toBeLessThanOrEqual(MAX_SLUG_LENGTH);
+      taken.add(candidate);
     }
   });
 });

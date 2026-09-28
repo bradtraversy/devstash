@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { parseZodErrors, isValidUrlProtocol, safeUrlSchema, validateId } from './validation';
+import {
+  parseZodErrors,
+  isValidUrlProtocol,
+  safeUrlSchema,
+  validateId,
+  collectionSlugSchema,
+  handleSchema,
+} from './validation';
 
 describe('parseZodErrors', () => {
   it('groups issue messages by their first path segment', () => {
@@ -76,5 +83,64 @@ describe('validateId', () => {
   it('rejects empty and whitespace ids with the label', () => {
     expect(validateId('', 'item')).toEqual({ success: false, error: 'Invalid item' });
     expect(validateId('   ', 'collection')).toEqual({ success: false, error: 'Invalid collection' });
+  });
+});
+
+describe('collectionSlugSchema', () => {
+  it('accepts a well-formed slug', () => {
+    expect(collectionSlugSchema.parse('react-patterns')).toBe('react-patterns');
+  });
+
+  it('trims and lowercases before validating', () => {
+    expect(collectionSlugSchema.parse('  React-Patterns ')).toBe('react-patterns');
+  });
+
+  it.each(['React Patterns', '-leading', 'under_score', '', 'a'.repeat(64)])(
+    'rejects %j for its format',
+    (value) => {
+      const result = collectionSlugSchema.safeParse(value);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('Use lowercase letters, numbers, and hyphens');
+      }
+    }
+  );
+
+  it.each(['raw', 'new', 'edit', 'RAW'])('rejects the reserved slug %s', (value) => {
+    const result = collectionSlugSchema.safeParse(value);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('That name is reserved');
+    }
+  });
+
+  it('allows names that are only reserved as handles', () => {
+    expect(collectionSlugSchema.parse('settings')).toBe('settings');
+  });
+});
+
+describe('handleSchema', () => {
+  it('accepts, trims, and lowercases a handle', () => {
+    expect(handleSchema.parse(' Brad ')).toBe('brad');
+  });
+
+  it('rejects a malformed handle', () => {
+    const result = handleSchema.safeParse('brad traversy');
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('Use lowercase letters, numbers, and hyphens');
+    }
+  });
+
+  it.each(['api', 'settings', 's', 'dashboard', 'Collections'])('rejects the reserved handle %s', (value) => {
+    const result = handleSchema.safeParse(value);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('That name is reserved');
+    }
+  });
+
+  it('allows names that are only reserved as slugs', () => {
+    expect(handleSchema.parse('raw')).toBe('raw');
   });
 });

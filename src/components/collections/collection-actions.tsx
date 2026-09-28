@@ -13,6 +13,7 @@ interface CollectionActionsProps {
   collection: {
     id: string;
     name: string;
+    slug: string;
     description: string | null;
     isFavorite: boolean;
   };
