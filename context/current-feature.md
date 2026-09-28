@@ -1,16 +1,30 @@
-# Current Feature
+# Current Feature: Public Collections Phase 3 (Public Page)
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Public page at `/{handle}/{slug}` for unlisted and public collections: server rendered outside the dashboard layout, reads no session, 404 for private, unknown, or handleless owners, lowercases segments, rejects bad segments before any query, and permanently redirects old slugs and non-canonical casing to the canonical URL
+- Short link route `/s/{shortId}` returning 302 to the canonical URL on the request origin, 404 otherwise
+- `src/lib/db/public.ts` with `getPublicCollection`, `resolveShortId`, `resolveSlugHistory`, and the public path lookups, every query filtering visibility inside
+- Shiki rendering for snippets and commands through a lazily created highlighter with the JavaScript regex engine and the `dark-plus` theme, grammars from a `src/lib/languages.ts` registry covering every `LANGUAGES` id, plain text fallback
+- One block per item in position order with a `#b{n}` anchor, type header, label (language or Terminal), description, body by type (code, markdown with Shiki for its fenced code, link card, inline image from R2, file card), and a copy button; commands strip a leading `$ ` on copy; files have no copy or download; the header has a Copy as markdown button
+- Raw markdown view at `/{handle}/{slug}/raw` with the `.md` rewrite in `next.config.ts`, built by a pure `collectionToMarkdown` with titled fences that outgrow backtick runs
+- Metadata: title, description, canonical, Open Graph, twitter card, noindex for unlisted, one static site-wide Open Graph image from `src/app/opengraph-image.tsx`, `metadataBase` in the root layout from `NEXT_PUBLIC_APP_URL`
+- Revalidation: setCollectionVisibility, updateCollection, moveCollectionItem, deleteCollection, updateHandle, createItem, updateItem, deleteItem, importData, and account deletion revalidate the union of public paths before and after the write, including retired slug redirects; lookup failures are logged and never change the result; toggles do not revalidate
+- Readable URL in `VisibilityControl` becomes a link that opens the public page
+- Unit tests for copy, languages, highlight, markdown, metadata, db/public, revalidate, both route handlers, and the action revalidation calls; `npm run verify` passes
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/public-collections-phase-3-spec.md`. Product spec R020 to R038 and R021 in the vault.
+- Branch `feature/public-collections` (long-lived, one commit per phase, no push). Stay on it.
+- No schema change, no migration, no new environment variable. One new dependency: `shiki`.
+- The `.md` rewrite lives in `next.config.ts`, not the proxy, so public requests never enter the NextAuth wrapper.
+- Images render inline from the R2 public URL the dashboard already uses; files stay a card until phase 5 adds public file access.
+- Caching and revalidation only show in a production build; dev renders fresh every request.
 
 ## History
 

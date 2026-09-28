@@ -14,6 +14,8 @@ import {
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 import { handleSchema, parseZodErrors } from '@/lib/validation';
 import { isUniqueViolation } from '@/lib/db/errors';
+import { publicPathsForUser } from '@/lib/db/public';
+import { lookupPublicPaths, revalidateAfterWrite } from '@/lib/public/revalidate';
 
 const editorPreferencesSchema = z.object({
   fontSize: z.number().refine((val) => FONT_SIZES.includes(val), {
@@ -71,7 +73,9 @@ export async function updateHandle(
   }
 
   try {
+    const before = await lookupPublicPaths(() => publicPathsForUser(session.user.id));
     await updateUserHandleQuery(session.user.id, parsed.data.handle);
+    await revalidateAfterWrite(before, () => publicPathsForUser(session.user.id));
     return { success: true, data: { handle: parsed.data.handle } };
   } catch (error) {
     if (isUniqueViolation(error)) {

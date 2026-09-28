@@ -103,9 +103,15 @@ export default function VisibilityControl({ collection, handle }: VisibilityCont
         </div>
       </div>
       {isShared && readableUrl && (
-        <p className="font-mono text-xs text-muted-foreground truncate" title={readableUrl}>
+        <a
+          href={readableUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="block truncate font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
+          title="Open the public page"
+        >
           {readableUrl}
-        </p>
+        </a>
       )}
     </div>
   );

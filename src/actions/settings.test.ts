@@ -12,6 +12,12 @@ vi.mock('@/lib/db/users', () => ({
   updateUserHandle: vi.fn(),
 }));
 
+vi.mock('@/lib/db/public', () => ({
+  publicPathsForUser: vi.fn(async () => []),
+}));
+
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+
 import { updateEditorPreferences, updateHandle } from './settings';
 import { auth } from '@/auth';
 import {
@@ -19,10 +25,15 @@ import {
   updateUserHandle as updateUserHandleQuery,
 } from '@/lib/db/users';
 import { DEFAULT_EDITOR_PREFERENCES } from '@/lib/constants/editor';
+import { publicPathsForUser } from '@/lib/db/public';
+import { revalidatePath } from 'next/cache';
 
 const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
 const mockUpdateEditorPreferencesQuery = vi.mocked(updateEditorPreferencesQuery);
 const mockUpdateUserHandleQuery = vi.mocked(updateUserHandleQuery);
+const mockPublicPathsForUser = vi.mocked(publicPathsForUser);
+const mockRevalidatePath = vi.mocked(revalidatePath);
+const revalidated = () => mockRevalidatePath.mock.calls.map((call) => call[0]);
 
 describe('updateEditorPreferences server action', () => {
   beforeEach(() => {
@@ -231,5 +242,54 @@ describe('updateHandle server action', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe('Failed to update handle');
+  });
+});
+
+describe('public page revalidation from settings actions', () => {
+  const session = {
+    user: { id: 'user-123', isPro: true },
+    expires: new Date().toISOString(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuth.mockResolvedValue(session);
+  });
+
+  it('updateHandle revalidates every shared collection under the old and new handle', async () => {
+    mockPublicPathsForUser
+      .mockResolvedValueOnce(['/brad/react', '/brad/node'])
+      .mockResolvedValueOnce(['/traversy/react', '/traversy/node']);
+    mockUpdateUserHandleQuery.mockResolvedValue(undefined as never);
+
+    const result = await updateHandle({ handle: 'traversy' });
+
+    expect(result.success).toBe(true);
+    expect(mockPublicPathsForUser).toHaveBeenCalledTimes(2);
+    expect(mockPublicPathsForUser).toHaveBeenCalledWith('user-123');
+    expect(revalidated()).toEqual([
+      '/brad/react',
+      '/brad/node',
+      '/traversy/react',
+      '/traversy/node',
+    ]);
+  });
+
+  it('updateHandle skips revalidation when the handle is taken', async () => {
+    mockUpdateUserHandleQuery.mockRejectedValue({ code: 'P2002' });
+
+    const result = await updateHandle({ handle: 'taken' });
+
+    expect(result.success).toBe(false);
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('updateEditorPreferences never revalidates', async () => {
+    mockUpdateEditorPreferencesQuery.mockResolvedValue(true);
+
+    await updateEditorPreferences(DEFAULT_EDITOR_PREFERENCES);
+
+    expect(mockPublicPathsForUser).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });

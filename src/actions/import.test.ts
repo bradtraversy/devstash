@@ -24,10 +24,18 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+vi.mock('@/lib/db/public', () => ({
+  publicPathsForCollections: vi.fn(async () => []),
+}));
+
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+
 import { previewImport, importData } from './import';
 import { SHORT_ID_PATTERN } from '@/lib/short-id';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { publicPathsForCollections } from '@/lib/db/public';
+import { revalidatePath } from 'next/cache';
 
 const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
 
@@ -531,5 +539,55 @@ describe('importData collection slugs and item positions', () => {
       ],
       [{ collectionId: 'new-coll', position: 1 }],
     ]);
+  });
+});
+
+describe('importData public page revalidation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('revalidates only the collections that received items', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    });
+
+    const json = JSON.stringify({
+      version: 1,
+      items: [
+        { title: 'First', type: 'snippet', content: 'a', tags: [], collections: ['React Patterns'] },
+        { title: 'Loose', type: 'snippet', content: 'b', tags: [], collections: [] },
+      ],
+      collections: [{ name: 'React Patterns', description: null, isFavorite: false }],
+    });
+
+    vi.mocked(prisma.item.count).mockResolvedValue(0);
+    vi.mocked(prisma.collection.count).mockResolvedValue(0);
+    vi.mocked(prisma.item.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.collection.findMany).mockResolvedValue([{ name: 'React Patterns' }] as never);
+    vi.mocked(prisma.itemType.findMany).mockResolvedValue([
+      { id: 'type-1', name: 'snippet', icon: 'Code', color: '#3b82f6', isSystem: true, userId: null },
+    ]);
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: unknown) => {
+      const txClient = {
+        collection: {
+          findMany: vi.fn().mockResolvedValue([
+            { id: 'existing', name: 'React Patterns', slug: 'react-patterns' },
+          ]),
+          create: vi.fn(),
+        },
+        itemCollection: { findFirst: vi.fn().mockResolvedValue(null) },
+        item: { create: vi.fn().mockResolvedValue({ id: 'new-item' }) },
+      };
+      return (fn as (tx: typeof txClient) => Promise<void>)(txClient);
+    });
+    vi.mocked(publicPathsForCollections).mockResolvedValueOnce(['/brad/react-patterns']);
+
+    const result = await importData(json, false);
+
+    expect(result.success).toBe(true);
+    expect(publicPathsForCollections).toHaveBeenCalledWith(['existing']);
+    expect(vi.mocked(revalidatePath).mock.calls.map((call) => call[0])).toEqual(['/brad/react-patterns']);
   });
 });

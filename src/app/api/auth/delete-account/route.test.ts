@@ -14,13 +14,21 @@ vi.mock('@/lib/stripe', () => ({
   getStripe: () => ({ subscriptions: { retrieve, cancel } }),
 }))
 
+vi.mock('@/lib/db/public', () => ({ publicPathsForUser: vi.fn(async () => []) }))
+
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
+import { publicPathsForUser } from '@/lib/db/public'
 import { DELETE } from './route'
 
 const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>
 const mockFindUnique = vi.mocked(prisma.user.findUnique)
 const mockDelete = vi.mocked(prisma.user.delete)
+const mockRevalidatePath = vi.mocked(revalidatePath)
+const mockPublicPathsForUser = vi.mocked(publicPathsForUser)
 
 const NOW = new Date('2026-09-26T12:00:00Z')
 const session: Session = { user: { id: 'user-1', isPro: true }, expires: '2099-01-01T00:00:00.000Z' }
@@ -50,6 +58,7 @@ describe('DELETE /api/auth/delete-account', () => {
     mockAuth.mockResolvedValue(session)
     mockFindUnique.mockResolvedValue(user)
     mockDelete.mockResolvedValue(user)
+    mockPublicPathsForUser.mockResolvedValue([])
   })
 
   afterEach(() => {
@@ -158,5 +167,40 @@ describe('DELETE /api/auth/delete-account', () => {
 
     expect(res.status).toBe(500)
     expect(await res.json()).toEqual({ error: 'An error occurred while deleting your account' })
+  })
+
+  it('revalidates the public pages the account had before deleting it', async () => {
+    mockFindUnique.mockResolvedValue({ ...user, stripeSubscriptionId: null })
+    mockPublicPathsForUser.mockResolvedValue(['/brad/react', '/brad/old-react'])
+
+    const res = await DELETE()
+
+    expect(res.status).toBe(200)
+    expect(mockPublicPathsForUser).toHaveBeenCalledWith('user-1')
+    expect(mockPublicPathsForUser.mock.invocationCallOrder[0]).toBeLessThan(
+      mockDelete.mock.invocationCallOrder[0]
+    )
+    expect(mockRevalidatePath.mock.calls.map((call) => call[0])).toEqual(['/brad/react', '/brad/old-react'])
+  })
+
+  it('keeps the pages cached when the delete fails', async () => {
+    mockFindUnique.mockResolvedValue({ ...user, stripeSubscriptionId: null })
+    mockPublicPathsForUser.mockResolvedValue(['/brad/react'])
+    mockDelete.mockRejectedValue(new Error('db down'))
+
+    const res = await DELETE()
+
+    expect(res.status).toBe(500)
+    expect(mockRevalidatePath).not.toHaveBeenCalled()
+  })
+
+  it('still deletes the account when the path lookup fails', async () => {
+    mockFindUnique.mockResolvedValue({ ...user, stripeSubscriptionId: null })
+    mockPublicPathsForUser.mockRejectedValue(new Error('db hiccup'))
+
+    const res = await DELETE()
+
+    expect(res.status).toBe(200)
+    expect(mockDelete).toHaveBeenCalledWith({ where: { id: 'user-1' } })
   })
 })

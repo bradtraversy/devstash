@@ -3,6 +3,8 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
+import { publicPathsForUser } from '@/lib/db/public'
+import { lookupPublicPaths, revalidatePublicPaths } from '@/lib/public/revalidate'
 
 // A subscription that already ended, or that Stripe no longer knows, must not block deletion.
 async function cancelIfActive(subscriptionId: string): Promise<void> {
@@ -49,10 +51,15 @@ export async function DELETE() {
       }
     }
 
+    // Public pages of the cascaded collections stay cached until they are revalidated.
+    const publicPaths = await lookupPublicPaths(() => publicPathsForUser(session.user.id))
+
     // Delete the user - cascade will handle related data
     await prisma.user.delete({
       where: { id: session.user.id },
     })
+
+    revalidatePublicPaths(publicPaths)
 
     return NextResponse.json({
       success: true,
