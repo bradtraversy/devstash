@@ -23,10 +23,18 @@ vi.mock('@/lib/usage', () => ({
   canCreateItem: vi.fn(),
 }));
 
+vi.mock('@/lib/db/public', () => ({
+  publicPathsForItem: vi.fn(async () => []),
+}));
+
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+
 import { updateItem, deleteItem, createItem, toggleItemFavorite, toggleItemPin } from './items';
 import { auth } from '@/auth';
 import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery, toggleItemPin as toggleItemPinQuery, UnknownCollectionError } from '@/lib/db/items';
 import { canCreateItem } from '@/lib/usage';
+import { publicPathsForItem } from '@/lib/db/public';
+import { revalidatePath } from 'next/cache';
 
 const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
 const mockUpdateItemQuery = vi.mocked(updateItemQuery);
@@ -35,6 +43,9 @@ const mockCreateItemQuery = vi.mocked(createItemQuery);
 const mockToggleItemFavoriteQuery = vi.mocked(toggleItemFavoriteQuery);
 const mockToggleItemPinQuery = vi.mocked(toggleItemPinQuery);
 const mockCanCreateItem = vi.mocked(canCreateItem);
+const mockPublicPathsForItem = vi.mocked(publicPathsForItem);
+const mockRevalidatePath = vi.mocked(revalidatePath);
+const revalidated = () => mockRevalidatePath.mock.calls.map((call) => call[0]);
 
 describe('updateItem server action', () => {
   beforeEach(() => {
@@ -974,5 +985,139 @@ describe('item action error mapping', () => {
 
     expect(result.success).toBe(false);
     expect(result.fieldErrors?.collectionIds).toBeDefined();
+  });
+});
+
+describe('public page revalidation from item actions', () => {
+  const session = {
+    user: { id: 'user-123', isPro: true },
+    expires: new Date().toISOString(),
+  };
+
+  const detail = {
+    id: 'item-123',
+    title: 'useAuth',
+    description: null,
+    content: 'export function useAuth() {}',
+    url: null,
+    language: 'typescript',
+    contentType: 'TEXT',
+    fileUrl: null,
+    fileName: null,
+    fileSize: null,
+    isFavorite: false,
+    isPinned: false,
+    itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
+    tags: [],
+    collections: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const input = {
+    title: 'useAuth',
+    description: null,
+    content: 'export function useAuth() {}',
+    url: null,
+    language: 'typescript',
+    tags: [],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuth.mockResolvedValue(session);
+    mockCanCreateItem.mockResolvedValue(true);
+  });
+
+  it('updateItem revalidates the collections the item was in and is now in', async () => {
+    mockPublicPathsForItem
+      .mockResolvedValueOnce(['/brad/react'])
+      .mockResolvedValueOnce(['/brad/node']);
+    mockUpdateItemQuery.mockResolvedValue(detail);
+
+    const result = await updateItem('item-123', { ...input, collectionIds: ['col-2'] });
+
+    expect(result.success).toBe(true);
+    expect(mockPublicPathsForItem).toHaveBeenCalledTimes(2);
+    expect(mockPublicPathsForItem).toHaveBeenCalledWith('item-123');
+    expect(revalidated()).toEqual(['/brad/react', '/brad/node']);
+  });
+
+  it('updateItem skips revalidation when the item is not found', async () => {
+    mockPublicPathsForItem.mockResolvedValueOnce(['/brad/react']);
+    mockUpdateItemQuery.mockResolvedValue(null);
+
+    await updateItem('item-123', input);
+
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('createItem revalidates the collections the new item joined', async () => {
+    mockPublicPathsForItem.mockResolvedValueOnce(['/brad/react']);
+    mockCreateItemQuery.mockResolvedValue({ ...detail, id: 'item-new' });
+
+    const result = await createItem({
+      typeName: 'snippet',
+      ...input,
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+      collectionIds: ['col-1'],
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockPublicPathsForItem).toHaveBeenCalledTimes(1);
+    expect(mockPublicPathsForItem).toHaveBeenCalledWith('item-new');
+    expect(revalidated()).toEqual(['/brad/react']);
+  });
+
+  it('deleteItem revalidates the pages the item was on before deleting', async () => {
+    mockPublicPathsForItem.mockResolvedValueOnce(['/brad/react']);
+    mockDeleteItemQuery.mockResolvedValue(true);
+
+    await deleteItem('item-123');
+
+    expect(mockPublicPathsForItem.mock.invocationCallOrder[0]).toBeLessThan(
+      mockDeleteItemQuery.mock.invocationCallOrder[0]
+    );
+    expect(revalidated()).toEqual(['/brad/react']);
+  });
+
+  it('deleteItem skips revalidation when nothing was deleted', async () => {
+    mockPublicPathsForItem.mockResolvedValueOnce(['/brad/react']);
+    mockDeleteItemQuery.mockResolvedValue(false);
+
+    await deleteItem('item-123');
+
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('createItem still succeeds when the path lookup fails', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockPublicPathsForItem.mockRejectedValueOnce(new Error('db hiccup'));
+    mockCreateItemQuery.mockResolvedValue({ ...detail, id: 'item-new' });
+
+    const result = await createItem({
+      typeName: 'snippet',
+      ...input,
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it('favorite and pin toggles never revalidate', async () => {
+    mockToggleItemFavoriteQuery.mockResolvedValue(true);
+    mockToggleItemPinQuery.mockResolvedValue(true);
+
+    await toggleItemFavorite('item-123');
+    await toggleItemPin('item-123');
+
+    expect(mockPublicPathsForItem).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });

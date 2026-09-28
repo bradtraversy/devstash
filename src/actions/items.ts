@@ -16,6 +16,8 @@ import { parseZodErrors, safeUrlSchema, validateId } from '@/lib/validation';
 import { isOwnedFileUrl } from '@/lib/file-urls';
 import { canCreateItem } from '@/lib/usage';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
+import { publicPathsForItem } from '@/lib/db/public';
+import { lookupPublicPaths, revalidateAfterWrite, revalidatePublicPaths } from '@/lib/public/revalidate';
 
 function collectionOrGenericError(error: unknown, fallback: string): ActionResult<never> {
   if (error instanceof UnknownCollectionError) {
@@ -53,12 +55,14 @@ export async function updateItem(
   }
 
   try {
+    const before = await lookupPublicPaths(() => publicPathsForItem(itemId));
     const updated = await updateItemQuery(session.user.id, itemId, parsed.data);
 
     if (!updated) {
       return { success: false, error: 'Item not found or access denied' };
     }
 
+    await revalidateAfterWrite(before, () => publicPathsForItem(itemId));
     return { success: true, data: updated };
   } catch (error) {
     return collectionOrGenericError(error, 'Failed to update item');
@@ -74,12 +78,14 @@ export async function deleteItem(
   const idError = validateId(itemId, 'item ID');
   if (idError) return idError;
 
+  const before = await lookupPublicPaths(() => publicPathsForItem(itemId));
   const deleted = await deleteItemQuery(session.user.id, itemId);
 
   if (!deleted) {
     return { success: false, error: 'Item not found or access denied' };
   }
 
+  revalidatePublicPaths(before);
   return { success: true };
 }
 
@@ -189,6 +195,7 @@ export async function createItem(
       return { success: false, error: 'Failed to create item' };
     }
 
+    await revalidateAfterWrite([], () => publicPathsForItem(created.id));
     return { success: true, data: created };
   } catch (error) {
     return collectionOrGenericError(error, 'Failed to create item');

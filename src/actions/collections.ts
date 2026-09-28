@@ -18,6 +18,8 @@ import { isUniqueViolation } from '@/lib/db/errors';
 import { COLLECTION_VISIBILITIES } from '@/lib/constants/visibility';
 import { canCreateCollection } from '@/lib/usage';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
+import { publicPathForOwnerSlug, publicPathsForCollections } from '@/lib/db/public';
+import { lookupPublicPaths, revalidateAfterWrite, revalidatePublicPaths } from '@/lib/public/revalidate';
 
 const createCollectionSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
@@ -47,6 +49,8 @@ export async function createCollection(
 
   try {
     const created = await createCollectionQuery(session.user.id, parsed.data);
+    // A new collection is private; this clears a cached redirect if its slug was a retired one.
+    await revalidateAfterWrite([], () => publicPathForOwnerSlug(session.user.id, created.slug));
     return { success: true, data: created };
   } catch {
     return { success: false, error: 'Failed to create collection' };
@@ -105,6 +109,7 @@ export async function updateCollection(
   }
 
   try {
+    const before = await lookupPublicPaths(() => publicPathsForCollections([parsed.data.id]));
     const updated = await updateCollectionQuery(parsed.data.id, session.user.id, {
       name: parsed.data.name,
       description: parsed.data.description,
@@ -115,6 +120,11 @@ export async function updateCollection(
       return { success: false, error: 'Collection not found' };
     }
 
+    const slug = parsed.data.slug;
+    await revalidateAfterWrite(before, async () => [
+      ...(await publicPathsForCollections([parsed.data.id])),
+      ...(slug ? await publicPathForOwnerSlug(session.user.id, slug) : []),
+    ]);
     return { success: true, data: updated };
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -148,6 +158,7 @@ export async function setCollectionVisibility(
   }
 
   try {
+    const before = await lookupPublicPaths(() => publicPathsForCollections([parsed.data.id]));
     const updated = await setCollectionVisibilityQuery(
       parsed.data.id,
       session.user.id,
@@ -158,6 +169,7 @@ export async function setCollectionVisibility(
       return { success: false, error: 'Collection not found' };
     }
 
+    await revalidateAfterWrite(before, () => publicPathsForCollections([parsed.data.id]));
     return { success: true, data: updated };
   } catch {
     return { success: false, error: 'Failed to update visibility' };
@@ -196,6 +208,7 @@ export async function moveCollectionItem(
       return { success: false, error: 'Item not found in this collection' };
     }
 
+    await revalidateAfterWrite([], () => publicPathsForCollections([parsed.data.collectionId]));
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to move item' };
@@ -214,12 +227,14 @@ export async function deleteCollection(
   if (idError) return idError;
 
   try {
+    const before = await lookupPublicPaths(() => publicPathsForCollections([input.id]));
     const deleted = await deleteCollectionQuery(input.id, session.user.id);
 
     if (!deleted) {
       return { success: false, error: 'Collection not found' };
     }
 
+    revalidatePublicPaths(before);
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to delete collection' };

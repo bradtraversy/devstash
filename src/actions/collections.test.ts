@@ -22,6 +22,13 @@ vi.mock('@/lib/usage', () => ({
   canCreateCollection: vi.fn(),
 }));
 
+vi.mock('@/lib/db/public', () => ({
+  publicPathsForCollections: vi.fn(async () => []),
+  publicPathForOwnerSlug: vi.fn(async () => []),
+}));
+
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+
 import {
   createCollection,
   updateCollection,
@@ -42,6 +49,8 @@ import {
   moveCollectionItem as moveCollectionItemQuery,
 } from '@/lib/db/collections';
 import { canCreateCollection } from '@/lib/usage';
+import { publicPathForOwnerSlug, publicPathsForCollections } from '@/lib/db/public';
+import { revalidatePath } from 'next/cache';
 
 const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
 const mockCreateCollectionQuery = vi.mocked(createCollectionQuery);
@@ -52,6 +61,10 @@ const mockToggleCollectionFavoriteQuery = vi.mocked(toggleCollectionFavoriteQuer
 const mockSetCollectionVisibilityQuery = vi.mocked(setCollectionVisibilityQuery);
 const mockMoveCollectionItemQuery = vi.mocked(moveCollectionItemQuery);
 const mockCanCreateCollection = vi.mocked(canCreateCollection);
+const mockPublicPathsForCollections = vi.mocked(publicPathsForCollections);
+const mockPublicPathForOwnerSlug = vi.mocked(publicPathForOwnerSlug);
+const mockRevalidatePath = vi.mocked(revalidatePath);
+const revalidated = () => mockRevalidatePath.mock.calls.map((call) => call[0]);
 
 describe('createCollection server action', () => {
   beforeEach(() => {
@@ -738,5 +751,210 @@ describe('moveCollectionItem server action', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe('Failed to move item');
+  });
+});
+
+describe('public page revalidation from collection actions', () => {
+  const session = {
+    user: { id: 'user-123', isPro: true },
+    expires: new Date().toISOString(),
+  };
+
+  const created = {
+    id: 'collection-123',
+    name: 'React',
+    description: null,
+    slug: 'react',
+    isFavorite: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuth.mockResolvedValue(session);
+  });
+
+  it('setCollectionVisibility revalidates the paths before and after the change', async () => {
+    mockPublicPathsForCollections
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(['/brad/react']);
+    mockSetCollectionVisibilityQuery.mockResolvedValue({
+      visibility: 'PUBLIC',
+      publishedAt: new Date(),
+      handle: 'brad',
+    });
+
+    const result = await setCollectionVisibility({ id: 'collection-123', visibility: 'PUBLIC' });
+
+    expect(result.success).toBe(true);
+    expect(mockPublicPathsForCollections).toHaveBeenCalledTimes(2);
+    expect(mockPublicPathsForCollections).toHaveBeenCalledWith(['collection-123']);
+    expect(revalidated()).toEqual(['/brad/react']);
+    expect(mockRevalidatePath.mock.invocationCallOrder[0]).toBeGreaterThan(
+      mockSetCollectionVisibilityQuery.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('setCollectionVisibility clears the old page when a collection goes private', async () => {
+    mockPublicPathsForCollections
+      .mockResolvedValueOnce(['/brad/react'])
+      .mockResolvedValueOnce([]);
+    mockSetCollectionVisibilityQuery.mockResolvedValue({
+      visibility: 'PRIVATE',
+      publishedAt: new Date(),
+      handle: 'brad',
+    });
+
+    await setCollectionVisibility({ id: 'collection-123', visibility: 'PRIVATE' });
+
+    expect(revalidated()).toEqual(['/brad/react']);
+  });
+
+  it('setCollectionVisibility skips revalidation when the collection is not found', async () => {
+    mockSetCollectionVisibilityQuery.mockResolvedValue(null);
+
+    await setCollectionVisibility({ id: 'collection-123', visibility: 'PUBLIC' });
+
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('updateCollection revalidates the old and new slug paths', async () => {
+    mockPublicPathsForCollections
+      .mockResolvedValueOnce(['/brad/react'])
+      .mockResolvedValueOnce(['/brad/react-hooks']);
+    mockUpdateCollectionQuery.mockResolvedValue({ ...created, slug: 'react-hooks' });
+
+    const result = await updateCollection({
+      id: 'collection-123',
+      name: 'React',
+      description: null,
+      slug: 'react-hooks',
+    });
+
+    expect(result.success).toBe(true);
+    expect(revalidated()).toEqual(['/brad/react', '/brad/react-hooks']);
+  });
+
+  it('updateCollection also clears the path of a reclaimed slug when the collection is private', async () => {
+    mockPublicPathsForCollections.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    mockPublicPathForOwnerSlug.mockResolvedValueOnce(['/brad/react']);
+    mockUpdateCollectionQuery.mockResolvedValue(created);
+
+    await updateCollection({ id: 'collection-123', name: 'React', description: null, slug: 'react' });
+
+    expect(mockPublicPathForOwnerSlug).toHaveBeenCalledWith('user-123', 'react');
+    expect(revalidated()).toEqual(['/brad/react']);
+  });
+
+  it('updateCollection without a slug does not look up the owner slug path', async () => {
+    mockUpdateCollectionQuery.mockResolvedValue(created);
+
+    await updateCollection({ id: 'collection-123', name: 'React', description: null });
+
+    expect(mockPublicPathForOwnerSlug).not.toHaveBeenCalled();
+  });
+
+  it('createCollection clears a cached redirect for the slug it takes', async () => {
+    mockCanCreateCollection.mockResolvedValue(true);
+    mockCreateCollectionQuery.mockResolvedValue(created);
+    mockPublicPathForOwnerSlug.mockResolvedValueOnce(['/brad/react']);
+
+    const result = await createCollection({ name: 'React', description: null });
+
+    expect(result.success).toBe(true);
+    expect(mockPublicPathForOwnerSlug).toHaveBeenCalledWith('user-123', 'react');
+    expect(revalidated()).toEqual(['/brad/react']);
+  });
+
+  it('updateCollection skips revalidation when the query fails', async () => {
+    mockUpdateCollectionQuery.mockRejectedValue(new Error('db down'));
+
+    const result = await updateCollection({ id: 'collection-123', name: 'React', description: null });
+
+    expect(result.success).toBe(false);
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('moveCollectionItem revalidates the collection page after the move', async () => {
+    mockPublicPathsForCollections.mockResolvedValueOnce(['/brad/react']);
+    mockMoveCollectionItemQuery.mockResolvedValue(true);
+
+    await moveCollectionItem({ collectionId: 'collection-123', itemId: 'item-1', direction: 'up' });
+
+    expect(mockPublicPathsForCollections).toHaveBeenCalledTimes(1);
+    expect(revalidated()).toEqual(['/brad/react']);
+  });
+
+  it('moveCollectionItem skips revalidation when the item is not in the collection', async () => {
+    mockMoveCollectionItemQuery.mockResolvedValue(false);
+
+    await moveCollectionItem({ collectionId: 'collection-123', itemId: 'item-1', direction: 'up' });
+
+    expect(mockPublicPathsForCollections).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('a failing path lookup after the write is logged and the result still succeeds', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockPublicPathsForCollections
+      .mockResolvedValueOnce(['/brad/react'])
+      .mockRejectedValueOnce(new Error('db hiccup'));
+    mockSetCollectionVisibilityQuery.mockResolvedValue({
+      visibility: 'PRIVATE',
+      publishedAt: new Date(),
+      handle: 'brad',
+    });
+
+    const result = await setCollectionVisibility({ id: 'collection-123', visibility: 'PRIVATE' });
+
+    expect(result.success).toBe(true);
+    expect(revalidated()).toEqual(['/brad/react']);
+    errorSpy.mockRestore();
+  });
+
+  it('a failing path lookup before the write does not block the write', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockPublicPathsForCollections
+      .mockRejectedValueOnce(new Error('db hiccup'))
+      .mockResolvedValueOnce(['/brad/react']);
+    mockUpdateCollectionQuery.mockResolvedValue(created);
+
+    const result = await updateCollection({ id: 'collection-123', name: 'React', description: null });
+
+    expect(result.success).toBe(true);
+    expect(mockUpdateCollectionQuery).toHaveBeenCalled();
+    expect(revalidated()).toEqual(['/brad/react']);
+    errorSpy.mockRestore();
+  });
+
+  it('deleteCollection revalidates the page it had before deletion', async () => {
+    mockPublicPathsForCollections.mockResolvedValueOnce(['/brad/react']);
+    mockDeleteCollectionQuery.mockResolvedValue(true);
+
+    await deleteCollection({ id: 'collection-123' });
+
+    expect(mockPublicPathsForCollections.mock.invocationCallOrder[0]).toBeLessThan(
+      mockDeleteCollectionQuery.mock.invocationCallOrder[0]
+    );
+    expect(revalidated()).toEqual(['/brad/react']);
+  });
+
+  it('deleteCollection skips revalidation when nothing was deleted', async () => {
+    mockPublicPathsForCollections.mockResolvedValueOnce(['/brad/react']);
+    mockDeleteCollectionQuery.mockResolvedValue(false);
+
+    await deleteCollection({ id: 'collection-123' });
+
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('toggleCollectionFavorite never revalidates', async () => {
+    mockToggleCollectionFavoriteQuery.mockResolvedValue(true);
+
+    await toggleCollectionFavorite('collection-123');
+
+    expect(mockPublicPathsForCollections).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });

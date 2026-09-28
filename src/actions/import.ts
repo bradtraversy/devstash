@@ -8,6 +8,8 @@ import { generateShortId } from '@/lib/short-id';
 import { MAX_ITEMS, MAX_COLLECTIONS } from '@/lib/usage';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 import { isOwnedFileUrl } from '@/lib/file-urls';
+import { publicPathsForCollections } from '@/lib/db/public';
+import { revalidateAfterWrite } from '@/lib/public/revalidate';
 
 const importItemSchema = z.object({
   title: z.string().min(1),
@@ -190,6 +192,7 @@ export async function importData(
   let collectionsImported = 0;
   let itemsSkipped = 0;
   let collectionsSkipped = 0;
+  const touchedCollectionIds = new Set<string>();
 
   await prisma.$transaction(async (tx) => {
     // 1. Create collections first
@@ -287,6 +290,7 @@ export async function importData(
       const memberships: { collectionId: string; position: number }[] = [];
       for (const collectionId of itemCollectionIds) {
         memberships.push({ collectionId, position: await takePosition(collectionId) });
+        touchedCollectionIds.add(collectionId);
       }
 
       // Preserve file references for file/image types (Pro users only), and only
@@ -325,6 +329,9 @@ export async function importData(
       itemsImported++;
     }
   });
+
+  // Imported collections start private; this covers items imported into collections already shared.
+  await revalidateAfterWrite([], () => publicPathsForCollections([...touchedCollectionIds]));
 
   return {
     success: true,
