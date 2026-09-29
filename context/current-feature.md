@@ -1,30 +1,16 @@
-# Current Feature: Public Collections Phase 3 (Public Page)
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Public page at `/{handle}/{slug}` for unlisted and public collections: server rendered outside the dashboard layout, reads no session, 404 for private, unknown, or handleless owners, lowercases segments, rejects bad segments before any query, and permanently redirects old slugs and non-canonical casing to the canonical URL
-- Short link route `/s/{shortId}` returning 302 to the canonical URL on the request origin, 404 otherwise
-- `src/lib/db/public.ts` with `getPublicCollection`, `resolveShortId`, `resolveSlugHistory`, and the public path lookups, every query filtering visibility inside
-- Shiki rendering for snippets and commands through a lazily created highlighter with the JavaScript regex engine and the `dark-plus` theme, grammars from a `src/lib/languages.ts` registry covering every `LANGUAGES` id, plain text fallback
-- One block per item in position order with a `#b{n}` anchor, type header, label (language or Terminal), description, body by type (code, markdown with Shiki for its fenced code, link card, inline image from R2, file card), and a copy button; commands strip a leading `$ ` on copy; files have no copy or download; the header has a Copy as markdown button
-- Raw markdown view at `/{handle}/{slug}/raw` with the `.md` rewrite in `next.config.ts`, built by a pure `collectionToMarkdown` with titled fences that outgrow backtick runs
-- Metadata: title, description, canonical, Open Graph, twitter card, noindex for unlisted, one static site-wide Open Graph image from `src/app/opengraph-image.tsx`, `metadataBase` in the root layout from `NEXT_PUBLIC_APP_URL`
-- Revalidation: setCollectionVisibility, updateCollection, moveCollectionItem, deleteCollection, updateHandle, createItem, updateItem, deleteItem, importData, and account deletion revalidate the union of public paths before and after the write, including retired slug redirects; lookup failures are logged and never change the result; toggles do not revalidate
-- Readable URL in `VisibilityControl` becomes a link that opens the public page
-- Unit tests for copy, languages, highlight, markdown, metadata, db/public, revalidate, both route handlers, and the action revalidation calls; `npm run verify` passes
+<!-- Define goals here -->
 
 ## Notes
 
-- Spec: `context/features/public-collections-phase-3-spec.md`. Product spec R020 to R038 and R021 in the vault.
-- Branch `feature/public-collections` (long-lived, one commit per phase, no push). Stay on it.
-- No schema change, no migration, no new environment variable. One new dependency: `shiki`.
-- The `.md` rewrite lives in `next.config.ts`, not the proxy, so public requests never enter the NextAuth wrapper.
-- Images render inline from the R2 public URL the dashboard already uses; files stay a card until phase 5 adds public file access.
-- Caching and revalidation only show in a production build; dev renders fresh every request.
+<!-- Additional context here -->
 
 ## History
 
@@ -97,3 +83,4 @@ In Progress
 - **Route Handler Tests** - Vitest coverage for the seven auth route handlers (register, verify, resend-verification, forgot-password, reset-password, change-password, delete-account) and the upload, download, export, and items/[id] handlers, plus direct unit tests for validation.ts, tokens.ts, and action-utils.ts; locks rate limit before body parse, enumeration-safe responses, token expiry and single use, OAuth-only guards, Pro gating, R2 namespace and traversal rejection, and Stripe cancel-before-delete; Stripe routes and the NextAuth catch-all left out; 115 new tests (383 total) (Completed)
 - **Public Collections Phase 1** - One migration adding visibility, slug, shortId, and publishedAt to Collection, handle to User, position to ItemCollection with a (collectionId, position) index, the CollectionSlugHistory table, and a partial unique index on system item types, with the backfills in the migration file (per-row random short ids, one slugify rule shared by SQL and TypeScript, per-user slug and global handle dedupe walking oldest first, positions by addedAt then itemId) so the unique constraints prove them; slugs.ts and short-id.ts helpers with a test that fails when an app route is missing from RESERVED_HANDLES; createCollection assigns slug and short id with one retry on a unique violation; createItem, updateItem, importData, and the seed append join rows at the end of each collection; getItemsByCollection reads through the join in position order; verified on the Docker production restore and an empty database with the CI drift check clean; 49 new tests (432 total) (Completed)
 - **Public Collections Phase 2** - Owner controls on the collection page: visibility select (Private, Unlisted, Public) backed by setCollectionVisibility, which stamps publishedAt once and generates the owner's handle from the email local part on first publish; Copy link for the /s/{shortId} short link with the readable URL shown; one ordered row list across all types replacing the type sections, with move up and move down through moveCollectionItem (collection row lock via updateMany, positions rewritten 0..n-1 in display order so ties and gaps repair on the first move); slug editing in the edit dialog with CollectionSlugHistory writes and reclaim on create, mapped P2002 field errors; handle editing card on the settings page; visibility marks on the drawer's collection badges; collectionSlugSchema and handleSchema; dedupePrefix for handles near the length limit; edit dialog reset effect removed; verified on the Docker restore with a scripted run including concurrent moves; 78 new tests (510 total) (Completed)
+- **Public Collections Phase 3** - Public page at /{handle}/{slug} for unlisted and public collections, server rendered outside the dashboard layout with no session read, 404 for private, unknown, and handleless owners, segment validation before any query, permanent redirects for retired slugs and non-canonical casing; /s/{shortId} short link route returning 302 to the canonical URL; src/lib/db/public.ts queries that filter visibility inside; Shiki rendering for snippets, commands, and fenced code in notes and prompts through a lazily created highlighter with the JavaScript regex engine, the dark-plus theme, and a src/lib/languages.ts registry covering every LANGUAGES id with plain text fallback; one block per item in position order with #b{n} anchors, type headers, language or Terminal labels, copy buttons (commands strip a leading $), link cards, inline R2 images, file cards, and a Copy as markdown header button; raw markdown view at /{handle}/{slug}/raw with the .md rewrite in next.config.ts built by a pure collectionToMarkdown with fences that outgrow backtick runs; title, description, canonical, Open Graph, twitter card, noindex for unlisted, one static site-wide Open Graph image, metadataBase from NEXT_PUBLIC_APP_URL; revalidation of the union of public paths before and after every owner write including retired-slug redirects and account deletion, with lookup failures logged and never changing the result; readable URL in VisibilityControl links to the public page; verified with 33 scripted checks on the Docker restore, three independent reviews, and a browser check; 97 new tests (607 total) (Completed)
