@@ -9,18 +9,18 @@ import { Database, Download, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ImportDialog from './import-dialog';
 
+type ExportFormat = 'json' | 'md' | 'zip';
+
 interface DataSettingsProps {
   isPro: boolean;
 }
 
 export default function DataSettings({ isPro }: DataSettingsProps) {
-  const [exportingJson, setExportingJson] = useState(false);
-  const [exportingZip, setExportingZip] = useState(false);
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [importOpen, setImportOpen] = useState(false);
 
-  async function handleExport(format: 'json' | 'zip') {
-    const setLoading = format === 'json' ? setExportingJson : setExportingZip;
-    setLoading(true);
+  async function handleExport(format: ExportFormat) {
+    setExporting(format);
 
     try {
       const res = await fetch(`/api/export?format=${format}`);
@@ -50,8 +50,16 @@ export default function DataSettings({ isPro }: DataSettingsProps) {
     } catch {
       toast.error('Export failed');
     } finally {
-      setLoading(false);
+      setExporting(null);
     }
+  }
+
+  function exportIcon(format: ExportFormat) {
+    return exporting === format ? (
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+    ) : (
+      <Download className="mr-2 h-4 w-4" />
+    );
   }
 
   return (
@@ -62,33 +70,35 @@ export default function DataSettings({ isPro }: DataSettingsProps) {
             <Database className="h-5 w-5" />
             <CardTitle>Data</CardTitle>
           </div>
-          <CardDescription>Export your data or import from a previous export.</CardDescription>
+          <CardDescription>
+            Export your data as JSON, Markdown, or a ZIP with files, or import from a previous export.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
               onClick={() => handleExport('json')}
-              disabled={exportingJson || exportingZip}
+              disabled={exporting !== null}
             >
-              {exportingJson ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="mr-2 h-4 w-4" />
-              )}
+              {exportIcon('json')}
               Export JSON
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleExport('md')}
+              disabled={exporting !== null}
+            >
+              {exportIcon('md')}
+              Export Markdown
             </Button>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 onClick={() => handleExport('zip')}
-                disabled={exportingJson || exportingZip || !isPro}
+                disabled={exporting !== null || !isPro}
               >
-                {exportingZip ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="mr-2 h-4 w-4" />
-                )}
+                {exportIcon('zip')}
                 Export ZIP
               </Button>
               {!isPro && (

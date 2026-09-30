@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getUserExportData } from '@/lib/db/export';
+import { getUserExportData, getUserMarkdownExport } from '@/lib/db/export';
+import { stashToMarkdown } from '@/lib/markdown-export';
 import { isOwnedFileUrl } from '@/lib/file-urls';
 import { isFileType } from '@/lib/db/items';
 import archiver from 'archiver';
@@ -18,8 +19,20 @@ export async function GET(request: NextRequest) {
 
   const format = request.nextUrl.searchParams.get('format') || 'json';
 
-  if (format !== 'json' && format !== 'zip') {
+  if (format !== 'json' && format !== 'zip' && format !== 'md') {
     return NextResponse.json({ error: 'Invalid format' }, { status: 400 });
+  }
+
+  const dateStr = getDateString();
+
+  if (format === 'md') {
+    const markdown = stashToMarkdown(await getUserMarkdownExport(session.user.id));
+    return new NextResponse(markdown, {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Content-Disposition': `attachment; filename="devstash-export-${dateStr}.md"`,
+      },
+    });
   }
 
   // ZIP export is Pro-only
@@ -31,7 +44,6 @@ export async function GET(request: NextRequest) {
   }
 
   const data = await getUserExportData(session.user.id);
-  const dateStr = getDateString();
 
   if (format === 'json') {
     const json = JSON.stringify(data, null, 2);
