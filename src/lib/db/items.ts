@@ -177,7 +177,7 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
 }
 
 // Define the display order for item types
-const ITEM_TYPE_ORDER = ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'];
+export const ITEM_TYPE_ORDER = ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'];
 
 /**
  * Get system item types with counts for a user

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { PublicCollection, PublicItem } from '@/lib/db/public';
-import { collectionToMarkdown } from './markdown';
+import { collectionToMarkdown, itemToMarkdown } from './markdown';
 
 const NOW = new Date('2026-09-28T12:00:00Z');
 
@@ -145,5 +145,24 @@ describe('collectionToMarkdown', () => {
 
     expect(md).toContain('## Slides\n\nSlides\n');
     expect(md).not.toContain('](');
+  });
+});
+
+describe('itemToMarkdown', () => {
+  it('renders the heading at the given level with the description, tags, and body', () => {
+    const md = itemToMarkdown(
+      {
+        ...item({ title: 'useAuth', description: 'Auth hook', content: 'x', language: 'typescript', itemType: snippet }),
+        tags: ['react', 'hooks'],
+      },
+      3
+    );
+
+    expect(md).toBe('### useAuth\n\nAuth hook\n\nTags: react, hooks\n\n```typescript title="useAuth"\nx\n```');
+  });
+
+  it('omits the tags line for an empty or missing list', () => {
+    expect(itemToMarkdown({ ...item({ title: 'A', content: 'a', itemType: note }), tags: [] }, 2)).toBe('## A\n\na');
+    expect(itemToMarkdown(item({ title: 'B', content: 'b', itemType: note }), 2)).toBe('## B\n\nb');
   });
 });

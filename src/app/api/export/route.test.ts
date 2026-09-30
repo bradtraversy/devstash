@@ -7,14 +7,16 @@ vi.mock('@/auth', () => ({ auth: vi.fn() }));
 // The real file-urls and isFileType modules run; only the data query and the Prisma client are stubbed.
 vi.mock('@/lib/prisma', () => ({ prisma: {} }));
 
-vi.mock('@/lib/db/export', () => ({ getUserExportData: vi.fn() }));
+vi.mock('@/lib/db/export', () => ({ getUserExportData: vi.fn(), getUserMarkdownExport: vi.fn() }));
 
 import { auth } from '@/auth';
-import { getUserExportData, type ExportData, type ExportItem } from '@/lib/db/export';
+import { getUserExportData, getUserMarkdownExport, type ExportData, type ExportItem, type MarkdownExport } from '@/lib/db/export';
+import { stashToMarkdown } from '@/lib/markdown-export';
 import { GET } from './route';
 
 const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
 const mockGetExportData = vi.mocked(getUserExportData);
+const mockGetMarkdownExport = vi.mocked(getUserMarkdownExport);
 const fetchMock = vi.fn();
 
 const NOW = new Date('2026-09-26T12:00:00Z');
@@ -57,6 +59,33 @@ const data: ExportData = {
   collections: [{ name: 'React', description: null, isFavorite: false }],
 };
 
+const markdownData: MarkdownExport = {
+  exportedAt: NOW,
+  itemCount: 1,
+  collections: [
+    {
+      name: 'React',
+      description: null,
+      items: [
+        {
+          id: 'item-1',
+          title: 'Item',
+          description: null,
+          content: 'const a = 1',
+          url: null,
+          language: 'typescript',
+          fileUrl: null,
+          fileName: null,
+          fileSize: null,
+          itemType: { name: 'snippet' },
+          tags: [],
+        },
+      ],
+    },
+  ],
+  uncollected: [],
+};
+
 function get(query = '') {
   return GET(new NextRequest(`http://localhost/api/export${query}`));
 }
@@ -71,6 +100,7 @@ describe('GET /api/export', () => {
     vi.stubGlobal('fetch', fetchMock);
     mockAuth.mockResolvedValue(proSession);
     mockGetExportData.mockResolvedValue(data);
+    mockGetMarkdownExport.mockResolvedValue(markdownData);
     fetchMock.mockResolvedValue(new Response('pdf-bytes', { status: 200 }));
   });
 
@@ -103,6 +133,28 @@ describe('GET /api/export', () => {
 
     expect(res.status).toBe(403);
     expect(await res.json()).toEqual({ error: 'ZIP export requires a Pro subscription' });
+    expect(mockGetExportData).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 for a markdown export without a session', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    const res = await get('?format=md');
+
+    expect(res.status).toBe(401);
+    expect(mockGetMarkdownExport).not.toHaveBeenCalled();
+  });
+
+  it('returns a markdown download on the free tier', async () => {
+    mockAuth.mockResolvedValue(freeSession);
+
+    const res = await get('?format=md');
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('text/markdown; charset=utf-8');
+    expect(res.headers.get('Content-Disposition')).toBe('attachment; filename="devstash-export-2026-09-26.md"');
+    expect(await res.text()).toBe(stashToMarkdown(markdownData));
+    expect(mockGetMarkdownExport).toHaveBeenCalledWith('user-1');
     expect(mockGetExportData).not.toHaveBeenCalled();
   });
 

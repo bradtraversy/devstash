@@ -1,16 +1,25 @@
-# Current Feature
+# Current Feature: Markdown Export
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- `GET /api/export?format=md` in the existing export route: session required, no Pro gate, returns `stashToMarkdown(await getUserMarkdownExport(userId))` as `text/markdown; charset=utf-8` with `Content-Disposition: attachment; filename="devstash-export-{date}.md"`; unknown formats still 400
+- `getUserMarkdownExport(userId)` in `src/lib/db/export.ts`: `exportedAt`, `itemCount` (distinct items), every collection ordered by name with `name`, `description`, and items through the join in `COLLECTION_ITEM_ORDER` with no `take` and the `item: { userId }` join filter, and `uncollected` items (`collections: { none: {} }`) sorted by the exported `ITEM_TYPE_ORDER` then `createdAt` then `id`; items carry `id`, `title`, `description`, `content`, `url`, `language`, `fileUrl`, `fileName`, `fileSize`, `itemType: { name }`, `tags: string[]`; three parallel queries
+- `src/lib/public/markdown.ts`: export `MarkdownItem` (minimal shape with optional `tags`) and `itemToMarkdown(item, level)` (heading, description, `Tags: a, b` when non-empty, body by type exactly as today); `collectionToMarkdown` uses it at level 2 with byte-identical output
+- `src/lib/markdown-export.ts`: pure `stashToMarkdown(data)`: `# DevStash export`, `Exported {formatLongDate}. {n} items, {m} collections.`, one `## {name}` section per collection with description and items at level 3, then uncollected items grouped by type in first-seen order under `## {Type}s not in a collection` (first letter uppercased, `s` appended), one blank line between sections, one trailing newline
+- `DataSettings`: `Export Markdown` button between JSON and ZIP with the `Download` icon and no badge, one `exporting: ExportFormat | null` state replacing the two booleans, card description updated
+- Tests: `itemToMarkdown` level and tags in `markdown.test.ts`, new `markdown-export.test.ts` (full fixture, empty, empty collection, item in two collections, unknown type label, trailing newline), new `src/lib/db/export.test.ts` for the query shape and sorting, `format=md` cases in the export route test; `npm run verify` passes
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/markdown-export-spec.md`
+- Branch `feature/markdown-export` off `main`, one implementation commit, then a pull request; commit needs Brad's approval
+- No schema change, no migration, no new dependency, no new environment variable
+- Out of scope: per-collection download on the owner page, file links in the markdown, markdown inside the ZIP, changes to JSON or ZIP or import, gist import (next feature)
+- Browser check needs a dev server Brad starts: click Export Markdown on `/settings` and open the file
 
 ## History
 
