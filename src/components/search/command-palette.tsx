@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { FolderOpen } from "lucide-react";
+import { FolderOpen, Share2 } from "lucide-react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/command";
 import { useSearch } from "@/components/search/search-provider";
 import { useItemDrawer } from "@/components/items/item-drawer-provider";
+import { useShareDialog } from "@/components/items/share-dialog-provider";
 import { getItemTypeIcon } from "@/lib/constants/item-types";
 
 /**
@@ -28,7 +29,13 @@ function strictFilter(value: string, search: string): number {
 export default function CommandPalette() {
   const { isOpen, closeSearch, searchData, isLoading } = useSearch();
   const { openDrawer } = useItemDrawer();
+  const { openShareDialog } = useShareDialog();
   const router = useRouter();
+
+  const handleShare = useCallback(() => {
+    closeSearch();
+    openShareDialog();
+  }, [closeSearch, openShareDialog]);
 
   const handleItemSelect = useCallback(
     (itemId: string) => {
@@ -64,6 +71,19 @@ export default function CommandPalette() {
         ) : (
           <>
             <CommandEmpty>No results found.</CommandEmpty>
+
+            <CommandGroup heading="Actions">
+              <CommandItem
+                value="action-share-a-snippet"
+                onSelect={handleShare}
+                className="cursor-pointer"
+              >
+                <Share2 className="h-4 w-4 text-muted-foreground" />
+                <span>Share a snippet</span>
+              </CommandItem>
+            </CommandGroup>
+
+            {searchData && searchData.items.length > 0 && <CommandSeparator />}
 
             {/* Items Section */}
             {searchData && searchData.items.length > 0 && (

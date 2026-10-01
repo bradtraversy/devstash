@@ -94,3 +94,90 @@ export function languageLabel(languageId: string | null | undefined): string {
   if (!languageId) return PLAIN_TEXT_LABEL;
   return LANGUAGES.find((language) => language.value === languageId)?.label ?? languageId;
 }
+
+const GUESS_SAMPLE_LENGTH = 2000;
+
+type GuessRule = { id: string; test: (sample: string, content: string) => boolean };
+
+function isJsonDocument(content: string): boolean {
+  const trimmed = content.trim();
+  if (!/^[[{]/.test(trimmed)) return false;
+  try {
+    JSON.parse(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function looksLikeYaml(sample: string): boolean {
+  if (/[{};]/.test(sample)) return false;
+  const lines = sample.split('\n');
+  if (/^---\s*$/.test(lines[0] ?? '')) return true;
+  return lines.filter((line) => /^\s*[\w.-]+:(\s|$)/.test(line)).length >= 3;
+}
+
+function looksLikeDockerfile(sample: string): boolean {
+  const first = sample.split('\n').find((line) => line.trim() !== '') ?? '';
+  return /^FROM\s+\S/.test(first) && /^RUN\s/m.test(sample);
+}
+
+// Ordered so the specific rules win: TypeScript before JavaScript, SCSS before CSS, Go and Rust
+// before the JavaScript keywords they share.
+const GUESS_RULES: GuessRule[] = [
+  { id: 'bash', test: (s) => /^#!.*\b(bash|sh|zsh)\b/.test(s) },
+  { id: 'python', test: (s) => /^#!.*\bpython/.test(s) },
+  { id: 'javascript', test: (s) => /^#!.*\bnode\b/.test(s) },
+  { id: 'php', test: (s) => /^\s*<\?php/.test(s) },
+  { id: 'html', test: (s) => /<!doctype html|<html[\s>]/i.test(s) },
+  { id: 'go', test: (s) => /^\s*package main\b/m.test(s) || (/\bfunc\s+\w+\s*\(/.test(s) && /:=/.test(s)) },
+  { id: 'rust', test: (s) => /\bfn main\s*\(\)/.test(s) || /\blet mut\b/.test(s) || /\bprintln!\s*\(/.test(s) },
+  { id: 'cpp', test: (s) => /^\s*#include\s*</m.test(s) && /\bstd::/.test(s) },
+  { id: 'c', test: (s) => /^\s*#include\s*</m.test(s) },
+  { id: 'csharp', test: (s) => /^\s*using System\b/m.test(s) },
+  { id: 'java', test: (s) => /public static void main/.test(s) || /System\.out\./.test(s) },
+  { id: 'python', test: (s) => /^\s*def \w+\s*\(.*\)\s*(->\s*[^:]+)?:/m.test(s) || /^\s*from \w[\w.]* import /m.test(s) },
+  {
+    id: 'typescript',
+    test: (s) =>
+      /^\s*(export\s+)?interface \w+(<[^>]*>)?\s*\{/m.test(s) ||
+      /:\s*(string|number|boolean)\b/.test(s) ||
+      /^\s*import type\b/m.test(s),
+  },
+  {
+    id: 'javascript',
+    test: (s) =>
+      /^\s*import React\b/m.test(s) ||
+      /\brequire\s*\(/.test(s) ||
+      /\bconsole\.log\s*\(/.test(s) ||
+      /=>\s*\{/.test(s) ||
+      /^\s*(async\s+)?function\s+\w+\s*\(/m.test(s),
+  },
+  { id: 'sql', test: (s) => /^\s*select\b[\s\S]*?\bfrom\b/im.test(s) || /\bcreate table\b/i.test(s) },
+  { id: 'json', test: (_, content) => isJsonDocument(content) },
+  { id: 'dockerfile', test: (s) => looksLikeDockerfile(s) },
+  { id: 'graphql', test: (s) => /^\s*(query|mutation)\b[^{]*\{/m.test(s) || (/^\s*type \w+\s*\{/m.test(s) && /!/.test(s)) },
+  { id: 'scss', test: (s) => /^\s*\$[\w-]+\s*:/m.test(s) || /@mixin\b/.test(s) || /@include\b/.test(s) },
+  { id: 'css', test: (s) => /(^|\n)\s*[^{}\n]+\{\s*\n?\s*[\w-]+\s*:\s*[^;{}]+;/.test(s) },
+  { id: 'yaml', test: (s) => looksLikeYaml(s) },
+  { id: 'bash', test: (s) => /^\$ /m.test(s) },
+];
+
+/**
+ * Best guess at the language of pasted content, or null when nothing matches. Only
+ * high-confidence shapes are tested; prose and ambiguous code come back null.
+ */
+export function guessLanguage(content: string): string | null {
+  if (!content.trim()) return null;
+  const sample = content.slice(0, GUESS_SAMPLE_LENGTH);
+  return GUESS_RULES.find((rule) => rule.test(sample, content))?.id ?? null;
+}
+
+export type ShareKind = 'snippet' | 'command';
+
+/** Title used when a shared snippet is created without one. */
+export function defaultShareTitle(kind: ShareKind, language: string | null): string {
+  if (kind === 'command') return 'Command';
+  if (!language || language === 'plaintext') return 'Snippet';
+  return `${languageLabel(language)} snippet`;
+}

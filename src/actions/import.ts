@@ -301,6 +301,7 @@ export async function importData(
         data: {
           userId,
           itemTypeId,
+          shortId: generateShortId(),
           title: item.title,
           content: item.content,
           language: item.language,

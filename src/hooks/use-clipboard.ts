@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 interface UseClipboardReturn {
   copied: boolean;
-  copy: (text: string) => Promise<void>;
+  copy: (text: string, message?: string) => Promise<void>;
 }
 
 /**
@@ -15,11 +15,11 @@ interface UseClipboardReturn {
 export function useClipboard(): UseClipboardReturn {
   const [copied, setCopied] = useState(false);
 
-  const copy = useCallback(async (text: string) => {
+  const copy = useCallback(async (text: string, message = "Copied to clipboard") => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast.success("Copied to clipboard");
+      toast.success(message);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Failed to copy");

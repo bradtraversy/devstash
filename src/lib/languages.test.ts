@@ -3,7 +3,9 @@ import { LANGUAGES } from '@/lib/constants/editor';
 import {
   FENCE_LANGUAGE_ALIASES,
   SHIKI_LANGUAGES,
+  defaultShareTitle,
   fenceLanguage,
+  guessLanguage,
   languageLabel,
   shikiLanguage,
   PLAIN_TEXT_LABEL,
@@ -75,5 +77,83 @@ describe('languageLabel', () => {
   it('falls back to the raw id or Plain Text', () => {
     expect(languageLabel('zig')).toBe('zig');
     expect(languageLabel(null)).toBe(PLAIN_TEXT_LABEL);
+  });
+});
+
+describe('guessLanguage', () => {
+  const cases: [string, string][] = [
+    ['#!/usr/bin/env bash\necho hi', 'bash'],
+    ['#!/usr/bin/env python3\nprint(1)', 'python'],
+    ['#!/usr/bin/env node\nconsole.log(1)', 'javascript'],
+    ['<?php\necho "hi";', 'php'],
+    ['<!DOCTYPE html>\n<html><body></body></html>', 'html'],
+    ['package main\n\nimport "fmt"\n\nfunc main() { fmt.Println("hi") }', 'go'],
+    ['func add(a int, b int) int {\n\tsum := a + b\n\treturn sum\n}', 'go'],
+    ['fn main() {\n    let mut x = 1;\n    println!("{}", x);\n}', 'rust'],
+    ['#include <iostream>\nint main() { std::cout << "hi"; }', 'cpp'],
+    ['#include <stdio.h>\nint main() { printf("hi"); }', 'c'],
+    ['using System;\nclass P { static void Main() {} }', 'csharp'],
+    ['public class Main {\n  public static void main(String[] args) {}\n}', 'java'],
+    ['def add(a, b):\n    return a + b', 'python'],
+    ['from pathlib import Path\nprint(Path.cwd())', 'python'],
+    ['interface User {\n  name: string;\n}', 'typescript'],
+    ['import type { Foo } from "./foo";', 'typescript'],
+    ['const add = (a, b) => {\n  return a + b;\n};', 'javascript'],
+    ['function greet(name) {\n  console.log(name);\n}', 'javascript'],
+    ['import React from "react";', 'javascript'],
+    ['SELECT id, name\nFROM users\nWHERE id = 1;', 'sql'],
+    ['CREATE TABLE users (id serial primary key);', 'sql'],
+    ['{\n  "name": "devstash",\n  "private": true\n}', 'json'],
+    ['[1, 2, 3]', 'json'],
+    ['FROM node:24\nRUN npm ci\nCMD ["node", "server.js"]', 'dockerfile'],
+    ['query {\n  user(id: 1) {\n    name\n  }\n}', 'graphql'],
+    ['type User {\n  id: ID!\n  name: String\n}', 'graphql'],
+    ['$primary: #333;\n.btn {\n  color: $primary;\n}', 'scss'],
+    ['@mixin flex { display: flex; }', 'scss'],
+    ['.btn {\n  color: red;\n  padding: 4px;\n}', 'css'],
+    ['---\nname: devstash\nversion: 1\n', 'yaml'],
+    ['name: devstash\nversion: 1\nprivate: true\n', 'yaml'],
+    ['$ npm install\n$ npm run dev', 'bash'],
+  ];
+
+  it.each(cases)('guesses %j as %s', (content, expected) => {
+    expect(guessLanguage(content)).toBe(expected);
+  });
+
+  it('prefers the specific rule when two match', () => {
+    expect(guessLanguage('interface Props { onClick: () => void }\nconst C = () => {}')).toBe('typescript');
+    expect(guessLanguage('$spacing: 4px;\n.a { margin: $spacing; }')).toBe('scss');
+    expect(guessLanguage('package main\nfunc main() { x := func() {} }')).toBe('go');
+  });
+
+  it('returns null for prose, empty input, and ambiguous text', () => {
+    expect(guessLanguage('')).toBeNull();
+    expect(guessLanguage('   \n  ')).toBeNull();
+    expect(guessLanguage('Remember to select the right branch from the list before you push.')).toBeNull();
+    expect(guessLanguage('x = 1')).toBeNull();
+  });
+
+  it('only returns ids the editor offers', () => {
+    const offered = new Set(LANGUAGES.map((language) => language.value));
+    for (const [content] of cases) {
+      const guess = guessLanguage(content);
+      expect(guess === null || offered.has(guess)).toBe(true);
+    }
+  });
+});
+
+describe('defaultShareTitle', () => {
+  it('names a snippet by its language', () => {
+    expect(defaultShareTitle('snippet', 'typescript')).toBe('TypeScript snippet');
+  });
+
+  it('falls back to Snippet for plain text or no language', () => {
+    expect(defaultShareTitle('snippet', null)).toBe('Snippet');
+    expect(defaultShareTitle('snippet', 'plaintext')).toBe('Snippet');
+  });
+
+  it('names a command Command whatever the language', () => {
+    expect(defaultShareTitle('command', 'bash')).toBe('Command');
+    expect(defaultShareTitle('command', null)).toBe('Command');
   });
 });

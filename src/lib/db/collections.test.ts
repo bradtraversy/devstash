@@ -39,7 +39,8 @@ vi.mock('@/lib/prisma', () => {
   return { prisma };
 });
 
-vi.mock('@/lib/db/users', () => ({
+vi.mock('@/lib/db/users', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/db/users')>()),
   ensureUserHandle: vi.fn(),
 }));
 

@@ -3,12 +3,16 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, Pin, Copy, Check } from 'lucide-react';
+import { Star, Pin, Copy, Check, Link2 } from 'lucide-react';
 import { getItemTypeIcon } from '@/lib/constants/item-types';
 import { formatRelativeDate } from '@/lib/utils/date';
 import { useItemDrawer } from '@/components/items/item-drawer-provider';
 import { useState } from 'react';
 import type { ItemWithType } from '@/lib/db/items';
+import { useClipboard } from '@/hooks/use-clipboard';
+import { useOrigin } from '@/hooks/use-origin';
+import { publicShortPath } from '@/lib/public/paths';
+import VisibilityMark from '@/components/items/visibility-mark';
 
 interface ItemCardProps {
   item: ItemWithType;
@@ -16,6 +20,8 @@ interface ItemCardProps {
 
 export default function ItemCard({ item }: ItemCardProps) {
   const { openDrawer } = useItemDrawer();
+  const origin = useOrigin();
+  const { copied: linkCopied, copy: copyLink } = useClipboard();
   const [copied, setCopied] = useState(false);
   const IconComponent = getItemTypeIcon(item.itemType.icon);
   const iconColor = item.itemType.color;
@@ -24,6 +30,12 @@ export default function ItemCard({ item }: ItemCardProps) {
   // Determine if item has copyable content
   const copyableContent = item.content || item.url;
   const canCopy = !!copyableContent;
+  const isShared = item.visibility !== 'PRIVATE';
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    copyLink(`${origin}${publicShortPath(item.shortId)}`, 'Link copied');
+  };
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -62,6 +74,7 @@ export default function ItemCard({ item }: ItemCardProps) {
             {item.isPinned && (
               <Pin className="h-4 w-4 shrink-0 text-muted-foreground" />
             )}
+            <VisibilityMark visibility={item.visibility} />
           </div>
           {item.description && (
             <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
@@ -86,12 +99,28 @@ export default function ItemCard({ item }: ItemCardProps) {
           ))}
         </div>
       )}
+      {isShared && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`absolute bottom-3 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity ${canCopy ? 'right-10' : 'right-2'}`}
+          onClick={handleCopyLink}
+          title="Copy link"
+        >
+          {linkCopied ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Link2 className="h-4 w-4 text-muted-foreground" />
+          )}
+        </Button>
+      )}
       {canCopy && (
         <Button
           variant="ghost"
           size="icon"
           className="absolute bottom-3 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={handleCopy}
+          title="Copy content"
         >
           {copied ? (
             <Check className="h-4 w-4 text-green-500" />

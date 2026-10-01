@@ -1,16 +1,32 @@
-# Current Feature
+# Current Feature: Item Sharing
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Item gains `visibility` (reusing the CollectionVisibility enum), a unique 8-character `shortId`, and `publishedAt`; one migration backfills short ids for every existing item with the phase 1 loop, treating ids present on collections as duplicates
+- Every item insert sets a short id (createItem with the one-retry wrapper and a cross-table check against collections, import, seed); createItem accepts an optional visibility, stamping publishedAt and ensuring the owner's handle when not private
+- setItemVisibility query and server action mirroring the collection version, with the handle-collision retry shared through a helper in users.ts and revalidation of the before-and-after path union
+- `/s/{shortId}` becomes a page: malformed id 404 before any query, case variant permanentRedirect, collection redirect (307) to its readable URL, item rendered through PublicItemView, not-found page; `/s/{shortId}/raw` returns text items as text/plain (commands through commandCopyText), 301 for collections, 404 for link/image/file
+- getPublicItem and resolveShortLink in src/lib/db/public.ts with the visibility filter inside; publicShortPath and publicShortRawPath in paths.ts; path lookups include `/s/{shortId}` for non-private items and collections
+- PublicItemView and a standalone mode on ItemBlock (h1 title, no anchor); publicItemMetadata with description fallback, canonical, Open Graph, and noindex for unlisted
+- Share dialog provider mounted in DashboardLayout; Share button in the top bar, `Share snippet` in the mobile menu, and a `Share a snippet` action in the command palette; ShareSnippetDialog with Code/Command toggle, textarea, language select following guessLanguage until touched, optional title with defaultShareTitle placeholder, Create link, and a result state that copies the link
+- guessLanguage and defaultShareTitle in src/lib/languages.ts with tests per rule
+- Item drawer: Share button in the read-mode action bar (publish as unlisted and copy, or copy when already shared; emerald when shared; hidden for file items) and a visibility select plus short link row under the badges when shared
+- ItemWithType and ItemDetail carry visibility and shortId; VisibilityMark component on ItemCard, FavoriteItemRow, FileListRow, ImageThumbnailCard, and CollectionCard; Copy link hover button on ItemCard; Copy link or Share entry in the CollectionCard dropdown
+- useClipboard copy accepts an optional toast message; the private option description becomes `Only you can see this`
+- Tests listed in the spec; `npm run verify` and the migrate diff drift check pass; scripted backfill check on the Docker restore; browser check
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: context/features/item-sharing-spec.md. Reverses the product spec's per-item visibility non-goal (recorded in the vault SPEC.md, 2026-09-30).
+- Branch `feature/item-sharing` already exists off main; one implementation commit, then a pull request. Do not run the complete step's merge or push.
+- Migration runs on the Docker restore (`devstash-db`, DATABASE_URL in .env) and is checked against an empty database; never against Neon production. migrate dev refuses non-interactive prompts: use migrate diff --script, hand-write the SQL, apply with migrate deploy.
+- `/s/{shortId}` serves items directly and redirects collections; the status for collections changes from 302 to 307.
+- Plain textarea in the share dialog, not Monaco. No Share controls on file items until phase 5. The free-tier cap still counts shared snippets.
+- Out of scope: generated Open Graph images, Save to your stash, cap removal, profile page, homepage, public file downloads, item slugs, visibility in export/import.
 
 ## History
 

@@ -5,6 +5,7 @@ import { useItemDrawer } from '@/components/items/item-drawer-provider';
 import { formatRelativeDate } from '@/lib/utils/date';
 import { formatFileSize } from '@/lib/r2';
 import type { ItemWithType } from '@/lib/db/items';
+import VisibilityMark from '@/components/items/visibility-mark';
 
 interface FileListRowProps {
   item: ItemWithType;
@@ -105,6 +106,7 @@ export default function FileListRow({ item }: FileListRowProps) {
             {item.isPinned && (
               <Pin className="h-4 w-4 shrink-0 text-muted-foreground" />
             )}
+            <VisibilityMark visibility={item.visibility} />
           </div>
           {item.fileName && (
             <p className="text-sm text-muted-foreground truncate">

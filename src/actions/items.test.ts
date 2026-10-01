@@ -13,6 +13,7 @@ vi.mock('@/lib/db/items', () => ({
   createItem: vi.fn(),
   toggleItemFavorite: vi.fn(),
   toggleItemPin: vi.fn(),
+  setItemVisibility: vi.fn(),
   VALID_ITEM_TYPES: ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'] as const,
   isFileType: (name: string) => name === 'file' || name === 'image',
   UnknownCollectionError: class UnknownCollectionError extends Error {},
@@ -29,9 +30,9 @@ vi.mock('@/lib/db/public', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-import { updateItem, deleteItem, createItem, toggleItemFavorite, toggleItemPin } from './items';
+import { updateItem, deleteItem, createItem, toggleItemFavorite, toggleItemPin, setItemVisibility } from './items';
 import { auth } from '@/auth';
-import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery, toggleItemPin as toggleItemPinQuery, UnknownCollectionError } from '@/lib/db/items';
+import { updateItem as updateItemQuery, deleteItem as deleteItemQuery, createItem as createItemQuery, toggleItemFavorite as toggleItemFavoriteQuery, toggleItemPin as toggleItemPinQuery, setItemVisibility as setItemVisibilityQuery, UnknownCollectionError } from '@/lib/db/items';
 import { canCreateItem } from '@/lib/usage';
 import { publicPathsForItem } from '@/lib/db/public';
 import { revalidatePath } from 'next/cache';
@@ -42,6 +43,7 @@ const mockDeleteItemQuery = vi.mocked(deleteItemQuery);
 const mockCreateItemQuery = vi.mocked(createItemQuery);
 const mockToggleItemFavoriteQuery = vi.mocked(toggleItemFavoriteQuery);
 const mockToggleItemPinQuery = vi.mocked(toggleItemPinQuery);
+const mockSetItemVisibilityQuery = vi.mocked(setItemVisibilityQuery);
 const mockCanCreateItem = vi.mocked(canCreateItem);
 const mockPublicPathsForItem = vi.mocked(publicPathsForItem);
 const mockRevalidatePath = vi.mocked(revalidatePath);
@@ -142,6 +144,8 @@ describe('updateItem server action', () => {
       fileSize: null,
       isFavorite: false,
       isPinned: false,
+      visibility: 'PRIVATE' as const,
+      shortId: 'abc12345',
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
       tags: ['react', 'hooks'],
       collections: [],
@@ -190,6 +194,8 @@ describe('updateItem server action', () => {
       fileSize: null,
       isFavorite: false,
       isPinned: false,
+      visibility: 'PRIVATE' as const,
+      shortId: 'abc12345',
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
       tags: ['valid'],
       collections: [],
@@ -236,6 +242,8 @@ describe('updateItem server action', () => {
       fileSize: null,
       isFavorite: false,
       isPinned: false,
+      visibility: 'PRIVATE' as const,
+      shortId: 'abc12345',
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
       tags: [],
       collections: [{ id: 'coll-1', name: 'React', visibility: 'PRIVATE' as const }],
@@ -331,6 +339,58 @@ describe('createItem server action', () => {
     mockCanCreateItem.mockResolvedValue(true);
   });
 
+  it('passes the visibility through to the query', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    });
+    mockCreateItemQuery.mockResolvedValue({ id: 'item-123' } as never);
+
+    await createItem({
+      typeName: 'snippet',
+      title: 'Shared',
+      description: null,
+      content: 'const x = 1;',
+      url: null,
+      language: null,
+      tags: [],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+      visibility: 'UNLISTED',
+    });
+
+    expect(mockCreateItemQuery).toHaveBeenCalledWith(
+      'user-123',
+      expect.objectContaining({ visibility: 'UNLISTED' })
+    );
+  });
+
+  it('rejects an unknown visibility', async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    });
+
+    const result = await createItem({
+      typeName: 'snippet',
+      title: 'Shared',
+      description: null,
+      content: 'const x = 1;',
+      url: null,
+      language: null,
+      tags: [],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+      visibility: 'EVERYONE' as never,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.fieldErrors?.visibility).toBeDefined();
+    expect(mockCreateItemQuery).not.toHaveBeenCalled();
+  });
+
   describe('file references', () => {
     const PUBLIC = 'https://pub-test.r2.dev';
     const createdFile = {
@@ -346,6 +406,8 @@ describe('createItem server action', () => {
       fileSize: 1024,
       isFavorite: false,
       isPinned: false,
+      visibility: 'PRIVATE' as const,
+      shortId: 'abc12345',
       itemType: { name: 'file', icon: 'File', color: '#6b7280' },
       tags: [],
       collections: [],
@@ -642,6 +704,8 @@ describe('createItem server action', () => {
       fileSize: null,
       isFavorite: false,
       isPinned: false,
+      visibility: 'PRIVATE' as const,
+      shortId: 'abc12345',
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
       tags: ['react'],
       collections: [],
@@ -698,6 +762,8 @@ describe('createItem server action', () => {
       fileSize: null,
       isFavorite: false,
       isPinned: false,
+      visibility: 'PRIVATE' as const,
+      shortId: 'abc12345',
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
       tags: ['valid', 'another'],
       collections: [],
@@ -752,6 +818,8 @@ describe('createItem server action', () => {
       fileSize: null,
       isFavorite: false,
       isPinned: false,
+      visibility: 'PRIVATE' as const,
+      shortId: 'abc12345',
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
       tags: [],
       collections: [{ id: 'coll-1', name: 'React', visibility: 'PRIVATE' as const }],
@@ -1007,6 +1075,8 @@ describe('public page revalidation from item actions', () => {
     fileSize: null,
     isFavorite: false,
     isPinned: false,
+    visibility: 'PRIVATE' as const,
+    shortId: 'abc12345',
     itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
     tags: [],
     collections: [],
@@ -1119,5 +1189,84 @@ describe('public page revalidation from item actions', () => {
 
     expect(mockPublicPathsForItem).not.toHaveBeenCalled();
     expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe('setItemVisibility server action', () => {
+  const session = {
+    user: { id: 'user-123', isPro: false },
+    expires: new Date().toISOString(),
+  };
+  const update = { visibility: 'UNLISTED' as const, publishedAt: new Date(), handle: 'brad' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuth.mockResolvedValue(session);
+  });
+
+  it('returns error when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    const result = await setItemVisibility({ id: 'item-123', visibility: 'UNLISTED' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Unauthorized');
+    expect(mockSetItemVisibilityQuery).not.toHaveBeenCalled();
+  });
+
+  it('returns validation errors for a missing id or an unknown visibility', async () => {
+    const noId = await setItemVisibility({ id: '', visibility: 'UNLISTED' });
+    expect(noId.success).toBe(false);
+    expect(noId.fieldErrors?.id).toBeDefined();
+
+    const badValue = await setItemVisibility({ id: 'item-123', visibility: 'EVERYONE' as never });
+    expect(badValue.success).toBe(false);
+    expect(badValue.fieldErrors?.visibility).toBeDefined();
+
+    expect(mockSetItemVisibilityQuery).not.toHaveBeenCalled();
+  });
+
+  it('returns error when the item is not found or not owned', async () => {
+    mockSetItemVisibilityQuery.mockResolvedValue(null);
+
+    const result = await setItemVisibility({ id: 'item-123', visibility: 'UNLISTED' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Item not found or access denied');
+    expect(mockSetItemVisibilityQuery).toHaveBeenCalledWith('item-123', 'user-123', 'UNLISTED');
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('returns the update and revalidates the paths from before and after', async () => {
+    mockSetItemVisibilityQuery.mockResolvedValue(update);
+    mockPublicPathsForItem.mockResolvedValueOnce([]).mockResolvedValueOnce(['/s/abc12345']);
+
+    const result = await setItemVisibility({ id: 'item-123', visibility: 'UNLISTED' });
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual(update);
+    expect(mockPublicPathsForItem).toHaveBeenCalledTimes(2);
+    expect(mockPublicPathsForItem).toHaveBeenCalledWith('item-123');
+    expect(revalidated()).toEqual(['/s/abc12345']);
+  });
+
+  it('clears the old page when an item goes private', async () => {
+    mockSetItemVisibilityQuery.mockResolvedValue({ ...update, visibility: 'PRIVATE' });
+    mockPublicPathsForItem
+      .mockResolvedValueOnce(['/s/abc12345', '/brad/react'])
+      .mockResolvedValueOnce(['/brad/react']);
+
+    await setItemVisibility({ id: 'item-123', visibility: 'PRIVATE' });
+
+    expect(revalidated()).toEqual(['/s/abc12345', '/brad/react']);
+  });
+
+  it('returns a failure result when the query throws', async () => {
+    mockSetItemVisibilityQuery.mockRejectedValue(new Error('boom'));
+
+    const result = await setItemVisibility({ id: 'item-123', visibility: 'PUBLIC' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Failed to update visibility');
   });
 });

@@ -2,9 +2,11 @@ import { prisma } from '@/lib/prisma';
 import { collectionSlugBase, uniqueSlug } from '@/lib/slugs';
 import { generateShortId } from '@/lib/short-id';
 import { isUniqueViolation } from '@/lib/db/errors';
-import { ensureUserHandle } from '@/lib/db/users';
+import { ensureUserHandle, retryOnHandleCollision } from '@/lib/db/users';
 import { COLLECTION_ITEM_ORDER } from '@/lib/db/items';
-import type { CollectionVisibility } from '@/lib/constants/visibility';
+import type { CollectionVisibility, VisibilityUpdate } from '@/lib/constants/visibility';
+
+export type { VisibilityUpdate };
 
 // Maximum allowed limit for queries to prevent abuse
 const MAX_QUERY_LIMIT = 100;
@@ -38,6 +40,8 @@ export interface CollectionWithTypes {
   id: string;
   name: string;
   slug: string;
+  shortId: string;
+  visibility: CollectionVisibility;
   description: string | null;
   isFavorite: boolean;
   itemCount: number;
@@ -167,6 +171,8 @@ export async function getRecentCollections(
       id: collection.id,
       name: collection.name,
       slug: collection.slug,
+      shortId: collection.shortId,
+      visibility: collection.visibility,
       description: collection.description,
       isFavorite: collection.isFavorite,
       itemCount: collection._count.items,
@@ -374,6 +380,8 @@ export async function getAllCollections(
         id: collection.id,
         name: collection.name,
         slug: collection.slug,
+        shortId: collection.shortId,
+        visibility: collection.visibility,
         description: collection.description,
         isFavorite: collection.isFavorite,
         itemCount: collection._count.items,
@@ -561,12 +569,6 @@ export async function updateCollection(
   });
 }
 
-export interface VisibilityUpdate {
-  visibility: CollectionVisibility;
-  publishedAt: Date | null;
-  handle: string | null;
-}
-
 async function applyVisibility(
   collectionId: string,
   userId: string,
@@ -614,13 +616,7 @@ export async function setCollectionVisibility(
   userId: string,
   visibility: CollectionVisibility
 ): Promise<VisibilityUpdate | null> {
-  try {
-    return await applyVisibility(collectionId, userId, visibility);
-  } catch (error) {
-    // Two first publishes generating the same handle at once; the second attempt sees the first.
-    if (!isUniqueViolation(error)) throw error;
-    return applyVisibility(collectionId, userId, visibility);
-  }
+  return retryOnHandleCollision(() => applyVisibility(collectionId, userId, visibility));
 }
 
 export type MoveDirection = 'up' | 'down';

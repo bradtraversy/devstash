@@ -4,6 +4,7 @@ import {
   mergeWithDefaults,
 } from '@/lib/constants/editor';
 import { dedupePrefix, handleBase, uniqueSlug } from '@/lib/slugs';
+import { isUniqueViolation } from '@/lib/db/errors';
 
 export interface DashboardUser {
   id: string;
@@ -114,6 +115,19 @@ export async function ensureUserHandle(client: HandleClient, userId: string): Pr
 
   await client.user.update({ where: { id: userId }, data: { handle } });
   return handle;
+}
+
+/**
+ * Runs a first-publish write a second time when two of them generated the same handle at
+ * once; the second attempt sees the handle the first one set.
+ */
+export async function retryOnHandleCollision<T>(write: () => Promise<T>): Promise<T> {
+  try {
+    return await write();
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error;
+    return write();
+  }
 }
 
 /**

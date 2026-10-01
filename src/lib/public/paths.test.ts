@@ -4,6 +4,8 @@ import {
   publicCollectionPath,
   publicMarkdownPath,
   publicRawPath,
+  publicShortPath,
+  publicShortRawPath,
   siteOrigin,
 } from './paths';
 
@@ -43,5 +45,12 @@ describe('normalizePublicSegment', () => {
     expect(normalizePublicSegment('.well-known')).toBeNull();
     expect(normalizePublicSegment('a%2e')).toBeNull();
     expect(normalizePublicSegment('a'.repeat(64))).toBeNull();
+  });
+});
+
+describe('short link paths', () => {
+  it('builds the item page and raw paths from the short id', () => {
+    expect(publicShortPath('abc12345')).toBe('/s/abc12345');
+    expect(publicShortRawPath('abc12345')).toBe('/s/abc12345/raw');
   });
 });

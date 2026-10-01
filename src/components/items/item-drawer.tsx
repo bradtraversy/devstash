@@ -46,8 +46,21 @@ import { getItemTypeIcon } from "@/lib/constants/item-types";
 import { LANGUAGES } from "@/lib/constants/editor";
 import { useItemDrawer } from "./item-drawer-provider";
 import { useClipboard } from "@/hooks/use-clipboard";
+import { useOrigin } from "@/hooks/use-origin";
+import { publicShortPath } from "@/lib/public/paths";
+import {
+  VISIBILITY_OPTIONS,
+  getVisibilityOption,
+  type CollectionVisibility,
+} from "@/lib/constants/visibility";
 import { toast } from "sonner";
-import { updateItem, deleteItem, toggleItemFavorite, toggleItemPin } from "@/actions/items";
+import {
+  updateItem,
+  deleteItem,
+  toggleItemFavorite,
+  toggleItemPin,
+  setItemVisibility,
+} from "@/actions/items";
 import { getUserCollections } from "@/actions/collections";
 import DeleteItemDialog from "./delete-item-dialog";
 import CodeEditor from "./code-editor";
@@ -99,10 +112,12 @@ export default function ItemDrawer() {
   const router = useRouter();
   const { isOpen, item, isLoading, isPro, closeDrawer, setItem } = useItemDrawer();
   const { copy } = useClipboard();
+  const origin = useOrigin();
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Form state
@@ -135,6 +150,44 @@ export default function ItemDrawer() {
       setShowDeleteDialog(false);
     }
   }, [isOpen]);
+
+  const shareLink = item ? `${origin}${publicShortPath(item.shortId)}` : "";
+  const isShared = !!item && item.visibility !== "PRIVATE";
+  // File pages have no download yet, so a shared file would only confuse the recipient.
+  const canShare = !!item && item.itemType.name !== "file";
+
+  const applyVisibility = async (visibility: CollectionVisibility) => {
+    if (!item) return false;
+    setIsSharing(true);
+    const result = await setItemVisibility({ id: item.id, visibility });
+    setIsSharing(false);
+
+    if (result.success && result.data) {
+      setItem({ ...item, visibility: result.data.visibility });
+      router.refresh();
+      return true;
+    }
+    toast.error(result.error || "Failed to update visibility");
+    return false;
+  };
+
+  const handleShare = async () => {
+    if (!item) return;
+    if (isShared) {
+      copy(shareLink, "Link copied");
+      return;
+    }
+    if (await applyVisibility("UNLISTED")) {
+      copy(shareLink, "Link copied. Anyone with it can view this item.");
+    }
+  };
+
+  const handleVisibilityChange = async (value: string) => {
+    const next = value as CollectionVisibility;
+    if (await applyVisibility(next)) {
+      toast.success(`Item is now ${getVisibilityOption(next).label.toLowerCase()}`);
+    }
+  };
 
   const handleToggleFavorite = async () => {
     if (!item) return;
@@ -351,6 +404,35 @@ export default function ItemDrawer() {
                       </Badge>
                     )}
                   </div>
+                  {!isEditing && isShared && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Select
+                        value={item.visibility}
+                        onValueChange={handleVisibilityChange}
+                        disabled={isSharing}
+                      >
+                        <SelectTrigger className="h-8 w-32 text-xs" aria-label="Visibility">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VISIBILITY_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <a
+                        href={shareLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="min-w-0 truncate font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
+                        title="Open the public page"
+                      >
+                        {shareLink}
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
               <SheetDescription className="sr-only">
@@ -411,6 +493,21 @@ export default function ItemDrawer() {
                   />
                   Pin
                 </button>
+                {canShare && (
+                  <button
+                    onClick={handleShare}
+                    disabled={isSharing}
+                    className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-50"
+                    style={
+                      isShared
+                        ? { color: "#10b981" }
+                        : { color: "var(--color-muted-foreground)" }
+                    }
+                  >
+                    <Link2 className="h-4 w-4" />
+                    Share
+                  </button>
+                )}
                 <button
                   onClick={handleCopy}
                   className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted"

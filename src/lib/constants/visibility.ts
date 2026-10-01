@@ -9,7 +9,7 @@ export interface VisibilityOption {
 }
 
 export const VISIBILITY_OPTIONS: VisibilityOption[] = [
-  { value: 'PRIVATE', label: 'Private', description: 'Only you can see this collection' },
+  { value: 'PRIVATE', label: 'Private', description: 'Only you can see this' },
   {
     value: 'UNLISTED',
     label: 'Unlisted',
@@ -21,6 +21,13 @@ export const VISIBILITY_OPTIONS: VisibilityOption[] = [
     description: 'Anyone can view it and search engines may index it',
   },
 ];
+
+/** Result of a visibility write; handle is set when the write made the owner's handle. */
+export interface VisibilityUpdate {
+  visibility: CollectionVisibility;
+  publishedAt: Date | null;
+  handle: string | null;
+}
 
 export function getVisibilityOption(value: CollectionVisibility): VisibilityOption {
   return VISIBILITY_OPTIONS.find((option) => option.value === value) ?? VISIBILITY_OPTIONS[0];
