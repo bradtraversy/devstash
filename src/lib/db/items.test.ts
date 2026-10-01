@@ -5,6 +5,7 @@ import {
   updateItem,
   createItem,
   getItemsByCollection,
+  setItemVisibility,
   UnknownCollectionError,
 } from './items';
 
@@ -13,6 +14,7 @@ vi.mock('@/lib/prisma', () => {
   const prisma = {
     item: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       delete: vi.fn(),
       update: vi.fn(),
       create: vi.fn(),
@@ -22,6 +24,12 @@ vi.mock('@/lib/prisma', () => {
     },
     collection: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    user: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
     },
     itemCollection: {
       findMany: vi.fn(),
@@ -339,6 +347,7 @@ describe('createItem collection membership', () => {
     mockItemTypeFindFirst.mockResolvedValue({ id: 'type-1', name: 'snippet' } as never);
     mockItemCreate.mockResolvedValue({ ...basePrismaItem, tags: [], collections: [] } as never);
     mockMembershipFindFirst.mockResolvedValue(null);
+    vi.mocked(prisma.collection.findUnique).mockResolvedValue(null);
   });
 
   const payload = {
@@ -379,7 +388,10 @@ describe('createItem collection membership', () => {
   it('resolves collections, reads positions, and inserts on the transaction client', async () => {
     // A distinct tx client proves the reads and the insert all run inside the transaction.
     const tx = {
-      collection: { findMany: vi.fn().mockResolvedValue([{ id: 'a' }, { id: 'b' }]) },
+      collection: {
+        findMany: vi.fn().mockResolvedValue([{ id: 'a' }, { id: 'b' }]),
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
       itemCollection: {
         findFirst: vi.fn().mockResolvedValueOnce({ position: 2 }).mockResolvedValueOnce(null),
       },
@@ -455,5 +467,180 @@ describe('getItemsByCollection', () => {
     expect(mockMembershipFindMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 40, take: 20 }));
     expect(result.totalPages).toBe(3);
     expect(result.currentPage).toBe(3);
+  });
+});
+
+describe('createItem short id and visibility', () => {
+  const mockCollectionFindUnique = vi.mocked(prisma.collection.findUnique);
+  const mockUserFindUnique = vi.mocked(prisma.user.findUnique);
+  const mockUserUpdate = vi.mocked(prisma.user.update);
+
+  const payload = {
+    typeName: 'snippet' as const,
+    title: 'New',
+    description: null,
+    content: 'code',
+    url: null,
+    language: 'typescript',
+    tags: [],
+  };
+
+  const createdData = () => vi.mocked(prisma.item.create).mock.calls.at(-1)![0].data;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(prisma.$transaction).mockImplementation((async (fn: (tx: typeof prisma) => Promise<unknown>) =>
+      fn(prisma)) as never);
+    vi.mocked(prisma.itemType.findFirst).mockResolvedValue({ id: 'type-1', name: 'snippet' } as never);
+    vi.mocked(prisma.item.create).mockResolvedValue({ ...basePrismaItem, tags: [], collections: [] } as never);
+    vi.mocked(prisma.itemCollection.findFirst).mockResolvedValue(null);
+    mockCollectionFindUnique.mockResolvedValue(null);
+    mockUserFindUnique.mockResolvedValue({ handle: 'brad', email: 'brad@example.com' } as never);
+  });
+
+  it('creates a private item with an 8-character short id and no publish stamp', async () => {
+    await createItem('user-1', payload);
+
+    const data = createdData();
+    expect(data.shortId).toMatch(/^[a-z0-9]{8}$/);
+    expect(data.visibility).toBe('PRIVATE');
+    expect(data.publishedAt).toBeNull();
+    expect(mockUserFindUnique).not.toHaveBeenCalled();
+  });
+
+  it('checks the short id against collections and regenerates on a hit', async () => {
+    mockCollectionFindUnique.mockResolvedValueOnce({ id: 'col-1' } as never).mockResolvedValueOnce(null);
+
+    await createItem('user-1', payload);
+
+    expect(mockCollectionFindUnique).toHaveBeenCalledTimes(2);
+    const tried = mockCollectionFindUnique.mock.calls.map((call) => call[0].where.shortId);
+    expect(tried[0]).not.toBe(tried[1]);
+    expect(createdData().shortId).toBe(tried[1]);
+  });
+
+  it('stamps publishedAt and ensures the handle when created shared', async () => {
+    await createItem('user-1', { ...payload, visibility: 'UNLISTED' });
+
+    const data = createdData();
+    expect(data.visibility).toBe('UNLISTED');
+    expect(data.publishedAt).toBeInstanceOf(Date);
+    expect(mockUserFindUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: { handle: true, email: true },
+    });
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+  });
+
+  it('retries the insert once on a unique violation', async () => {
+    vi.mocked(prisma.item.create)
+      .mockRejectedValueOnce({ code: 'P2002' })
+      .mockResolvedValueOnce({ ...basePrismaItem, tags: [], collections: [] } as never);
+
+    const created = await createItem('user-1', payload);
+
+    expect(created?.id).toBe('item-1');
+    expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+    expect(prisma.item.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('rethrows other errors without retrying', async () => {
+    vi.mocked(prisma.item.create).mockRejectedValueOnce(new Error('down'));
+
+    await expect(createItem('user-1', payload)).rejects.toThrow('down');
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns the short id and visibility on the created item', async () => {
+    vi.mocked(prisma.item.create).mockResolvedValue({
+      ...basePrismaItem,
+      shortId: 'k3j9x2ab',
+      visibility: 'UNLISTED',
+      tags: [],
+      collections: [],
+    } as never);
+
+    const created = await createItem('user-1', { ...payload, visibility: 'UNLISTED' });
+
+    expect(created?.shortId).toBe('k3j9x2ab');
+    expect(created?.visibility).toBe('UNLISTED');
+  });
+});
+
+describe('setItemVisibility', () => {
+  const mockItemFindFirst = vi.mocked(prisma.item.findFirst);
+  const mockItemUpdate = vi.mocked(prisma.item.update);
+  const mockUserFindUnique = vi.mocked(prisma.user.findUnique);
+  const mockUserFindMany = vi.mocked(prisma.user.findMany);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(prisma.$transaction).mockImplementation((async (fn: (tx: typeof prisma) => Promise<unknown>) =>
+      fn(prisma)) as never);
+    mockItemUpdate.mockResolvedValue({ visibility: 'UNLISTED', publishedAt: mockDate } as never);
+    mockUserFindUnique.mockResolvedValue({ handle: 'brad', email: 'brad@example.com' } as never);
+  });
+
+  it('returns null without writing when the item is not the user\'s', async () => {
+    mockItemFindFirst.mockResolvedValue(null);
+
+    expect(await setItemVisibility('item-1', 'user-2', 'UNLISTED')).toBeNull();
+    expect(mockItemFindFirst).toHaveBeenCalledWith({
+      where: { id: 'item-1', userId: 'user-2' },
+      select: { publishedAt: true },
+    });
+    expect(mockItemUpdate).not.toHaveBeenCalled();
+  });
+
+  it('stamps publishedAt on the first departure from private and ensures the handle', async () => {
+    mockItemFindFirst.mockResolvedValue({ publishedAt: null } as never);
+
+    const result = await setItemVisibility('item-1', 'user-1', 'UNLISTED');
+
+    expect(mockItemUpdate).toHaveBeenCalledWith({
+      where: { id: 'item-1', userId: 'user-1' },
+      data: { visibility: 'UNLISTED', publishedAt: expect.any(Date) },
+      select: { visibility: true, publishedAt: true },
+    });
+    expect(mockUserFindUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: { handle: true, email: true },
+    });
+    expect(result).toEqual({ visibility: 'UNLISTED', publishedAt: mockDate, handle: 'brad' });
+  });
+
+  it('keeps the original publishedAt on later changes', async () => {
+    mockItemFindFirst.mockResolvedValue({ publishedAt: mockDate } as never);
+    mockItemUpdate.mockResolvedValue({ visibility: 'PUBLIC', publishedAt: mockDate } as never);
+
+    await setItemVisibility('item-1', 'user-1', 'PUBLIC');
+
+    expect(mockItemUpdate.mock.calls[0][0].data).toEqual({ visibility: 'PUBLIC' });
+  });
+
+  it('reads the handle without generating one when going private', async () => {
+    mockItemFindFirst.mockResolvedValue({ publishedAt: mockDate } as never);
+    mockItemUpdate.mockResolvedValue({ visibility: 'PRIVATE', publishedAt: mockDate } as never);
+    mockUserFindUnique.mockResolvedValue({ handle: null } as never);
+
+    const result = await setItemVisibility('item-1', 'user-1', 'PRIVATE');
+
+    expect(mockUserFindUnique).toHaveBeenCalledWith({ where: { id: 'user-1' }, select: { handle: true } });
+    expect(mockUserFindMany).not.toHaveBeenCalled();
+    expect(result).toEqual({ visibility: 'PRIVATE', publishedAt: mockDate, handle: null });
+  });
+
+  it('retries once when two first publishes generate the same handle', async () => {
+    mockItemFindFirst.mockResolvedValue({ publishedAt: null } as never);
+    mockUserFindUnique
+      .mockResolvedValueOnce({ handle: null, email: 'brad@example.com' } as never)
+      .mockResolvedValueOnce({ handle: 'brad', email: 'brad@example.com' } as never);
+    mockUserFindMany.mockResolvedValue([] as never);
+    vi.mocked(prisma.user.update).mockRejectedValueOnce({ code: 'P2002' });
+
+    const result = await setItemVisibility('item-1', 'user-1', 'UNLISTED');
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+    expect(result?.handle).toBe('brad');
   });
 });

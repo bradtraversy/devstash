@@ -173,6 +173,7 @@ async function main() {
   // --- React Patterns (3 snippets) ---
   const useDebounceSnippet = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'useDebounce Hook',
       contentType: ContentType.TEXT,
       content: `import { useState, useEffect } from 'react';
@@ -203,6 +204,7 @@ export function useDebounce<T>(value: T, delay: number): T {
 
   const useLocalStorageSnippet = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'useLocalStorage Hook',
       contentType: ContentType.TEXT,
       content: `import { useState, useEffect } from 'react';
@@ -243,6 +245,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
 
   const compoundComponentSnippet = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Compound Component Pattern',
       contentType: ContentType.TEXT,
       content: `import { createContext, useContext, useState, ReactNode } from 'react';
@@ -312,6 +315,7 @@ Accordion.Item = function AccordionItem({ id, title, children }: AccordionItemPr
   // --- AI Workflows (3 prompts) ---
   const codeReviewPrompt = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Code Review Assistant',
       contentType: ContentType.TEXT,
       content: `You are a senior software engineer performing a code review. Analyze the provided code and give feedback on:
@@ -338,6 +342,7 @@ Code to review:
 
   const docGenerationPrompt = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Documentation Generator',
       contentType: ContentType.TEXT,
       content: `Generate comprehensive documentation for the following code. Include:
@@ -363,6 +368,7 @@ Code to document:
 
   const refactoringPrompt = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Refactoring Assistant',
       contentType: ContentType.TEXT,
       content: `Analyze the following code and suggest refactoring improvements. Focus on:
@@ -392,6 +398,7 @@ Code to refactor:
   // --- DevOps (1 snippet, 1 command, 2 links) ---
   const dockerComposeSnippet = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Docker Compose - Node.js + PostgreSQL',
       contentType: ContentType.TEXT,
       content: `version: '3.8'
@@ -441,6 +448,7 @@ volumes:
 
   const deployCommand = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Deploy to Production',
       contentType: ContentType.TEXT,
       content: `git pull origin main && npm ci && npm run build && pm2 restart all`,
@@ -453,6 +461,7 @@ volumes:
 
   const dockerDocsLink = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Docker Documentation',
       contentType: ContentType.URL,
       url: 'https://docs.docker.com/',
@@ -465,6 +474,7 @@ volumes:
 
   const githubActionsLink = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'GitHub Actions Documentation',
       contentType: ContentType.URL,
       url: 'https://docs.github.com/en/actions',
@@ -478,6 +488,7 @@ volumes:
   // --- Terminal Commands (4 commands) ---
   const gitUndoCommand = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Git Undo Last Commit (Keep Changes)',
       contentType: ContentType.TEXT,
       content: `git reset --soft HEAD~1`,
@@ -491,6 +502,7 @@ volumes:
 
   const dockerCleanupCommand = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Docker Cleanup',
       contentType: ContentType.TEXT,
       content: `docker system prune -af --volumes`,
@@ -503,6 +515,7 @@ volumes:
 
   const killPortCommand = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Kill Process on Port',
       contentType: ContentType.TEXT,
       content: `lsof -ti:3000 | xargs kill -9`,
@@ -515,6 +528,7 @@ volumes:
 
   const npmOutdatedCommand = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Check Outdated Packages',
       contentType: ContentType.TEXT,
       content: `npm outdated --long`,
@@ -528,6 +542,7 @@ volumes:
   // --- Design Resources (4 links) ---
   const tailwindDocsLink = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Tailwind CSS Documentation',
       contentType: ContentType.URL,
       url: 'https://tailwindcss.com/docs',
@@ -541,6 +556,7 @@ volumes:
 
   const shadcnLink = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'shadcn/ui Components',
       contentType: ContentType.URL,
       url: 'https://ui.shadcn.com/',
@@ -553,6 +569,7 @@ volumes:
 
   const radixLink = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Radix UI Primitives',
       contentType: ContentType.URL,
       url: 'https://www.radix-ui.com/primitives',
@@ -565,6 +582,7 @@ volumes:
 
   const lucideLink = await prisma.item.create({
     data: {
+      shortId: generateShortId(),
       title: 'Lucide Icons',
       contentType: ContentType.URL,
       url: 'https://lucide.dev/icons/',

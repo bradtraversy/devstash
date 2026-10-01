@@ -28,6 +28,8 @@ const item: ItemDetail = {
   fileSize: null,
   isFavorite: false,
   isPinned: false,
+  visibility: 'PRIVATE' as const,
+  shortId: 'abc12345',
   itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
   tags: ['react'],
   collections: [{ id: 'col-1', name: 'React Patterns', visibility: 'PRIVATE' }],

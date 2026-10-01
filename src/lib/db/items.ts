@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma/client';
-import type { CollectionVisibility } from '@/lib/constants/visibility';
+import type { CollectionVisibility, VisibilityUpdate } from '@/lib/constants/visibility';
+import { generateShortId } from '@/lib/short-id';
+import { isUniqueViolation } from '@/lib/db/errors';
+import { ensureUserHandle, retryOnHandleCollision } from '@/lib/db/users';
 
 /** Display order of a collection's items; the reorder in collections.ts walks the same order. */
 export const COLLECTION_ITEM_ORDER: Prisma.ItemCollectionOrderByWithRelationInput[] = [
@@ -37,6 +40,8 @@ export interface ItemWithType {
   url: string | null;
   isFavorite: boolean;
   isPinned: boolean;
+  visibility: CollectionVisibility;
+  shortId: string;
   itemType: ItemType;
   tags: string[];
   fileUrl: string | null;
@@ -59,6 +64,8 @@ export interface ItemDetail {
   fileSize: number | null;
   isFavorite: boolean;
   isPinned: boolean;
+  visibility: CollectionVisibility;
+  shortId: string;
   itemType: ItemType;
   tags: string[];
   collections: { id: string; name: string; visibility: CollectionVisibility }[];
@@ -75,6 +82,8 @@ type PrismaItemWithType = {
   url: string | null;
   isFavorite: boolean;
   isPinned: boolean;
+  visibility: CollectionVisibility;
+  shortId: string;
   fileUrl: string | null;
   fileName: string | null;
   fileSize: number | null;
@@ -102,6 +111,8 @@ function toItemWithType(item: PrismaItemWithType): ItemWithType {
     url: item.url,
     isFavorite: item.isFavorite,
     isPinned: item.isPinned,
+    visibility: item.visibility,
+    shortId: item.shortId,
     itemType: {
       name: item.itemType.name,
       icon: item.itemType.icon,
@@ -133,6 +144,8 @@ function toItemDetail(item: PrismaItemWithDetail): ItemDetail {
     fileSize: item.fileSize,
     isFavorite: item.isFavorite,
     isPinned: item.isPinned,
+    visibility: item.visibility,
+    shortId: item.shortId,
     itemType: {
       name: item.itemType.name,
       icon: item.itemType.icon,
@@ -428,6 +441,25 @@ export type PositionReader = {
   itemCollection: { findFirst: typeof prisma.itemCollection.findFirst };
 };
 
+type ShortIdReader = {
+  collection: { findUnique: typeof prisma.collection.findUnique };
+};
+
+const SHORT_ID_ATTEMPTS = 5;
+
+/**
+ * A short id no collection holds, so /s/{shortId} never resolves to two things. Items are
+ * covered by their unique index; the caller retries once on that violation.
+ */
+async function freeShortId(client: ShortIdReader): Promise<string> {
+  for (let attempt = 0; attempt < SHORT_ID_ATTEMPTS; attempt++) {
+    const shortId = generateShortId();
+    const taken = await client.collection.findUnique({ where: { shortId }, select: { id: true } });
+    if (!taken) return shortId;
+  }
+  throw new Error('Could not allocate a free short id');
+}
+
 /** Position after the last item in a collection, so a new membership appends at the end. */
 export async function nextPosition(client: PositionReader, collectionId: string): Promise<number> {
   const last = await client.itemCollection.findFirst({
@@ -586,6 +618,7 @@ export interface CreateItemData {
   fileUrl?: string | null;
   fileName?: string | null;
   fileSize?: number | null;
+  visibility?: CollectionVisibility;
 }
 
 /**
@@ -738,14 +771,26 @@ export async function createItem(
     contentType = 'FILE';
   }
 
-  const created = await prisma.$transaction(async (tx) => {
-    const collectionIds = await resolveOwnedCollectionIds(tx, userId, data.collectionIds ?? []);
-    const positions = await appendPositions(tx, collectionIds);
+  const visibility = data.visibility ?? 'PRIVATE';
+  const shared = visibility !== 'PRIVATE';
 
-    return tx.item.create({
+  const insert = () =>
+    prisma.$transaction(async (tx) => {
+      const collectionIds = await resolveOwnedCollectionIds(tx, userId, data.collectionIds ?? []);
+      const positions = await appendPositions(tx, collectionIds);
+      const shortId = await freeShortId(tx);
+
+      if (shared) {
+        await ensureUserHandle(tx, userId);
+      }
+
+      return tx.item.create({
       data: {
         userId,
         itemTypeId: itemType.id,
+        shortId,
+        visibility,
+        publishedAt: shared ? new Date() : null,
         title: data.title,
         description: data.description,
         content: data.content,
@@ -782,7 +827,16 @@ export async function createItem(
         },
       },
     });
-  });
+    });
+
+  let created: Awaited<ReturnType<typeof insert>>;
+  try {
+    created = await insert();
+  } catch (error) {
+    // A short id taken by another item, or two first shares generating the same handle; one retry recomputes both.
+    if (!isUniqueViolation(error)) throw error;
+    created = await insert();
+  }
 
   return {
     id: created.id,
@@ -797,6 +851,8 @@ export async function createItem(
     fileSize: created.fileSize,
     isFavorite: created.isFavorite,
     isPinned: created.isPinned,
+    visibility: created.visibility,
+    shortId: created.shortId,
     itemType: {
       name: created.itemType.name,
       icon: created.itemType.icon,
@@ -811,4 +867,49 @@ export async function createItem(
     createdAt: created.createdAt,
     updatedAt: created.updatedAt,
   };
+}
+
+/**
+ * Set an item's visibility (with ownership check). The first time it leaves private,
+ * publishedAt is stamped and the owner gets a handle if they have none, the same rule
+ * as a collection's first publish.
+ */
+export async function setItemVisibility(
+  itemId: string,
+  userId: string,
+  visibility: CollectionVisibility
+): Promise<VisibilityUpdate | null> {
+  return retryOnHandleCollision(() =>
+    prisma.$transaction(async (tx) => {
+      const existing = await tx.item.findFirst({
+        where: { id: itemId, userId },
+        select: { publishedAt: true },
+      });
+
+      if (!existing) {
+        return null;
+      }
+
+      const leavingPrivate = visibility !== 'PRIVATE';
+
+      const updated = await tx.item.update({
+        where: { id: itemId, userId },
+        data: {
+          visibility,
+          ...(leavingPrivate && !existing.publishedAt ? { publishedAt: new Date() } : {}),
+        },
+        select: { visibility: true, publishedAt: true },
+      });
+
+      let handle: string | null;
+      if (leavingPrivate) {
+        handle = await ensureUserHandle(tx, userId);
+      } else {
+        const user = await tx.user.findUnique({ where: { id: userId }, select: { handle: true } });
+        handle = user?.handle ?? null;
+      }
+
+      return { visibility: updated.visibility, publishedAt: updated.publishedAt, handle };
+    })
+  );
 }

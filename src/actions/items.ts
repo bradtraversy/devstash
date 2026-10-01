@@ -7,6 +7,7 @@ import {
   createItem as createItemQuery,
   toggleItemFavorite as toggleItemFavoriteQuery,
   toggleItemPin as toggleItemPinQuery,
+  setItemVisibility as setItemVisibilityQuery,
   VALID_ITEM_TYPES,
   isFileType,
   UnknownCollectionError,
@@ -16,6 +17,7 @@ import { parseZodErrors, safeUrlSchema, validateId } from '@/lib/validation';
 import { isOwnedFileUrl } from '@/lib/file-urls';
 import { canCreateItem } from '@/lib/usage';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
+import { COLLECTION_VISIBILITIES, type VisibilityUpdate } from '@/lib/constants/visibility';
 import { publicPathsForItem } from '@/lib/db/public';
 import { lookupPublicPaths, revalidateAfterWrite, revalidatePublicPaths } from '@/lib/public/revalidate';
 
@@ -139,6 +141,7 @@ const createItemSchema = z.object({
   fileUrl: safeUrlSchema,
   fileName: z.string().nullable().optional().transform((val) => val || null),
   fileSize: z.number().int().positive().nullable().optional().transform((val) => val || null),
+  visibility: z.enum(COLLECTION_VISIBILITIES).optional(),
 });
 
 export type CreateItemInput = z.infer<typeof createItemSchema>;
@@ -199,5 +202,43 @@ export async function createItem(
     return { success: true, data: created };
   } catch (error) {
     return collectionOrGenericError(error, 'Failed to create item');
+  }
+}
+
+const setItemVisibilitySchema = z.object({
+  id: z.string().min(1, 'Item ID is required'),
+  visibility: z.enum(COLLECTION_VISIBILITIES),
+});
+
+export type SetItemVisibilityInput = z.infer<typeof setItemVisibilitySchema>;
+
+export async function setItemVisibility(
+  input: SetItemVisibilityInput
+): Promise<ActionResult<VisibilityUpdate>> {
+  const { session, unauthorized } = await getAuthedSession();
+  if (unauthorized) return unauthorized;
+
+  const parsed = setItemVisibilitySchema.safeParse(input);
+
+  if (!parsed.success) {
+    return { success: false, error: 'Validation failed', fieldErrors: parseZodErrors(parsed.error) };
+  }
+
+  try {
+    const before = await lookupPublicPaths(() => publicPathsForItem(parsed.data.id));
+    const updated = await setItemVisibilityQuery(
+      parsed.data.id,
+      session.user.id,
+      parsed.data.visibility
+    );
+
+    if (!updated) {
+      return { success: false, error: 'Item not found or access denied' };
+    }
+
+    await revalidateAfterWrite(before, () => publicPathsForItem(parsed.data.id));
+    return { success: true, data: updated };
+  } catch {
+    return { success: false, error: 'Failed to update visibility' };
   }
 }

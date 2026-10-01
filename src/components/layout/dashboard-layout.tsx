@@ -6,6 +6,7 @@ import Sidebar from "@/components/layout/sidebar";
 import MobileSidebar from "@/components/layout/mobile-sidebar";
 import ItemDrawerProvider from "@/components/items/item-drawer-provider";
 import ItemDrawer from "@/components/items/item-drawer";
+import ShareDialogProvider from "@/components/items/share-dialog-provider";
 import SearchProvider from "@/components/search/search-provider";
 import CommandPalette from "@/components/search/command-palette";
 import EditorPreferencesProvider from "@/components/settings/editor-preferences-provider";
@@ -53,41 +54,44 @@ export default function DashboardLayout({
   return (
     <SearchProvider>
       <TooltipProvider>
-        <div className="flex h-screen flex-col">
-          <TopBar onMenuClick={() => setIsMobileSidebarOpen(true)} isPro={isPro} />
-          <div className="flex flex-1 overflow-hidden">
-            {/* Desktop Sidebar */}
-            <div className="hidden lg:block">
-              <Sidebar
-                isCollapsed={isSidebarCollapsed}
-                onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        {/* Above the top bar and the palette, which both open the one share dialog. */}
+        <ShareDialogProvider>
+          <div className="flex h-screen flex-col">
+            <TopBar onMenuClick={() => setIsMobileSidebarOpen(true)} isPro={isPro} />
+            <div className="flex flex-1 overflow-hidden">
+              {/* Desktop Sidebar */}
+              <div className="hidden lg:block">
+                <Sidebar
+                  isCollapsed={isSidebarCollapsed}
+                  onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                  itemTypes={itemTypes}
+                  sidebarCollections={sidebarCollections}
+                  user={user}
+                />
+              </div>
+
+              {/* Mobile Sidebar */}
+              <MobileSidebar
+                isOpen={isMobileSidebarOpen}
+                onClose={() => setIsMobileSidebarOpen(false)}
                 itemTypes={itemTypes}
                 sidebarCollections={sidebarCollections}
                 user={user}
               />
+
+              {/* Main Content */}
+              <ItemDrawerProvider isPro={isPro}>
+                {editorPreferences ? (
+                  <EditorPreferencesProvider initialPreferences={editorPreferences}>
+                    {content}
+                  </EditorPreferencesProvider>
+                ) : (
+                  content
+                )}
+              </ItemDrawerProvider>
             </div>
-
-            {/* Mobile Sidebar */}
-            <MobileSidebar
-              isOpen={isMobileSidebarOpen}
-              onClose={() => setIsMobileSidebarOpen(false)}
-              itemTypes={itemTypes}
-              sidebarCollections={sidebarCollections}
-              user={user}
-            />
-
-            {/* Main Content */}
-            <ItemDrawerProvider isPro={isPro}>
-              {editorPreferences ? (
-                <EditorPreferencesProvider initialPreferences={editorPreferences}>
-                  {content}
-                </EditorPreferencesProvider>
-              ) : (
-                content
-              )}
-            </ItemDrawerProvider>
           </div>
-        </div>
+        </ShareDialogProvider>
       </TooltipProvider>
     </SearchProvider>
   );

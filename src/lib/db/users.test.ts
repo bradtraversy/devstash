@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ensureUserHandle, updateUserHandle, getUserWithSettings } from './users';
+import { ensureUserHandle, updateUserHandle, getUserWithSettings, retryOnHandleCollision } from './users';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -138,5 +138,28 @@ describe('getUserWithSettings', () => {
     mockFindUnique.mockResolvedValue(null);
 
     expect(await getUserWithSettings('user-1')).toBeNull();
+  });
+});
+
+describe('retryOnHandleCollision', () => {
+  it('returns the first result when the write succeeds', async () => {
+    const write = vi.fn().mockResolvedValue('ok');
+
+    expect(await retryOnHandleCollision(write)).toBe('ok');
+    expect(write).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs the write once more after a unique violation', async () => {
+    const write = vi.fn().mockRejectedValueOnce({ code: 'P2002' }).mockResolvedValueOnce('second');
+
+    expect(await retryOnHandleCollision(write)).toBe('second');
+    expect(write).toHaveBeenCalledTimes(2);
+  });
+
+  it('rethrows other errors without retrying', async () => {
+    const write = vi.fn().mockRejectedValue(new Error('down'));
+
+    await expect(retryOnHandleCollision(write)).rejects.toThrow('down');
+    expect(write).toHaveBeenCalledTimes(1);
   });
 });

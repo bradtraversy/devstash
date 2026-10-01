@@ -91,20 +91,23 @@ enum ContentType {
 }
 
 model Item {
-  id          String      @id @default(cuid())
+  id          String               @id @default(cuid())
   title       String
   contentType ContentType
-  content     String?     @db.Text // For TEXT types
+  content     String?              @db.Text // For TEXT types
   fileUrl     String? // R2 URL for FILE types
   fileName    String? // Original filename
   fileSize    Int? // Size in bytes
   url         String? // For URL/link types
-  description String?     @db.Text
-  isFavorite  Boolean     @default(false)
-  isPinned    Boolean     @default(false)
+  description String?              @db.Text
+  isFavorite  Boolean              @default(false)
+  isPinned    Boolean              @default(false)
   language    String? // Programming language for syntax highlighting
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  visibility  CollectionVisibility @default(PRIVATE)
+  shortId     String               @unique // 8 chars of [a-z0-9], never reissued
+  publishedAt DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   // Relations
   userId     String

@@ -5,6 +5,7 @@ import { getItemTypeIcon } from "@/lib/constants/item-types";
 import { formatRelativeDate } from "@/lib/utils/date";
 import { useItemDrawer } from "@/components/items/item-drawer-provider";
 import type { ItemWithType } from "@/lib/db/items";
+import VisibilityMark from "@/components/items/visibility-mark";
 
 interface FavoriteItemRowProps {
   item: ItemWithType;
@@ -28,6 +29,7 @@ export default function FavoriteItemRow({ item }: FavoriteItemRowProps) {
       <span className="flex-1 min-w-0 font-mono text-sm text-foreground truncate">
         {item.title}
       </span>
+      <VisibilityMark visibility={item.visibility} />
       <Badge
         variant="outline"
         className="shrink-0 text-xs font-mono capitalize"

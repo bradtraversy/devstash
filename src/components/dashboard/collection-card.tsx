@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Star, MoreHorizontal, Pencil, Trash2, Link2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,16 +14,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import EditCollectionDialog from "@/components/collections/edit-collection-dialog";
 import DeleteCollectionDialog from "@/components/collections/delete-collection-dialog";
-import { deleteCollection, toggleCollectionFavorite } from "@/actions/collections";
+import { deleteCollection, toggleCollectionFavorite, setCollectionVisibility } from "@/actions/collections";
 import { toast } from "sonner";
 import { getItemTypeIcon } from "@/lib/constants/item-types";
 import type { CollectionItemType } from "@/lib/db/collections";
+import type { CollectionVisibility } from "@/lib/constants/visibility";
+import { useClipboard } from "@/hooks/use-clipboard";
+import { useOrigin } from "@/hooks/use-origin";
+import { publicShortPath } from "@/lib/public/paths";
+import VisibilityMark from "@/components/items/visibility-mark";
 
 interface CollectionCardProps {
   collection: {
     id: string;
     name: string;
     slug: string;
+    shortId: string;
+    visibility: CollectionVisibility;
     description: string | null;
     isFavorite: boolean;
     itemCount: number;
@@ -34,8 +41,28 @@ interface CollectionCardProps {
 
 export default function CollectionCard({ collection }: CollectionCardProps) {
   const router = useRouter();
+  const origin = useOrigin();
+  const { copy } = useClipboard();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const shareLink = `${origin}${publicShortPath(collection.shortId)}`;
+  const isShared = collection.visibility !== "PRIVATE";
+
+  const handleCopyLink = () => {
+    copy(shareLink, "Link copied");
+  };
+
+  const handleShare = async () => {
+    const result = await setCollectionVisibility({ id: collection.id, visibility: "UNLISTED" });
+
+    if (result.success) {
+      copy(shareLink, "Link copied. Anyone with it can view this collection.");
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to share collection");
+    }
+  };
 
   const borderStyle = collection.dominantColor
     ? { borderLeftColor: collection.dominantColor, borderLeftWidth: "3px" }
@@ -82,6 +109,7 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
               {collection.isFavorite && (
                 <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
               )}
+              <VisibilityMark visibility={collection.visibility} />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -102,6 +130,17 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
                   <Star className="h-4 w-4" />
                   {collection.isFavorite ? "Unfavorite" : "Favorite"}
                 </DropdownMenuItem>
+                {isShared ? (
+                  <DropdownMenuItem onClick={handleCopyLink}>
+                    <Link2 className="h-4 w-4" />
+                    Copy link
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={handleShare}>
+                    <Share2 className="h-4 w-4" />
+                    Share
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"

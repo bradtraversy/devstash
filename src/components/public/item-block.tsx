@@ -11,7 +11,10 @@ import { FileBlock, ImageBlock, isRenderableImage } from "./media-block";
 
 interface ItemBlockProps {
   item: PublicItem;
-  position: number;
+  /** 1-based position inside a collection page; drives the #b{n} anchor. */
+  position?: number;
+  /** The block is the whole page: the title is the h1 and there is no anchor. */
+  standalone?: boolean;
 }
 
 function copyTextFor(item: PublicItem): string | null {
@@ -57,35 +60,40 @@ function BlockBody({ item }: { item: PublicItem }) {
   }
 }
 
-export default function ItemBlock({ item, position }: ItemBlockProps) {
-  const anchor = `b${position}`;
+export default function ItemBlock({ item, position, standalone = false }: ItemBlockProps) {
+  const anchor = !standalone && position !== undefined ? `b${position}` : null;
+  const Heading = standalone ? "h1" : "h2";
   const IconComponent = ITEM_TYPE_ICONS[item.itemType.icon] ?? Code;
   const copyText = copyTextFor(item);
   const label = labelFor(item);
 
   return (
     <section
-      id={anchor}
+      id={anchor ?? undefined}
       className="group scroll-mt-6 overflow-hidden rounded-lg border border-border bg-card"
     >
       <header className="flex items-center gap-3 border-b border-border px-4 py-2">
         <IconComponent className="h-4 w-4 shrink-0" style={{ color: item.itemType.color }} />
-        <h2 className="min-w-0 flex-1 truncate font-mono text-sm font-medium text-foreground">
+        <Heading
+          className={`min-w-0 flex-1 truncate font-mono font-medium text-foreground ${standalone ? "text-base" : "text-sm"}`}
+        >
           {item.title}
-        </h2>
+        </Heading>
         {label && (
           <span className="hidden shrink-0 font-mono text-xs text-muted-foreground sm:inline">
             {label}
           </span>
         )}
-        <a
-          href={`#${anchor}`}
-          className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 focus:opacity-100"
-          aria-label={`Link to ${item.title}`}
-          title="Link to this block"
-        >
-          <Hash className="h-4 w-4" />
-        </a>
+        {anchor && (
+          <a
+            href={`#${anchor}`}
+            className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 focus:opacity-100"
+            aria-label={`Link to ${item.title}`}
+            title="Link to this block"
+          >
+            <Hash className="h-4 w-4" />
+          </a>
+        )}
         {copyText !== null && <CopyButton text={copyText} />}
       </header>
       {item.description && (

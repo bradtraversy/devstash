@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Menu, Star, Plus, FolderPlus, FilePlus, FolderOpen, Sparkles } from "lucide-react";
+import { Search, Menu, Star, Plus, FolderPlus, FilePlus, FolderOpen, Sparkles, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
 import NewItemDialog from "@/components/items/new-item-dialog";
 import NewCollectionDialog from "@/components/collections/new-collection-dialog";
 import { useSearch } from "@/components/search/search-provider";
+import { useShareDialog } from "@/components/items/share-dialog-provider";
 
 interface TopBarProps {
   onMenuClick?: () => void;
@@ -23,6 +24,7 @@ export default function TopBar({ onMenuClick, isPro }: TopBarProps) {
   const [newItemOpen, setNewItemOpen] = useState(false);
   const [newCollectionOpen, setNewCollectionOpen] = useState(false);
   const { openSearch } = useSearch();
+  const { openShareDialog } = useShareDialog();
 
   return (
     <header className="flex h-14 items-center gap-2 sm:gap-4 border-b border-border px-3 sm:px-6">
@@ -91,6 +93,10 @@ export default function TopBar({ onMenuClick, isPro }: TopBarProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={openShareDialog}>
+              <Share2 className="mr-2 h-4 w-4" />
+              Share snippet
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setNewItemOpen(true)}>
               <FilePlus className="mr-2 h-4 w-4" />
               New Item
@@ -103,6 +109,15 @@ export default function TopBar({ onMenuClick, isPro }: TopBarProps) {
         </DropdownMenu>
 
         {/* Desktop: full buttons */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden sm:inline-flex"
+          onClick={openShareDialog}
+        >
+          <Share2 className="h-4 w-4 mr-1" />
+          Share
+        </Button>
         <Button
           variant="outline"
           size="sm"

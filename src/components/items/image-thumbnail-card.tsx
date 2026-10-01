@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Star, Pin } from 'lucide-react';
 import { useItemDrawer } from '@/components/items/item-drawer-provider';
 import type { ItemWithType } from '@/lib/db/items';
+import VisibilityMark from '@/components/items/visibility-mark';
 
 interface ImageThumbnailCardProps {
   item: ItemWithType;
@@ -47,6 +48,7 @@ export default function ImageThumbnailCard({ item }: ImageThumbnailCardProps) {
           {item.isPinned && (
             <Pin className="h-4 w-4 shrink-0 text-muted-foreground" />
           )}
+          <VisibilityMark visibility={item.visibility} />
         </div>
       </div>
     </Card>
