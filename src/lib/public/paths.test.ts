@@ -1,12 +1,15 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   normalizePublicSegment,
+  publicCollectionOgPath,
   publicCollectionPath,
   publicMarkdownPath,
   publicRawPath,
+  publicShortOgPath,
   publicShortPath,
   publicShortRawPath,
   siteOrigin,
+  versionedPath,
 } from './paths';
 
 describe('siteOrigin', () => {
@@ -52,5 +55,17 @@ describe('short link paths', () => {
   it('builds the item page and raw paths from the short id', () => {
     expect(publicShortPath('abc12345')).toBe('/s/abc12345');
     expect(publicShortRawPath('abc12345')).toBe('/s/abc12345/raw');
+  });
+});
+
+describe('Open Graph image paths', () => {
+  it('builds the item and collection image paths', () => {
+    expect(publicShortOgPath('abc12345')).toBe('/s/abc12345/og');
+    expect(publicCollectionOgPath('brad', 'react-hooks')).toBe('/brad/react-hooks/og');
+  });
+
+  it('appends the update time as a version query', () => {
+    const date = new Date('2026-10-02T08:00:00Z');
+    expect(versionedPath('/s/abc12345/og', date)).toBe(`/s/abc12345/og?v=${date.getTime()}`);
   });
 });

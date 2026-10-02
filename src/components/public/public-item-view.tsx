@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { FileText } from "lucide-react";
+import { isCopyableType } from "@/lib/constants/item-types";
 import { languageLabel } from "@/lib/languages";
 import { publicShortRawPath } from "@/lib/public/paths";
 import { formatLongDate } from "@/lib/utils/date";
 import type { PublicSharedItem } from "@/lib/db/public";
 import ItemBlock from "./item-block";
+import SaveButton from "./save-button";
 
 const TEXT_TYPES = new Set(["snippet", "command", "note", "prompt"]);
 
@@ -27,13 +29,18 @@ export default function PublicItemView({ item }: PublicItemViewProps) {
   return (
     <main className="min-h-screen bg-background">
       <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 sm:px-6">
-        <p className="flex flex-wrap gap-x-2 font-mono text-xs text-muted-foreground">
-          <span>@{item.handle}</span>
-          <span aria-hidden="true">·</span>
-          <span>{typeLabel(item)}</span>
-          <span aria-hidden="true">·</span>
-          <span>Updated {formatLongDate(item.updatedAt)}</span>
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="flex flex-wrap gap-x-2 font-mono text-xs text-muted-foreground">
+            <span>@{item.handle}</span>
+            <span aria-hidden="true">·</span>
+            <span>{typeLabel(item)}</span>
+            <span aria-hidden="true">·</span>
+            <span>Updated {formatLongDate(item.updatedAt)}</span>
+          </p>
+          {isCopyableType(item.itemType.name) && (
+            <SaveButton target={{ kind: "item", shortId: item.shortId }} />
+          )}
+        </div>
 
         <ItemBlock item={item} standalone />
 

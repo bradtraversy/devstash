@@ -16,6 +16,7 @@ import {
 import { parseZodErrors, safeUrlSchema, validateId } from '@/lib/validation';
 import { isOwnedFileUrl } from '@/lib/file-urls';
 import { canCreateItem } from '@/lib/usage';
+import { ITEM_LIMIT_ERROR } from '@/lib/constants/limits';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 import { COLLECTION_VISIBILITIES, type VisibilityUpdate } from '@/lib/constants/visibility';
 import { publicPathsForItem } from '@/lib/db/public';
@@ -168,7 +169,7 @@ export async function createItem(
   // Usage limit check
   const allowed = await canCreateItem(session.user.id, isPro);
   if (!allowed) {
-    return { success: false, error: 'You have reached the free tier limit of 50 items. Upgrade to Pro for unlimited items.' };
+    return { success: false, error: ITEM_LIMIT_ERROR };
   }
 
   // Validate URL is required for link type

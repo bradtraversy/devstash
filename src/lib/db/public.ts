@@ -1,7 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { COLLECTION_ITEM_ORDER, type ItemType } from '@/lib/db/items';
 import { PUBLIC_PAGE_ITEM_LIMIT } from '@/lib/constants/pagination';
-import { publicCollectionPath, publicShortPath } from '@/lib/public/paths';
+import {
+  publicCollectionOgPath,
+  publicCollectionPath,
+  publicShortOgPath,
+  publicShortPath,
+} from '@/lib/public/paths';
 import type { CollectionVisibility } from '@/lib/constants/visibility';
 
 // Every query in this module carries this filter; nothing here takes a user id from a request.
@@ -42,6 +47,8 @@ export interface PublicCollection {
   visibility: CollectionVisibility;
   publishedAt: Date | null;
   updatedAt: Date;
+  /** The latest update among the collection row and its listed items; what the page shows last changed then. */
+  contentUpdatedAt: Date;
   handle: string;
   itemCount: number;
   items: PublicItem[];
@@ -119,6 +126,11 @@ export async function getPublicCollection(
     return null;
   }
 
+  const contentUpdatedAt = collection.items.reduce(
+    (latest, { item }) => (item.updatedAt > latest ? item.updatedAt : latest),
+    collection.updatedAt
+  );
+
   return {
     id: collection.id,
     name: collection.name,
@@ -128,6 +140,7 @@ export async function getPublicCollection(
     visibility: collection.visibility,
     publishedAt: collection.publishedAt,
     updatedAt: collection.updatedAt,
+    contentUpdatedAt,
     handle: collection.user.handle,
     itemCount: collection._count.items,
     items: collection.items.map(({ item }) => toPublicItem(item)),
@@ -221,7 +234,8 @@ const PATH_SELECT = {
   slugHistory: { select: { oldSlug: true } },
 } as const;
 
-// Retired slugs are cached as redirects, and so is the short link, so both are revalidated with the live page.
+// Retired slugs are cached as redirects, and so are the short link and the Open Graph image at the
+// live slug, so all of them are revalidated with the live page.
 function toPaths(rows: PathRow[]): string[] {
   return rows.flatMap((row) => {
     const handle = row.user.handle;
@@ -230,9 +244,15 @@ function toPaths(rows: PathRow[]): string[] {
       ...[row.slug, ...row.slugHistory.map((history) => history.oldSlug)].map((slug) =>
         publicCollectionPath(handle, slug)
       ),
+      publicCollectionOgPath(handle, row.slug),
       publicShortPath(row.shortId),
     ];
   });
+}
+
+/** A shared item's page and its Open Graph image. */
+function itemPaths(shortId: string): string[] {
+  return [publicShortPath(shortId), publicShortOgPath(shortId)];
 }
 
 /** Paths for the non-private collections among the given ids: the live page, its slug redirects, and its short link. */
@@ -260,7 +280,7 @@ export async function publicPathsForItem(itemId: string): Promise<string[]> {
     }),
   ]);
 
-  return [...(item ? [publicShortPath(item.shortId)] : []), ...toPaths(rows)];
+  return [...(item ? itemPaths(item.shortId) : []), ...toPaths(rows)];
 }
 
 /**
@@ -286,5 +306,5 @@ export async function publicPathsForUser(userId: string): Promise<string[]> {
     }),
   ]);
 
-  return [...toPaths(rows), ...items.map((item) => publicShortPath(item.shortId))];
+  return [...toPaths(rows), ...items.flatMap((item) => itemPaths(item.shortId))];
 }

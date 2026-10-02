@@ -99,6 +99,7 @@ describe('getPublicCollection', () => {
       visibility: 'PUBLIC',
       publishedAt: NOW,
       updatedAt: NOW,
+      contentUpdatedAt: NOW,
       handle: 'brad',
       itemCount: 1,
       items: [
@@ -116,6 +117,19 @@ describe('getPublicCollection', () => {
         },
       ],
     });
+  });
+
+  it('dates the content by the latest item change when that is newer than the collection row', async () => {
+    const later = new Date('2026-10-02T08:00:00Z');
+    mockCollectionFindFirst.mockResolvedValue({
+      ...prismaCollection,
+      items: [{ item: { ...prismaItem, updatedAt: NOW } }, { item: { ...prismaItem, id: 'item-2', updatedAt: later } }],
+    } as never);
+
+    const result = await getPublicCollection('brad', 'react-hooks');
+
+    expect(result?.updatedAt).toEqual(NOW);
+    expect(result?.contentUpdatedAt).toEqual(later);
   });
 
   it('returns null when nothing matches', async () => {
@@ -218,7 +232,7 @@ describe('public path lookups', () => {
       id: { in: ['col-1', 'col-2'] },
       visibility: { not: 'PRIVATE' },
     });
-    expect(paths).toEqual(['/brad/react-hooks', '/brad/hooks', '/s/abc12345']);
+    expect(paths).toEqual(['/brad/react-hooks', '/brad/hooks', '/brad/react-hooks/og', '/s/abc12345']);
   });
 
   it('publicPathsForItem finds non-private collections holding the item', async () => {
@@ -232,7 +246,7 @@ describe('public path lookups', () => {
       id: 'item-1',
       visibility: { not: 'PRIVATE' },
     });
-    expect(paths).toEqual(['/brad/react-hooks', '/brad/hooks', '/s/abc12345']);
+    expect(paths).toEqual(['/brad/react-hooks', '/brad/hooks', '/brad/react-hooks/og', '/s/abc12345']);
   });
 
   it('publicPathsForItem adds the item page when the item itself is shared', async () => {
@@ -240,7 +254,14 @@ describe('public path lookups', () => {
 
     const paths = await publicPathsForItem('item-1');
 
-    expect(paths).toEqual(['/s/item0001', '/brad/react-hooks', '/brad/hooks', '/s/abc12345']);
+    expect(paths).toEqual([
+      '/s/item0001',
+      '/s/item0001/og',
+      '/brad/react-hooks',
+      '/brad/hooks',
+      '/brad/react-hooks/og',
+      '/s/abc12345',
+    ]);
   });
 
   it('publicPathsForUser finds the non-private collections and items of the owner', async () => {
@@ -259,9 +280,12 @@ describe('public path lookups', () => {
     expect(paths).toEqual([
       '/brad/react-hooks',
       '/brad/hooks',
+      '/brad/react-hooks/og',
       '/s/abc12345',
       '/s/item0001',
+      '/s/item0001/og',
       '/s/item0002',
+      '/s/item0002/og',
     ]);
   });
 });

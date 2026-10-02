@@ -36,6 +36,7 @@ function collection(items: PublicItem[], overrides: Partial<PublicCollection> = 
     visibility: 'PUBLIC',
     publishedAt: NOW,
     updatedAt: NOW,
+    contentUpdatedAt: NOW,
     handle: 'brad',
     itemCount: items.length,
     items,

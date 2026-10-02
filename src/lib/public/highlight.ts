@@ -68,11 +68,7 @@ async function ensureGrammar(highlighter: HighlighterCore, grammar: Grammar): Pr
   await pending;
 }
 
-/** HTML for one code block. Unknown, missing, and plaintext languages render as text through the same pipeline. */
-export async function highlightCode(
-  code: string,
-  languageId: string | null | undefined
-): Promise<string> {
+async function prepare(languageId: string | null | undefined) {
   const highlighter = await getHighlighter();
   const grammar = shikiLanguage(languageId);
   const lang = grammar && grammar in GRAMMAR_LOADERS ? (grammar as Grammar) : null;
@@ -81,5 +77,34 @@ export async function highlightCode(
     await ensureGrammar(highlighter, lang);
   }
 
-  return highlighter.codeToHtml(code, { lang: lang ?? 'text', theme: HIGHLIGHT_THEME });
+  return { highlighter, lang: lang ?? 'text' };
+}
+
+/** HTML for one code block. Unknown, missing, and plaintext languages render as text through the same pipeline. */
+export async function highlightCode(
+  code: string,
+  languageId: string | null | undefined
+): Promise<string> {
+  const { highlighter, lang } = await prepare(languageId);
+  return highlighter.codeToHtml(code, { lang, theme: HIGHLIGHT_THEME });
+}
+
+export interface HighlightedToken {
+  content: string;
+  color: string;
+}
+
+const DEFAULT_TOKEN_COLOR = '#d4d4d4';
+
+/** One token list per line, with the theme's colors, for renderers that cannot take HTML. */
+export async function highlightLines(
+  code: string,
+  languageId: string | null | undefined
+): Promise<HighlightedToken[][]> {
+  const { highlighter, lang } = await prepare(languageId);
+  return highlighter
+    .codeToTokensBase(code, { lang, theme: HIGHLIGHT_THEME })
+    .map((line) =>
+      line.map((token) => ({ content: token.content, color: token.color ?? DEFAULT_TOKEN_COLOR }))
+    );
 }

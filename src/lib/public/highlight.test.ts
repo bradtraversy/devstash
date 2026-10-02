@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createHighlighterCore } from 'shiki/core';
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
 import { SHIKI_LANGUAGES } from '@/lib/languages';
-import { GRAMMAR_LOADERS, HIGHLIGHT_THEME, highlightCode } from './highlight';
+import { GRAMMAR_LOADERS, HIGHLIGHT_THEME, highlightCode, highlightLines } from './highlight';
 
 describe('GRAMMAR_LOADERS', () => {
   it('has one loader per Shiki grammar in the registry', () => {
@@ -56,5 +56,33 @@ describe('highlightCode', () => {
   it('preserves leading whitespace', async () => {
     const html = await highlightCode('    indented', 'typescript');
     expect(html).toContain('    indented');
+  });
+});
+
+describe('highlightLines', () => {
+  const text = (line: { content: string }[]) => line.map((token) => token.content).join('');
+
+  it('returns one token list per line with a theme color on every token', async () => {
+    const lines = await highlightLines('const a = 1;\nreturn a;', 'typescript');
+
+    expect(lines).toHaveLength(2);
+    expect(text(lines[0])).toBe('const a = 1;');
+    expect(text(lines[1])).toBe('return a;');
+    expect(lines[0].length).toBeGreaterThan(1);
+    for (const token of lines.flat()) {
+      expect(token.color).toMatch(/^#[0-9a-f]{6}/i);
+    }
+  });
+
+  it('keeps blank lines and renders plain text with the default color', async () => {
+    const lines = await highlightLines('hello\n\nworld', null);
+
+    expect(lines).toHaveLength(3);
+    expect(text(lines[0])).toBe('hello');
+    expect(text(lines[1])).toBe('');
+    expect(text(lines[2])).toBe('world');
+    for (const token of lines.flat()) {
+      expect(token.color).toMatch(/^#[0-9a-f]{6}/i);
+    }
   });
 });

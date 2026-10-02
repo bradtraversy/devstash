@@ -17,6 +17,7 @@ import { collectionSlugSchema, parseZodErrors, validateId } from '@/lib/validati
 import { isUniqueViolation } from '@/lib/db/errors';
 import { COLLECTION_VISIBILITIES } from '@/lib/constants/visibility';
 import { canCreateCollection } from '@/lib/usage';
+import { COLLECTION_LIMIT_ERROR } from '@/lib/constants/limits';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 import { publicPathForOwnerSlug, publicPathsForCollections } from '@/lib/db/public';
 import { lookupPublicPaths, revalidateAfterWrite, revalidatePublicPaths } from '@/lib/public/revalidate';
@@ -44,7 +45,7 @@ export async function createCollection(
   const isPro = session.user.isPro ?? false;
   const allowed = await canCreateCollection(session.user.id, isPro);
   if (!allowed) {
-    return { success: false, error: 'You have reached the free tier limit of 3 collections. Upgrade to Pro for unlimited collections.' };
+    return { success: false, error: COLLECTION_LIMIT_ERROR };
   }
 
   try {

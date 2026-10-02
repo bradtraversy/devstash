@@ -1,5 +1,6 @@
 import { auth } from '@/auth';
 import { checkRateLimit, formatRetryTime } from '@/lib/rate-limit';
+import { UNAUTHORIZED_ERROR } from '@/lib/constants/action-errors';
 
 /**
  * Standard server action result shape used across all actions.
@@ -30,7 +31,7 @@ export async function getAuthedSession(): Promise<
 > {
   const session = await auth();
   if (!session?.user?.id) {
-    return { unauthorized: { success: false, error: 'Unauthorized' } };
+    return { unauthorized: { success: false, error: UNAUTHORIZED_ERROR } };
   }
   return { session: session as AuthedSession };
 }

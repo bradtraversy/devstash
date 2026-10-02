@@ -3,6 +3,7 @@ import { publicMarkdownPath } from "@/lib/public/paths";
 import { formatLongDate } from "@/lib/utils/date";
 import type { PublicCollection } from "@/lib/db/public";
 import CopyButton from "./copy-button";
+import SaveButton from "./save-button";
 
 interface CollectionHeaderProps {
   collection: PublicCollection;
@@ -17,6 +18,10 @@ export default function CollectionHeader({ collection, markdown }: CollectionHea
       <div className="flex items-start justify-between gap-4">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">{collection.name}</h1>
         <div className="flex shrink-0 items-center gap-1 pt-1">
+          <SaveButton
+            target={{ kind: "collection", handle: collection.handle, slug: collection.slug }}
+            compact
+          />
           <CopyButton text={markdown} label="Copy as markdown" />
           <a
             href={publicMarkdownPath(collection.handle, collection.slug)}

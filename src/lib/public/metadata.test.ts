@@ -11,6 +11,7 @@ const base: PublicCollection = {
   visibility: 'PUBLIC',
   publishedAt: new Date('2026-09-28T12:00:00Z'),
   updatedAt: new Date('2026-09-28T12:00:00Z'),
+  contentUpdatedAt: new Date('2026-09-28T12:00:00Z'),
   handle: 'brad',
   itemCount: 3,
   items: [],
@@ -23,18 +24,31 @@ describe('publicCollectionMetadata', () => {
     expect(metadata.title).toBe('React Hooks by @brad | DevStash');
     expect(metadata.description).toBe('Hooks I reuse');
     expect(metadata.alternates).toEqual({ canonical: '/brad/react-hooks' });
+    const image = `/brad/react-hooks/og?v=${base.updatedAt.getTime()}`;
     expect(metadata.openGraph).toEqual({
       type: 'article',
       title: 'React Hooks by @brad',
       description: 'Hooks I reuse',
       url: '/brad/react-hooks',
       siteName: 'DevStash',
+      images: [{ url: image, width: 1200, height: 630, alt: 'React Hooks by @brad' }],
     });
     expect(metadata.twitter).toEqual({
       card: 'summary_large_image',
       title: 'React Hooks by @brad',
       description: 'Hooks I reuse',
+      images: [image],
     });
+  });
+
+  it('versions the image URL by the latest change to the collection or its items', () => {
+    const later = publicCollectionMetadata(
+      { ...base, contentUpdatedAt: new Date('2026-10-02T08:00:00Z') },
+      '/brad/react-hooks'
+    );
+    expect(later.openGraph?.images).toEqual([
+      expect.objectContaining({ url: `/brad/react-hooks/og?v=${new Date('2026-10-02T08:00:00Z').getTime()}` }),
+    ]);
   });
 
   it('leaves public collections indexable and marks unlisted ones noindex', () => {
@@ -87,17 +101,20 @@ describe('publicItemMetadata', () => {
     expect(metadata.title).toBe('useAuth Hook by @brad | DevStash');
     expect(metadata.description).toBe('Reads the session');
     expect(metadata.alternates).toEqual({ canonical: '/s/k3j9x2ab' });
+    const image = `/s/k3j9x2ab/og?v=${sharedItem.updatedAt.getTime()}`;
     expect(metadata.openGraph).toEqual({
       type: 'article',
       title: 'useAuth Hook by @brad',
       description: 'Reads the session',
       url: '/s/k3j9x2ab',
       siteName: 'DevStash',
+      images: [{ url: image, width: 1200, height: 630, alt: 'useAuth Hook by @brad' }],
     });
     expect(metadata.twitter).toEqual({
       card: 'summary_large_image',
       title: 'useAuth Hook by @brad',
       description: 'Reads the session',
+      images: [image],
     });
     expect(metadata.robots).toBeUndefined();
   });

@@ -1,16 +1,27 @@
-# Current Feature
+# Current Feature: Link Previews and Save to Stash
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Generated Open Graph images for shared items at `/s/{shortId}/og` and shared collections at `/{handle}/{slug}/og`: `force-static` route handlers rendering a 1200x630 card with `ImageResponse` (type dot, title, kind label, up to 10 Shiki-highlighted preview lines or 8 collection rows, `@handle`, `devstash.io`), 404 for malformed, case-variant, unknown, or private targets, no session, cookies, or search params read.
+- Vendored Geist SemiBold and Geist Mono Regular TTFs under `src/lib/og/fonts/` with the OFL text, loaded through `readFile(join(process.cwd(), ...))` and cached in module scope; `highlightLines` on the shared highlighter returning colored tokens for the preview lines only.
+- `publicItemMetadata` and `publicCollectionMetadata` set `openGraph.images` and `twitter.images` to the og path versioned with `?v=` from the item's `updatedAt` or the collection's new `contentUpdatedAt` (latest of the row and its listed items); the og response carries `Cache-Control: public, max-age=0, must-revalidate` in place of the renderer's one-year default; the og paths join `publicPathsForItem`, `publicPathsForCollections` (live slug only), and `publicPathsForUser` so existing owner writes revalidate the image with the page.
+- `Save to your stash` on both public pages: `saveSharedItem` and `saveSharedCollection` actions over `copySharedItem` and `copySharedCollection` in `src/lib/db/save.ts`, copies private with fresh short ids, tags carried, collection items in source order with positions `0..n-1`, file and image items skipped and counted, one transaction with the unique-violation retry, `insertCollectionTx` extracted and `freeShortId` exported; statuses `not-found`, `own`, `unsupported`, `limit`, `empty` mapped to clear messages with the source checks before the cap checks; free tier caps enforced before the copy with the slot message for collections, and a 200-item ceiling on a collection save for everyone; limit messages shared through `src/lib/constants/limits.ts`.
+- `SaveButton` client component (outline, `BookmarkPlus`) on the item meta line (not for file or image items) and compact in the collection header; signed-out click goes to `/sign-in?callbackUrl={path}?save=1` and the save runs once on return from `window.location.search`; success toast with an `Open` action to `/items/{type}s` or `/collections/{id}`; `UNAUTHORIZED_ERROR` in a client-safe constants module used by `getAuthedSession`; `signInWithGitHub` honours a safe `redirectTo` passed by `GitHubAuthSection` from the sign-in form.
+- Unit tests for lines, cards, highlightLines, both og routes, paths, metadata, public path lookups, the save queries and actions, and the GitHub redirect; `npm run verify` green; scripted check on the Docker restore; browser check and production-build cache check (og MISS then HIT, title edit forces a MISS and a new `?v=`, private makes it 404).
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/link-previews-and-save-spec.md`. Branch `feature/link-previews-and-save` off `main`, one implementation commit, then a pull request (the complete step's local merge and push are not used in this repo).
+- No migration, no new environment variable, no new npm dependency; about 275 KB of font files vendored from `geist@1.7.2` (OFL 1.1).
+- The og routes are explicit `force-static` handlers rather than the `opengraph-image.tsx` convention so `revalidatePath` can target them by the same path lists the pages use; the `?v=` query lives only in the metadata URL for social platforms' own caches.
+- `ImageResponse` drops its default font when `fonts` is passed, so both the sans and the mono face are vendored.
+- Public pages stay cached without a session, so the save button renders for everyone, and the owner's click gets `This is already in your stash`.
+- Out of scope: profile page, homepage and the return path through registration, fork provenance and duplicate detection, saving files, highlighting for languages without a grammar, free tier changes, a CLI (noted for later).
+- Observed during the browser check, pre-existing and carried: a JWT session for a deleted user still passes `getAuthedSession`, so every write action fails with a foreign key error behind the generic toast until the cookie expires; `getAuthedSession` could confirm the user row exists.
 
 ## History
 

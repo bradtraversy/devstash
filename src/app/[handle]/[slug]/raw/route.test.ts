@@ -24,6 +24,7 @@ const collection: PublicCollection = {
   visibility: 'PUBLIC',
   publishedAt: NOW,
   updatedAt: NOW,
+  contentUpdatedAt: NOW,
   handle: 'brad',
   itemCount: 1,
   items: [

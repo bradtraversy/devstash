@@ -1,7 +1,11 @@
 "use server";
 
 import { signIn } from "@/auth";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
-export async function signInWithGitHub() {
-  await signIn("github", { redirectTo: "/dashboard" });
+/** Starts GitHub sign-in; a same-origin `redirectTo` field brings the user back where they started. */
+export async function signInWithGitHub(formData?: FormData) {
+  const requested = formData?.get("redirectTo");
+  const redirectTo = safeRedirectPath(typeof requested === "string" ? requested : null);
+  await signIn("github", { redirectTo });
 }
