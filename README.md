@@ -29,6 +29,8 @@ This project is part of the [Coding With AI](https://www.codingwithaicourse.com)
 
 The docs, spec files, and other resources for this project are available in the [course resources repo](https://github.com/bradtraversy/coding-with-ai-course-resources).
 
+The code exactly as it stood at the end of the course is preserved at the [`course-final` tag](https://github.com/bradtraversy/devstash/tree/course-final), also packaged as the [Course version release](https://github.com/bradtraversy/devstash/releases/tag/course-final). Everything after that tag on `main` is post-course development.
+
 ## Features
 
 **Core**
