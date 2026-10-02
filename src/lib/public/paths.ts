@@ -26,6 +26,21 @@ export function publicShortRawPath(shortId: string): string {
   return `/s/${shortId}/raw`;
 }
 
+/** Generated Open Graph image for a shared item. */
+export function publicShortOgPath(shortId: string): string {
+  return `/s/${shortId}/og`;
+}
+
+/** Generated Open Graph image for a shared collection, at its live slug only. */
+export function publicCollectionOgPath(handle: string, slug: string): string {
+  return `/${handle}/${slug}/og`;
+}
+
+/** The path with a version query, so caches keyed by URL (social platforms) refetch after an edit. */
+export function versionedPath(path: string, date: Date): string {
+  return `${path}?v=${date.getTime()}`;
+}
+
 /** Lowercases a handle or slug from a URL, or null when it could never match a stored value. */
 export function normalizePublicSegment(raw: string | undefined): string | null {
   if (!raw) return null;

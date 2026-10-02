@@ -441,7 +441,7 @@ export type PositionReader = {
   itemCollection: { findFirst: typeof prisma.itemCollection.findFirst };
 };
 
-type ShortIdReader = {
+export type ShortIdReader = {
   collection: { findUnique: typeof prisma.collection.findUnique };
 };
 
@@ -451,7 +451,7 @@ const SHORT_ID_ATTEMPTS = 5;
  * A short id no collection holds, so /s/{shortId} never resolves to two things. Items are
  * covered by their unique index; the caller retries once on that violation.
  */
-async function freeShortId(client: ShortIdReader): Promise<string> {
+export async function freeShortId(client: ShortIdReader): Promise<string> {
   for (let attempt = 0; attempt < SHORT_ID_ATTEMPTS; attempt++) {
     const shortId = generateShortId();
     const taken = await client.collection.findUnique({ where: { shortId }, select: { id: true } });

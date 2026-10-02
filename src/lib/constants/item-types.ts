@@ -31,6 +31,15 @@ export function getItemTypeIcon(iconName: string): LucideIcon {
   return ITEM_TYPE_ICONS[iconName] || Code;
 }
 
+/** Types whose content lives in the row itself, so a copy into another account needs no file access. */
+export const COPYABLE_ITEM_TYPES = ['snippet', 'command', 'note', 'prompt', 'link'] as const;
+
+export type CopyableItemType = (typeof COPYABLE_ITEM_TYPES)[number];
+
+export function isCopyableType(name: string): name is CopyableItemType {
+  return (COPYABLE_ITEM_TYPES as readonly string[]).includes(name);
+}
+
 /**
  * Default colors for item types
  */

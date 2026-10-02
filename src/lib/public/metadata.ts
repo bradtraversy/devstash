@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import type { PublicCollection, PublicSharedItem } from '@/lib/db/public';
 import { defaultShareTitle } from '@/lib/languages';
+import { OG_IMAGE_SIZE } from '@/lib/og/constants';
+import { publicCollectionOgPath, publicShortOgPath, versionedPath } from '@/lib/public/paths';
 
 export const SITE_NAME = 'DevStash';
 
@@ -24,7 +26,8 @@ function buildMetadata(
   title: string,
   description: string,
   canonicalPath: string,
-  visibility: PublicCollection['visibility']
+  visibility: PublicCollection['visibility'],
+  imageUrl: string
 ): Metadata {
   return {
     title: `${title} | ${SITE_NAME}`,
@@ -36,8 +39,9 @@ function buildMetadata(
       description,
       url: canonicalPath,
       siteName: SITE_NAME,
+      images: [{ url: imageUrl, width: OG_IMAGE_SIZE.width, height: OG_IMAGE_SIZE.height, alt: title }],
     },
-    twitter: { card: 'summary_large_image', title, description },
+    twitter: { card: 'summary_large_image', title, description, images: [imageUrl] },
     ...(visibility === 'UNLISTED' ? { robots: { index: false, follow: false } } : {}),
   };
 }
@@ -51,7 +55,8 @@ export function publicCollectionMetadata(
     `${collection.name} by @${collection.handle}`,
     describe(collection),
     canonicalPath,
-    collection.visibility
+    collection.visibility,
+    versionedPath(publicCollectionOgPath(collection.handle, collection.slug), collection.contentUpdatedAt)
   );
 }
 
@@ -75,6 +80,7 @@ export function publicItemMetadata(item: PublicSharedItem, canonicalPath: string
     `${item.title} by @${item.handle}`,
     describeItem(item),
     canonicalPath,
-    item.visibility
+    item.visibility,
+    versionedPath(publicShortOgPath(item.shortId), item.updatedAt)
   );
 }

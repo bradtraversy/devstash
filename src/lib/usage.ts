@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
+import { MAX_ITEMS, MAX_COLLECTIONS } from '@/lib/constants/limits'
 
-export const MAX_ITEMS = 50
-export const MAX_COLLECTIONS = 3
+export { MAX_ITEMS, MAX_COLLECTIONS }
 
 interface UserUsage {
   itemCount: number

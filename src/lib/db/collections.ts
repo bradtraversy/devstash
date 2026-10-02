@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma/client';
 import { collectionSlugBase, uniqueSlug } from '@/lib/slugs';
 import { generateShortId } from '@/lib/short-id';
 import { isUniqueViolation } from '@/lib/db/errors';
@@ -475,32 +476,41 @@ export async function getCollectionById(
   };
 }
 
-async function insertCollection(userId: string, data: CreateCollectionData) {
-  return prisma.$transaction(async (tx) => {
-    const existing = await tx.collection.findMany({
-      where: { userId },
-      select: { slug: true },
-    });
-    const slug = uniqueSlug(
-      collectionSlugBase(data.name),
-      existing.map((collection) => collection.slug)
-    );
+type CollectionWriter = Pick<Prisma.TransactionClient, 'collection' | 'collectionSlugHistory'>;
 
-    const created = await tx.collection.create({
-      data: {
-        userId,
-        name: data.name,
-        description: data.description,
-        slug,
-        shortId: generateShortId(),
-      },
-    });
-
-    // The slug is live again, so a retired collection's redirect for it must not linger.
-    await tx.collectionSlugHistory.deleteMany({ where: { userId, oldSlug: slug } });
-
-    return created;
+/** Creates a collection on a transaction client; a unique violation propagates for the caller's one retry. */
+export async function insertCollectionTx(
+  tx: CollectionWriter,
+  userId: string,
+  data: CreateCollectionData
+) {
+  const existing = await tx.collection.findMany({
+    where: { userId },
+    select: { slug: true },
   });
+  const slug = uniqueSlug(
+    collectionSlugBase(data.name),
+    existing.map((collection) => collection.slug)
+  );
+
+  const created = await tx.collection.create({
+    data: {
+      userId,
+      name: data.name,
+      description: data.description,
+      slug,
+      shortId: generateShortId(),
+    },
+  });
+
+  // The slug is live again, so a retired collection's redirect for it must not linger.
+  await tx.collectionSlugHistory.deleteMany({ where: { userId, oldSlug: slug } });
+
+  return created;
+}
+
+async function insertCollection(userId: string, data: CreateCollectionData) {
+  return prisma.$transaction((tx) => insertCollectionTx(tx, userId, data));
 }
 
 export async function createCollection(

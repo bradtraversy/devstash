@@ -170,7 +170,7 @@ export function SignInForm() {
           </Button>
         </form>
 
-        <GitHubAuthSection />
+        <GitHubAuthSection callbackUrl={callbackUrl} />
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
