@@ -29,10 +29,18 @@ import {
   X,
   Save,
   Download,
+  ExternalLink,
   File,
   Globe,
+  Image as ImageIcon,
   Link2,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { formatFileSize } from "@/lib/r2";
 import { formatLongDate } from "@/lib/utils/date";
 import {
@@ -47,7 +55,9 @@ import { LANGUAGES } from "@/lib/constants/editor";
 import { useItemDrawer } from "./item-drawer-provider";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useOrigin } from "@/hooks/use-origin";
-import { publicShortPath } from "@/lib/public/paths";
+import { useCopyImage } from "@/hooks/use-copy-image";
+import { imageFilename } from "@/lib/og/filename";
+import { publicShortOgPath, publicShortPath } from "@/lib/public/paths";
 import {
   VISIBILITY_OPTIONS,
   getVisibilityOption,
@@ -112,6 +122,7 @@ export default function ItemDrawer() {
   const router = useRouter();
   const { isOpen, item, isLoading, isPro, closeDrawer, setItem } = useItemDrawer();
   const { copy } = useClipboard();
+  const { copyImage } = useCopyImage();
   const origin = useOrigin();
 
   // Edit mode state
@@ -155,6 +166,9 @@ export default function ItemDrawer() {
   const isShared = !!item && item.visibility !== "PRIVATE";
   // File pages have no download yet, so a shared file would only confuse the recipient.
   const canShare = !!item && item.itemType.name !== "file";
+  // The owner route renders the image whatever the visibility, so private snippets export too.
+  const canImage = !!item && TEXT_TYPES.includes(item.itemType.name);
+  const ownerImageUrl = item ? `/api/items/${item.id}/image` : "";
 
   const applyVisibility = async (visibility: CollectionVisibility) => {
     if (!item) return false;
@@ -431,6 +445,15 @@ export default function ItemDrawer() {
                       >
                         {shareLink}
                       </a>
+                      <a
+                        href={publicShortOgPath(item.shortId)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 text-xs text-muted-foreground hover:text-foreground hover:underline"
+                        title="Preview card, what Slack and X show for the link"
+                      >
+                        Card
+                      </a>
                     </div>
                   )}
                 </div>
@@ -462,7 +485,7 @@ export default function ItemDrawer() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-1 px-6 py-3">
+              <div className="flex flex-wrap items-center gap-1 px-6 py-3">
                 <button
                   onClick={handleToggleFavorite}
                   className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-muted"
@@ -507,6 +530,37 @@ export default function ItemDrawer() {
                     <Link2 className="h-4 w-4" />
                     Share
                   </button>
+                )}
+                {canImage && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        aria-label="Image"
+                        title="Image"
+                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem asChild>
+                        <a href={ownerImageUrl} target="_blank" rel="noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                          Open image
+                        </a>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <a href={`${ownerImageUrl}?download=1`} download={imageFilename(item.title)}>
+                          <Download className="h-4 w-4" />
+                          Download PNG
+                        </a>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => copyImage(ownerImageUrl)}>
+                        <Copy className="h-4 w-4" />
+                        Copy image
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 <button
                   onClick={handleCopy}

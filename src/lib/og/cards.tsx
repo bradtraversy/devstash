@@ -5,11 +5,11 @@ import type { HighlightedToken } from '@/lib/public/highlight';
 import { formatFileSize } from '@/lib/r2';
 import { OG_COLLECTION_ROWS } from './constants';
 
-// The image renderer takes inline styles only; this module and src/app/opengraph-image.tsx are the places they are allowed.
+// The image renderer takes inline styles only; this module, snippet-image.tsx, and src/app/opengraph-image.tsx are the places they are allowed.
 
 const BACKGROUND = 'linear-gradient(135deg, #0a0a0a 0%, #111827 100%)';
 const FOREGROUND = '#fafafa';
-const MUTED = '#a1a1aa';
+export const MUTED = '#a1a1aa';
 const PANEL = '#18181b';
 const PANEL_BORDER = '#27272a';
 const LINK = '#10b981';
@@ -18,11 +18,11 @@ const COLLECTION_COLOR = '#3b82f6';
 const SANS = 'Geist';
 const MONO = 'Geist Mono';
 const TEXT_SIZE = 22;
-const LINE_HEIGHT = 33;
+export const LINE_HEIGHT = 33;
 const ROW_HEIGHT = 36;
 
 /** `JavaScript`, `Terminal`, `Note`: the label on the right of a card or row. */
-export function kindLabel(item: Pick<PublicItem, 'itemType' | 'language'>): string {
+export function kindLabel(item: { itemType: { name: string }; language: string | null }): string {
   switch (item.itemType.name) {
     case 'snippet':
       return languageLabel(item.language);
@@ -33,7 +33,7 @@ export function kindLabel(item: Pick<PublicItem, 'itemType' | 'language'>): stri
   }
 }
 
-function Mono({ color, children }: { color: string; children: string }) {
+export function Mono({ color, children }: { color: string; children: string }) {
   return (
     <div style={{ display: 'flex', fontSize: TEXT_SIZE, lineHeight: `${LINE_HEIGHT}px`, color, whiteSpace: 'pre' }}>
       {children}
@@ -44,12 +44,24 @@ function Mono({ color, children }: { color: string; children: string }) {
 interface FrameProps {
   title: string;
   label: string;
-  handle: string;
+  footerLeft: string;
+  footerRight?: string;
   dotColor: string;
+  /** Clip the panel to its box; off for an image sized to fit, where satori's clip costs grow with every line. */
+  clip?: boolean;
   children: ReactNode;
 }
 
-function Frame({ title, label, handle, dotColor, children }: FrameProps) {
+/** The shared shell: title row, the dark panel, and the footer line. */
+export function Frame({
+  title,
+  label,
+  footerLeft,
+  footerRight = 'devstash.io',
+  dotColor,
+  clip = true,
+  children,
+}: FrameProps) {
   return (
     <div
       style={{
@@ -95,7 +107,7 @@ function Frame({ title, label, handle, dotColor, children }: FrameProps) {
           borderRadius: 16,
           border: `1px solid ${PANEL_BORDER}`,
           background: PANEL,
-          overflow: 'hidden',
+          ...(clip && { overflow: 'hidden' }),
         }}
       >
         {children}
@@ -111,9 +123,35 @@ function Frame({ title, label, handle, dotColor, children }: FrameProps) {
           color: MUTED,
         }}
       >
-        <div>{`@${handle}`}</div>
-        <div>devstash.io</div>
+        <div>{footerLeft}</div>
+        <div>{footerRight}</div>
       </div>
+    </div>
+  );
+}
+
+/** Highlighted lines, one flex row each, at the panel's line height. */
+export function CodeLines({ lines }: { lines: HighlightedToken[][] }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {lines.map((line, index) => (
+        <div
+          key={index}
+          style={{
+            display: 'flex',
+            height: LINE_HEIGHT,
+            fontSize: TEXT_SIZE,
+            lineHeight: `${LINE_HEIGHT}px`,
+            whiteSpace: 'pre',
+          }}
+        >
+          {line.map((token, tokenIndex) => (
+            <span key={tokenIndex} style={{ color: token.color, whiteSpace: 'pre' }}>
+              {token.content}
+            </span>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -126,26 +164,7 @@ interface TokenLinesProps {
 function TokenLines({ lines, truncated }: TokenLinesProps) {
   return (
     <>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {lines.map((line, index) => (
-          <div
-            key={index}
-            style={{
-              display: 'flex',
-              height: LINE_HEIGHT,
-              fontSize: TEXT_SIZE,
-              lineHeight: `${LINE_HEIGHT}px`,
-              whiteSpace: 'pre',
-            }}
-          >
-            {line.map((token, tokenIndex) => (
-              <span key={tokenIndex} style={{ color: token.color, whiteSpace: 'pre' }}>
-                {token.content}
-              </span>
-            ))}
-          </div>
-        ))}
-      </div>
+      <CodeLines lines={lines} />
       {truncated && (
         <div
           style={{
@@ -196,7 +215,7 @@ function ItemBody({ item, lines, truncated }: ItemCardProps) {
 /** The card behind a shared item's link: title, kind, the first lines, and the owner. */
 export function ItemCard({ item, lines, truncated }: ItemCardProps) {
   return (
-    <Frame title={item.title} label={kindLabel(item)} handle={item.handle} dotColor={item.itemType.color}>
+    <Frame title={item.title} label={kindLabel(item)} footerLeft={`@${item.handle}`} dotColor={item.itemType.color}>
       <ItemBody item={item} lines={lines} truncated={truncated} />
     </Frame>
   );
@@ -214,7 +233,7 @@ export function CollectionCard({ collection }: { collection: PublicCollection })
     <Frame
       title={collection.name}
       label={`${count} ${count === 1 ? 'item' : 'items'}`}
-      handle={collection.handle}
+      footerLeft={`@${collection.handle}`}
       dotColor={COLLECTION_COLOR}
     >
       {rows.length === 0 ? (

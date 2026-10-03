@@ -1,16 +1,26 @@
-# Current Feature
+# Current Feature: Snippet Images
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Full-snippet PNG renderer: `SnippetImage` in `src/lib/og/snippet-image.tsx` with the card's look (type dot, Geist SemiBold title, kind label, dark panel, Geist Mono lines at 22px/33px), every line up to `IMAGE_MAX_LINES` (500) and `IMAGE_MAX_CHARS` (12,000 visible cells) cut at `IMAGE_MAX_LINE_CHARS` (170 cells, wide characters counting two), an unclipped panel, a `+ n more lines` row when cut, footer `@handle` and `devstash.io/s/{shortId}` when shared or `devstash.io` when private; `snippetImageSize` widening from 1200 to 2400px for long lines and growing by 33px per line; `itemImage` in preview.ts and `previewLines` returning `total` with a `maxChars` override.
+- Public route `/s/{shortId}/image` (`force-static`, `generateStaticParams` `[]`, 404 for malformed, case-variant, unknown, private, and non-text items) with the `/s/:shortId.png` rewrite; `publicShortImagePath` and `publicShortPngPath`; the image path in `itemPaths` so owner writes revalidate it with the page and the card.
+- Owner route `/api/items/{id}/image` (session, ownership, text types only, `private, no-store`, `?download=1` attachment with the slugified title) through `renderOwnerImage`; `renderOgImage` takes an optional size.
+- `useCopyImage` hook writing a `ClipboardItem` with a blob promise, with a clear toast when the browser cannot.
+- Drawer: an icon-only `Image` dropdown (Open image, Download PNG, Copy image) in a wrapping action bar on text items in read mode using the owner route whatever the visibility; a `Card` link to `/s/{shortId}/og` in the visibility row.
+- Share dialog result: the card preview under the link with a caption, plus `Download image` and `Copy image` buttons next to Copy and Open.
+- Public item page: `Image` and `Download` links beside `Raw` for text items.
+- Unit tests for lines, size and markup, itemImage, both routes, render headers, paths, public lookups, filename; `npm run verify` green; scratch renders of a 40-line, a 600-line, and a long-line snippet viewed; browser check on a dev server Brad starts.
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/snippet-images-spec.md`. Branch `feature/snippet-images` off `main`, one implementation commit, then a pull request (the complete step's local merge and push are not used in this repo).
+- The `/og` card is untouched: Slack, X, and Discord need 1200 by 630, so the full image is a second image at its own URL.
+- The owner route exists so a private snippet exports without being shared; its image footer carries no link. The public image is cached by path exactly like the og route proven on 2026-10-02.
+- Out of scope: collection images, images for link, file, and image items, theme or padding options, line wrapping, rate limiting beyond the session, any change to the Save button or the collection page.
 
 ## History
 

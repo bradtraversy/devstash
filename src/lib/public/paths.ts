@@ -31,6 +31,16 @@ export function publicShortOgPath(shortId: string): string {
   return `/s/${shortId}/og`;
 }
 
+/** The full snippet image route; what the cache and revalidation see. */
+export function publicShortImagePath(shortId: string): string {
+  return `/s/${shortId}/image`;
+}
+
+/** The full snippet image as people see it; next.config rewrites it to the route. */
+export function publicShortPngPath(shortId: string): string {
+  return `/s/${shortId}.png`;
+}
+
 /** Generated Open Graph image for a shared collection, at its live slug only. */
 export function publicCollectionOgPath(handle: string, slug: string): string {
   return `/${handle}/${slug}/og`;

@@ -82,6 +82,12 @@ export async function updateEditorPreferences(
   }
 }
 
+/** The user's handle, or null when they have never shared anything. */
+export async function getUserHandle(userId: string): Promise<string | null> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { handle: true } });
+  return user?.handle ?? null;
+}
+
 export type HandleClient = {
   user: {
     findUnique: typeof prisma.user.findUnique;

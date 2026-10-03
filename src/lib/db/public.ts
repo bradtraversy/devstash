@@ -4,6 +4,7 @@ import { PUBLIC_PAGE_ITEM_LIMIT } from '@/lib/constants/pagination';
 import {
   publicCollectionOgPath,
   publicCollectionPath,
+  publicShortImagePath,
   publicShortOgPath,
   publicShortPath,
 } from '@/lib/public/paths';
@@ -250,9 +251,9 @@ function toPaths(rows: PathRow[]): string[] {
   });
 }
 
-/** A shared item's page and its Open Graph image. */
+/** A shared item's page, its Open Graph card, and its full image. */
 function itemPaths(shortId: string): string[] {
-  return [publicShortPath(shortId), publicShortOgPath(shortId)];
+  return [publicShortPath(shortId), publicShortOgPath(shortId), publicShortImagePath(shortId)];
 }
 
 /** Paths for the non-private collections among the given ids: the live page, its slug redirects, and its short link. */
