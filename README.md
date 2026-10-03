@@ -20,7 +20,7 @@
 ---
 
 > [!IMPORTANT]
-> **Here for the [Coding With AI](https://www.codingwithaicourse.com) course?** This repository is under active development and has changed a lot since the course was recorded: features have been added, changed, and removed, and the code on `main` no longer matches the lessons. To follow along, switch to the **`course-final`** tag, which holds the code exactly as it was at the end of the course.
+> **Here for the [Coding With AI](https://www.traversymedia.com/coding-with-ai) course?** This repository is under active development and has changed a lot since the course was recorded: features have been added, changed, and removed, and the code on `main` no longer matches the lessons. To follow along, switch to the **`course-final`** tag, which holds the code exactly as it was at the end of the course.
 >
 > - **On GitHub:** open the branch menu (it says `main`), choose the **Tags** tab, and select **`course-final`**.
 > - **With git:** `git clone --branch course-final https://github.com/bradtraversy/devstash.git`
@@ -37,7 +37,7 @@
 DevStash is a place to keep the snippets, commands, prompts, notes, and links you reuse, and to share any of them with one link. Everything is private until you share it. A shared snippet gets a short link that never changes, plus a raw version for `curl` and a clean image of the whole thing; a collection can be published as one ordered page. It runs at [devstash.io](https://devstash.io).
 
 <p align="center">
-  <img src="screen.png" alt="The DevStash dashboard" width="800" />
+  <img src="screen.png" alt="The DevStash homepage: Stash it. Share it., with a snippet shared as a link and an image" width="800" />
 </p>
 
 ## Features
@@ -59,9 +59,9 @@ DevStash is a place to keep the snippets, commands, prompts, notes, and links yo
 
 **Under the hood**
 - Email and password or GitHub sign-in, with email verification and password reset
-- Rate limiting on the auth endpoints, uploads, and AI requests
+- Rate limiting on the auth endpoints and AI requests
 - Images and preview cards rendered on the server with Shiki highlighting and `next/og`
-- A Pro plan with Stripe billing and file and image uploads is built but switched off; set `NEXT_PUBLIC_PRO_ENABLED=true` to turn it back on
+- A Pro plan with Stripe billing and file and image uploads is built but disabled; set `NEXT_PUBLIC_PRO_ENABLED=true` to turn it back on
 
 ## Tech Stack
 
@@ -78,8 +78,8 @@ DevStash is a place to keep the snippets, commands, prompts, notes, and links yo
 | AI            | OpenAI (`gpt-5-nano`)                        |
 | Rate limiting | Upstash Redis                                |
 | Email         | Resend                                       |
-| File storage  | Cloudflare R2 (with Pro)                     |
-| Payments      | Stripe (with Pro)                            |
+| File storage  | Cloudflare R2 (disabled)                     |
+| Payments      | Stripe (disabled)                            |
 | Testing       | Vitest                                       |
 
 ## Getting Started
@@ -121,16 +121,16 @@ cp .env.example .env
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis URL for rate limiting (required in production) |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis token |
 | `OPENAI_API_KEY` | OpenAI API key for the AI helpers |
-| `R2_ACCOUNT_ID` | Cloudflare R2 account ID (Pro file uploads) |
-| `R2_ACCESS_KEY_ID` | R2 access key |
-| `R2_SECRET_ACCESS_KEY` | R2 secret key |
-| `R2_BUCKET_NAME` | R2 bucket name |
-| `R2_PUBLIC_URL` | R2 public URL |
-| `STRIPE_SECRET_KEY` | Stripe secret key (Pro billing) |
-| `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `STRIPE_PRICE_ID_MONTHLY` | Stripe monthly price ID |
-| `STRIPE_PRICE_ID_YEARLY` | Stripe yearly price ID |
+| `R2_ACCOUNT_ID` | Cloudflare R2 account ID (disabled; only for Pro file uploads) |
+| `R2_ACCESS_KEY_ID` | R2 access key (disabled) |
+| `R2_SECRET_ACCESS_KEY` | R2 secret key (disabled) |
+| `R2_BUCKET_NAME` | R2 bucket name (disabled) |
+| `R2_PUBLIC_URL` | R2 public URL (disabled) |
+| `STRIPE_SECRET_KEY` | Stripe secret key (disabled; only for Pro billing) |
+| `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (disabled) |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (disabled) |
+| `STRIPE_PRICE_ID_MONTHLY` | Stripe monthly price ID (disabled) |
+| `STRIPE_PRICE_ID_YEARLY` | Stripe yearly price ID (disabled) |
 
 ### Database Setup
 
