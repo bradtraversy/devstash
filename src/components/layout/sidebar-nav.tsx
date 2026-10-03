@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getItemTypeIcon } from "@/lib/constants/item-types";
+import { isTypeListed, showsProBadge } from "@/lib/plans";
 import type { ItemTypeWithCount } from "@/lib/db/items";
 import type { SidebarCollections } from "@/lib/db/collections";
 
@@ -30,7 +31,7 @@ export default function SidebarNav({
         <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Types
         </h3>
-        {itemTypes.map((type) => {
+        {itemTypes.filter(isTypeListed).map((type) => {
           const Icon = getItemTypeIcon(type.icon);
           const isActive = pathname === `/items/${type.name}s`;
 
@@ -46,7 +47,7 @@ export default function SidebarNav({
             >
               <Icon className="h-4 w-4" style={{ color: type.color }} />
               <span className="capitalize">{type.name}s</span>
-              {(type.name === "file" || type.name === "image") && (
+              {showsProBadge(type.name) && (
                 <Badge
                   variant="secondary"
                   className="h-4 px-1 text-[10px] font-medium"

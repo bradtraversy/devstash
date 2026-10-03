@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { isProEnabled } from '@/lib/plans'
 
 const PRICE_MAP: Record<string, string | undefined> = {
   monthly: process.env.STRIPE_PRICE_ID_MONTHLY,
@@ -9,6 +10,10 @@ const PRICE_MAP: Record<string, string | undefined> = {
 }
 
 export async function POST(request: Request) {
+  if (!isProEnabled()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   try {
     const session = await auth()
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { prisma } from '@/lib/prisma'
 import {
   getUserUsage,
@@ -22,6 +22,15 @@ const mockCollectionCount = vi.mocked(prisma.collection.count)
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+// These tests cover Pro gating, so the switch is on unless a test turns it off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', 'true')
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
 })
 
 describe('getUserUsage', () => {
@@ -105,5 +114,32 @@ describe('canCreateCollection', () => {
 
     expect(result).toBe(true)
     expect(mockCollectionCount).not.toHaveBeenCalled()
+  })
+})
+
+describe('with Pro off', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '')
+  })
+
+  it('allows up to the 1,000-item and 100-collection ceiling', async () => {
+    mockItemCount.mockResolvedValue(999)
+    mockCollectionCount.mockResolvedValue(100)
+
+    const usage = await getUserUsage('user-1', false)
+
+    expect(usage.canCreateItem).toBe(true)
+    expect(usage.canCreateCollection).toBe(false)
+    expect(usage.maxItems).toBe(1000)
+    expect(usage.maxCollections).toBe(100)
+  })
+
+  it('ignores a stale Pro flag and still counts', async () => {
+    mockItemCount.mockResolvedValue(1000)
+
+    const result = await canCreateItem('user-1', true)
+
+    expect(result).toBe(false)
+    expect(mockItemCount).toHaveBeenCalled()
   })
 })

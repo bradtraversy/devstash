@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { hasAiAccess } from "@/lib/plans";
 
 interface ProAiButtonProps {
   isPro: boolean;
@@ -22,7 +23,7 @@ export default function ProAiButton({
   isLoading,
   onClick,
 }: ProAiButtonProps) {
-  if (!isPro) {
+  if (!hasAiAccess(isPro)) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>

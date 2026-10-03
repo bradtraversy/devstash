@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest'
 import type { Session } from 'next-auth'
 
 // Mock the auth module
@@ -33,6 +33,15 @@ const validInput = {
   language: 'typescript',
   typeName: 'snippet',
 }
+
+// These tests cover Pro gating, so the switch is on unless a test turns it off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', 'true')
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
 
 describe('generateAutoTags server action', () => {
   beforeEach(() => {
@@ -96,6 +105,25 @@ describe('generateAutoTags server action', () => {
     expect(result.success).toBe(false)
     expect(result.error).toContain('Too many AI requests')
     expect(mockCheckRateLimit).toHaveBeenCalledWith('ai', 'user-123')
+  })
+
+  it('works for a non-Pro user while Pro is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '')
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    })
+    const mockClient = {
+      responses: {
+        create: vi.fn().mockResolvedValue({ output_text: JSON.stringify({ tags: ['react'] }) }),
+      },
+    }
+    mockGetOpenAIClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getOpenAIClient>)
+
+    const result = await generateAutoTags(validInput)
+
+    expect(result.success).toBe(true)
+    expect(result.data).toEqual(['react'])
   })
 
   it('returns tags on success with { tags: [...] } format', async () => {

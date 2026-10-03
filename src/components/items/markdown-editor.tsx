@@ -9,6 +9,7 @@ import EditorHeader from "./editor-header";
 import { optimizePrompt } from "@/actions/ai";
 import { toast } from "sonner";
 import ProAiButton from "@/components/shared/pro-ai-button";
+import { hasAiAccess } from "@/lib/plans";
 
 interface MarkdownEditorProps {
   value: string;
@@ -59,7 +60,7 @@ export default function MarkdownEditor({
   }, [value, activeTab]);
 
   const handleOptimize = async () => {
-    if (!isPro) return;
+    if (!hasAiAccess(isPro)) return;
     if (isOptimizing) return;
 
     setIsOptimizing(true);
@@ -119,7 +120,7 @@ export default function MarkdownEditor({
   // Build extra buttons for the header
   const extraButtons = showOptimize ? (
     <div className="flex items-center gap-2">
-      {isPro && activeTab === "optimized" && optimizedContent && onAcceptOptimized && (
+      {hasAiAccess(isPro) && activeTab === "optimized" && optimizedContent && onAcceptOptimized && (
         <button
           type="button"
           onClick={handleAccept}

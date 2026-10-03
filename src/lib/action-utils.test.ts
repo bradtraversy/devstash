@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import type { Session } from 'next-auth';
 
 vi.mock('@/auth', () => ({ auth: vi.fn() }));
@@ -16,6 +16,15 @@ const mockAuth = auth as unknown as Mock<() => Promise<Session | null>>;
 const mockCheckRateLimit = vi.mocked(checkRateLimit);
 
 const session: Session = { user: { id: 'user-1', isPro: true }, expires: '2099-01-01T00:00:00.000Z' };
+
+// These tests cover Pro gating, so the switch is on unless a test turns it off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', 'true');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('getAuthedSession', () => {
   beforeEach(() => {
@@ -50,6 +59,13 @@ describe('requirePro', () => {
 
   it('returns null for a Pro user', () => {
     expect(requirePro(true)).toBeNull();
+  });
+
+  it('lets everyone through while Pro is off', () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '');
+
+    expect(requirePro(undefined)).toBeNull();
+    expect(requirePro(false)).toBeNull();
   });
 });
 

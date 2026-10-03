@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import type { Session } from 'next-auth';
 
 vi.mock('@/auth', () => ({ auth: vi.fn() }));
@@ -57,6 +57,15 @@ function post(fields: { file?: File; itemType?: string }) {
   return POST(new Request('http://localhost/api/upload', { method: 'POST', body }));
 }
 
+// These tests cover Pro gating, so the switch is on unless a test turns it off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', 'true');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe('POST /api/upload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -87,6 +96,17 @@ describe('POST /api/upload', () => {
     expect(res.status).toBe(403);
     expect(await res.json()).toEqual({ error: 'File uploads require a Pro subscription' });
     expect(mockFindUnique).toHaveBeenCalledWith({ where: { id: 'user-1' }, select: { isPro: true } });
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 for everyone, a Pro user included, before any lookup while Pro is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '');
+
+    const res = await post({ file, itemType: 'file' });
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'File uploads are not available right now' });
+    expect(mockFindUnique).not.toHaveBeenCalled();
     expect(mockCheckRateLimit).not.toHaveBeenCalled();
   });
 

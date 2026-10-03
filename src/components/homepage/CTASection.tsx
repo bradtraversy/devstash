@@ -11,7 +11,7 @@ export default function CTASection() {
             Your next snippet deserves a link
           </h2>
           <p className="text-base text-[#8888a4] max-w-[520px] mx-auto mb-8 leading-relaxed">
-            Free to start, with sharing on every plan. Paste something and send the link.
+            Free to use, with sharing built in. Paste something and send the link.
           </p>
           <Button asChild size="lg" className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-400 text-white border-0 px-8 py-3 text-base hover:opacity-90 hover:-translate-y-0.5 transition-all">
             <Link href="/register">Start sharing free</Link>

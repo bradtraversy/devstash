@@ -11,6 +11,7 @@ import { getSidebarCollections } from '@/lib/db/collections';
 import { getItemsByType, getItemTypesWithCounts, VALID_ITEM_TYPES } from '@/lib/db/items';
 import { getEditorPreferences } from '@/lib/db/users';
 import { ITEMS_PER_PAGE } from '@/lib/constants/pagination';
+import { isProEnabled } from '@/lib/plans';
 
 interface ItemsPageProps {
   params: Promise<{ type: string }>;
@@ -47,10 +48,10 @@ export default async function ItemsPage({ params, searchParams }: ItemsPageProps
     redirect('/sign-in');
   }
 
-  // Pro-only types: file and image require a Pro subscription
+  // With Pro off these pages list existing file and image items read only.
   const isProType = typeName === 'file' || typeName === 'image';
 
-  if (isProType && !user.isPro) {
+  if (isProType && isProEnabled() && !user.isPro) {
     redirect('/upgrade');
   }
 
@@ -105,7 +106,9 @@ export default async function ItemsPage({ params, searchParams }: ItemsPageProps
         ) : (
           <div className="rounded-lg border border-border bg-card p-8 text-center">
             <p className="text-muted-foreground">
-              No {typeName}s yet. Create your first one!
+              {isProType && !isProEnabled()
+                ? `No ${typeName}s here. New ${typeName} uploads are not available right now.`
+                : `No ${typeName}s yet. Create your first one!`}
             </p>
           </div>
         )}

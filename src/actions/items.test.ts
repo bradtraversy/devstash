@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import type { Session } from 'next-auth';
 
 // Mock the auth module
@@ -48,6 +48,15 @@ const mockCanCreateItem = vi.mocked(canCreateItem);
 const mockPublicPathsForItem = vi.mocked(publicPathsForItem);
 const mockRevalidatePath = vi.mocked(revalidatePath);
 const revalidated = () => mockRevalidatePath.mock.calls.map((call) => call[0]);
+
+// These tests cover Pro gating, so the switch is on unless a test turns it off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', 'true');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('updateItem server action', () => {
   beforeEach(() => {
@@ -616,6 +625,55 @@ describe('createItem server action', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe('File and image uploads require a Pro subscription');
+  });
+
+  it('refuses file items even for a Pro user while Pro is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '');
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    });
+
+    const result = await createItem({
+      typeName: 'image',
+      title: 'Test Image',
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      tags: [],
+      fileUrl: 'https://example.com/image.png',
+      fileName: 'image.png',
+      fileSize: 1024,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('File and image items are not available right now');
+  });
+
+  it('reports the ceiling without upgrade wording when the limit is hit while Pro is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '');
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    });
+    mockCanCreateItem.mockResolvedValue(false);
+
+    const result = await createItem({
+      typeName: 'snippet',
+      title: 'Test',
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      tags: [],
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('You have reached the limit of 1,000 items. Delete some to add more.');
   });
 
   it('returns error when item limit reached', async () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import type { Session } from 'next-auth';
 
 vi.mock('@/auth', () => ({
@@ -77,6 +77,15 @@ const validExportJson = JSON.stringify({
     { name: 'React Patterns', description: 'Common patterns', isFavorite: false },
     { name: 'AI Workflows', description: null, isFavorite: true },
   ],
+});
+
+// These tests cover Pro gating, so the switch is on unless a test turns it off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', 'true');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe('previewImport server action', () => {
@@ -385,6 +394,47 @@ describe('importData server action', () => {
     expect(created.find((d) => d.title === 'Internal')).toMatchObject({ fileUrl: null, fileName: null, fileSize: null });
   });
 
+  it('skips file and image items even for a Pro user while Pro is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '');
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    });
+    const json = JSON.stringify({
+      version: 1,
+      items: [
+        { title: 'Doc', type: 'file', content: null, fileUrl: null, fileName: 'a.pdf', fileSize: 10, tags: [], collections: [] },
+        { title: 'Hook', type: 'snippet', content: 'const a = 1;', tags: [], collections: [] },
+      ],
+      collections: [],
+    });
+    vi.mocked(prisma.item.count).mockResolvedValue(0);
+    vi.mocked(prisma.collection.count).mockResolvedValue(0);
+    vi.mocked(prisma.item.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.collection.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.itemType.findMany).mockResolvedValue([
+      { id: 'type-1', name: 'snippet', icon: 'Code', color: '#3b82f6', isSystem: true, userId: null },
+      { id: 'type-file', name: 'file', icon: 'File', color: '#6b7280', isSystem: true, userId: null },
+    ]);
+    const itemCreate = vi.fn().mockResolvedValue({ id: 'new-item' });
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: unknown) => {
+      const txClient = {
+        collection: {
+          findMany: vi.fn().mockResolvedValue([]),
+          create: vi.fn().mockResolvedValue({ id: 'new-coll', name: 'Test' }),
+        },
+        item: { create: itemCreate },
+      };
+      return (fn as (tx: typeof txClient) => Promise<void>)(txClient);
+    });
+
+    const result = await importData(json, false);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.itemsImported).toBe(1);
+    expect(itemCreate.mock.calls.map((call) => call[0].data.title)).toEqual(['Hook']);
+  });
+
   it('enforces free tier item limit', async () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user-123', isPro: false },
@@ -419,6 +469,43 @@ describe('importData server action', () => {
 
     expect(result.success).toBe(true);
     // Only 1 item can fit (50 - 49 = 1)
+    expect(result.data?.itemsImported).toBe(1);
+    expect(result.data?.itemsSkipped).toBe(2);
+  });
+
+  it('caps a stale Pro flag at the 1,000-item ceiling while Pro is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '');
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: true },
+      expires: new Date().toISOString(),
+    });
+
+    vi.mocked(prisma.item.count).mockResolvedValue(999);
+    vi.mocked(prisma.collection.count).mockResolvedValue(0);
+    vi.mocked(prisma.item.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.collection.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.itemType.findMany).mockResolvedValue([
+      { id: 'type-1', name: 'snippet', icon: 'Code', color: '#3b82f6', isSystem: true, userId: null },
+      { id: 'type-2', name: 'command', icon: 'Terminal', color: '#f97316', isSystem: true, userId: null },
+      { id: 'type-3', name: 'prompt', icon: 'Sparkles', color: '#8b5cf6', isSystem: true, userId: null },
+    ]);
+
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: unknown) => {
+      const txClient = {
+        collection: {
+          findMany: vi.fn().mockResolvedValue([]),
+          create: vi.fn().mockResolvedValue({ id: 'new-coll', name: 'Test' }),
+        },
+        item: {
+          create: vi.fn().mockResolvedValue({ id: 'new-item' }),
+        },
+      };
+      return (fn as (tx: typeof txClient) => Promise<void>)(txClient);
+    });
+
+    const result = await importData(validExportJson, false);
+
+    expect(result.success).toBe(true);
     expect(result.data?.itemsImported).toBe(1);
     expect(result.data?.itemsSkipped).toBe(2);
   });

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import type { Session } from 'next-auth';
 
 vi.mock('@/auth', () => ({ auth: vi.fn() }));
@@ -41,6 +41,15 @@ function signIn(isPro = false) {
 function silenceErrors() {
   return vi.spyOn(console, 'error').mockImplementation(() => {});
 }
+
+// These tests cover Pro gating, so the switch is on unless a test turns it off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', 'true');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('saveSharedItem', () => {
   beforeEach(() => {
@@ -197,6 +206,17 @@ describe('saveSharedCollection', () => {
     expect(result.error).toBe(
       'Saving this collection needs 5 item slots and your free plan has 2 left. Upgrade to Pro for unlimited items.'
     );
+    expect(mockCopySharedCollection).not.toHaveBeenCalled();
+  });
+
+  it('states the slots left under the ceiling without upgrade wording while Pro is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '');
+    signIn();
+    mockGetUserUsage.mockResolvedValue({ ...freeUsage, itemCount: 998, maxItems: 1000 });
+
+    const result = await saveSharedCollection(input);
+
+    expect(result.error).toBe('Saving this collection needs 5 item slots and you have 2 left of your 1,000.');
     expect(mockCopySharedCollection).not.toHaveBeenCalled();
   });
 

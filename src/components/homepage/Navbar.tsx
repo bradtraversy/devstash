@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FolderOpen, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isProEnabled } from "@/lib/plans";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -36,9 +37,11 @@ export default function Navbar() {
           <Link href="/#features" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
             Features
           </Link>
-          <Link href="/#pricing" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
-            Pricing
-          </Link>
+          {isProEnabled() && (
+            <Link href="/#pricing" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
+              Pricing
+            </Link>
+          )}
         </div>
 
         <div className="hidden md:flex items-center gap-3">
@@ -75,13 +78,15 @@ export default function Navbar() {
           >
             Features
           </Link>
-          <Link
-            href="/#pricing"
-            className="text-[#8888a4] text-sm py-2"
-            onClick={() => setMobileOpen(false)}
-          >
-            Pricing
-          </Link>
+          {isProEnabled() && (
+            <Link
+              href="/#pricing"
+              className="text-[#8888a4] text-sm py-2"
+              onClick={() => setMobileOpen(false)}
+            >
+              Pricing
+            </Link>
+          )}
           <Button variant="outline" asChild className="border-[#1e1e2e] text-[#8888a4] hover:text-[#e4e4ef] bg-transparent mt-1 justify-center">
             <Link href="/sign-in" onClick={() => setMobileOpen(false)}>Sign In</Link>
           </Button>

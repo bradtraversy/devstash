@@ -58,6 +58,7 @@ import { useOrigin } from "@/hooks/use-origin";
 import { useCopyImage } from "@/hooks/use-copy-image";
 import { imageFilename } from "@/lib/og/filename";
 import { publicShortOgPath, publicShortPath } from "@/lib/public/paths";
+import { hasAiAccess } from "@/lib/plans";
 import {
   VISIBILITY_OPTIONS,
   getVisibilityOption,
@@ -607,7 +608,7 @@ export default function ItemDrawer() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="description">Description</Label>
-                        {isPro && (
+                        {hasAiAccess(isPro) && (
                           <GenerateDescriptionButton
                             title={title}
                             content={content || null}
@@ -684,7 +685,7 @@ export default function ItemDrawer() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="tags">Tags</Label>
-                        {isPro && (
+                        {hasAiAccess(isPro) && (
                           <SuggestTagsButton
                             title={title}
                             content={content || null}

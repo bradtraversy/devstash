@@ -1,6 +1,7 @@
 import { auth } from '@/auth';
 import { checkRateLimit, formatRetryTime } from '@/lib/rate-limit';
 import { UNAUTHORIZED_ERROR } from '@/lib/constants/action-errors';
+import { hasAiAccess } from '@/lib/plans';
 
 /**
  * Standard server action result shape used across all actions.
@@ -40,7 +41,7 @@ export async function getAuthedSession(): Promise<
  * Checks if the user has Pro status. Returns an error result if not.
  */
 export function requirePro(isPro: boolean | undefined): ActionResult<never> | null {
-  if (!(isPro ?? false)) {
+  if (!hasAiAccess(isPro)) {
     return { success: false, error: 'AI features require a Pro subscription' };
   }
   return null;

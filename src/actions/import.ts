@@ -5,7 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { VALID_ITEM_TYPES, isFileType, nextPosition } from '@/lib/db/items';
 import { collectionSlugBase, uniqueSlug } from '@/lib/slugs';
 import { generateShortId } from '@/lib/short-id';
-import { MAX_ITEMS, MAX_COLLECTIONS } from '@/lib/usage';
+import { maxCollections, maxItems } from '@/lib/constants/limits';
+import { hasFileAccess, isProUser } from '@/lib/plans';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 import { isOwnedFileUrl } from '@/lib/file-urls';
 import { publicPathsForCollections } from '@/lib/db/public';
@@ -135,9 +136,9 @@ export async function importData(
     prisma.collection.count({ where: { userId } }),
   ]);
 
-  // Filter out file/image types for free users
+  // Filter out file/image types for anyone without file access
   let importableItems = data.items;
-  if (!isPro) {
+  if (!hasFileAccess(isPro)) {
     importableItems = importableItems.filter(
       (item) => item.type !== 'file' && item.type !== 'image'
     );
@@ -147,9 +148,9 @@ export async function importData(
   let itemLimit = importableItems.length;
   let collectionLimit = data.collections.length;
 
-  if (!isPro) {
-    const remainingItems = Math.max(0, MAX_ITEMS - currentItemCount);
-    const remainingCollections = Math.max(0, MAX_COLLECTIONS - currentCollectionCount);
+  if (!isProUser(isPro)) {
+    const remainingItems = Math.max(0, maxItems() - currentItemCount);
+    const remainingCollections = Math.max(0, maxCollections() - currentCollectionCount);
     itemLimit = Math.min(itemLimit, remainingItems);
     collectionLimit = Math.min(collectionLimit, remainingCollections);
   }
@@ -190,7 +191,8 @@ export async function importData(
 
   let itemsImported = 0;
   let collectionsImported = 0;
-  let itemsSkipped = 0;
+  // File and image items filtered out above count as skipped so the summary adds up.
+  let itemsSkipped = data.items.length - importableItems.length;
   let collectionsSkipped = 0;
   const touchedCollectionIds = new Set<string>();
 

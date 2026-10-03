@@ -31,6 +31,7 @@ import FileUpload from "./file-upload";
 import CollectionPicker, { type CollectionOption } from "./collection-picker";
 import SuggestTagsButton from "./suggest-tags-button";
 import GenerateDescriptionButton from "./generate-description-button";
+import { hasAiAccess, isProEnabled } from "@/lib/plans";
 
 interface NewItemDialogProps {
   open: boolean;
@@ -53,6 +54,8 @@ const ITEM_TYPES: { value: ItemTypeName; label: string; icon: string; isPro?: bo
 
 export default function NewItemDialog({ open, onOpenChange, defaultType, isPro }: NewItemDialogProps) {
   const router = useRouter();
+  const aiAccess = hasAiAccess(isPro);
+  const itemTypes = isProEnabled() ? ITEM_TYPES : ITEM_TYPES.filter((type) => !type.isPro);
   const [isLoading, setIsLoading] = useState(false);
   const [typeName, setTypeName] = useState<ItemTypeName>(defaultType || "snippet");
   const [title, setTitle] = useState("");
@@ -193,7 +196,7 @@ export default function NewItemDialog({ open, onOpenChange, defaultType, isPro }
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ITEM_TYPES.map((type) => {
+                {itemTypes.map((type) => {
                   const Icon = getItemTypeIcon(type.icon);
                   const color = ITEM_TYPE_COLORS[type.value];
                   return (
@@ -229,7 +232,7 @@ export default function NewItemDialog({ open, onOpenChange, defaultType, isPro }
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="description">Description</Label>
-              {isPro && (
+              {aiAccess && (
                 <GenerateDescriptionButton
                   title={title}
                   content={content || null}
@@ -317,7 +320,7 @@ export default function NewItemDialog({ open, onOpenChange, defaultType, isPro }
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="tags">Tags</Label>
-              {isPro && (
+              {aiAccess && (
                 <SuggestTagsButton
                   title={title}
                   content={content || null}

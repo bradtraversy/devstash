@@ -7,6 +7,7 @@ import FeaturesSection from "@/components/homepage/FeaturesSection";
 import PricingSection from "@/components/homepage/PricingSection";
 import CTASection from "@/components/homepage/CTASection";
 import Footer from "@/components/homepage/Footer";
+import { isProEnabled } from "@/lib/plans";
 
 export default function Home() {
   return (
@@ -17,7 +18,7 @@ export default function Home() {
       <SharedViewSection />
       <PreviewsSection />
       <FeaturesSection />
-      <PricingSection />
+      {isProEnabled() && <PricingSection />}
       <CTASection />
       <Footer />
     </main>

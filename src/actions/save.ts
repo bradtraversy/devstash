@@ -6,8 +6,9 @@ import { normalizePublicSegment } from '@/lib/public/paths';
 import { parseZodErrors } from '@/lib/validation';
 import { getUserUsage } from '@/lib/usage';
 import {
-  COLLECTION_LIMIT_ERROR,
-  ITEM_LIMIT_ERROR,
+  collectionLimitError,
+  collectionSaveError,
+  itemLimitError,
   SAVE_COLLECTION_ITEM_LIMIT,
 } from '@/lib/constants/limits';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
@@ -72,7 +73,7 @@ export async function saveSharedItem(input: SaveItemInput): Promise<ActionResult
       case 'unsupported':
         return { success: false, error: 'Files cannot be saved yet' };
       case 'limit':
-        return { success: false, error: ITEM_LIMIT_ERROR };
+        return { success: false, error: itemLimitError() };
       default:
         return { success: true, data: { itemId: result.itemId, typeName: result.typeName } };
     }
@@ -117,16 +118,13 @@ export async function saveSharedCollection(
 
     const usage = await getUserUsage(userId, session.user.isPro ?? false);
     if (!usage.canCreateCollection) {
-      return { success: false, error: COLLECTION_LIMIT_ERROR };
+      return { success: false, error: collectionLimitError() };
     }
 
-    // maxItems is unbounded for Pro, so only a free account can fail this check.
+    // maxItems is unbounded for Pro users, so only a capped account can fail this check.
     const left = Math.max(0, usage.maxItems - usage.itemCount);
     if (summary.copyable > left) {
-      return {
-        success: false,
-        error: `Saving this collection needs ${summary.copyable} item slots and your free plan has ${left} left. Upgrade to Pro for unlimited items.`,
-      };
+      return { success: false, error: collectionSaveError(summary.copyable, left) };
     }
 
     const result = await copySharedCollection(userId, handle, slug);
