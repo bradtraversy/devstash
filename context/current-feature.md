@@ -1,16 +1,18 @@
-# Current Feature
+# Current Feature: README Restructure
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Course notice at the top as a GitHub alert: the repo has changed since the course, switch to the `course-final` tag (GitHub tag menu, `git clone --branch course-final`, or the release ZIP), with the cropped tag-menu screenshot.
+- README rewritten around "Stash it. Share it." with features, stack, setup, variables, scripts, and structure matching the code today.
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/readme-restructure-spec.md`. Branch `chore/readme-restructure`, one commit, then a pull request.
+- Brad, 2026-10-03: one of the most important things is telling people the project is being worked on and changed, and to select the correct tag for the course files; image from `~/Downloads/de.png` or a better one.
 
 ## History
 
