@@ -257,6 +257,7 @@ describe('public path lookups', () => {
     expect(paths).toEqual([
       '/s/item0001',
       '/s/item0001/og',
+      '/s/item0001/image',
       '/brad/react-hooks',
       '/brad/hooks',
       '/brad/react-hooks/og',
@@ -284,8 +285,10 @@ describe('public path lookups', () => {
       '/s/abc12345',
       '/s/item0001',
       '/s/item0001/og',
+      '/s/item0001/image',
       '/s/item0002',
       '/s/item0002/og',
+      '/s/item0002/image',
     ]);
   });
 });

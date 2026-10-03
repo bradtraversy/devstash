@@ -5,8 +5,10 @@ import {
   publicCollectionPath,
   publicMarkdownPath,
   publicRawPath,
+  publicShortImagePath,
   publicShortOgPath,
   publicShortPath,
+  publicShortPngPath,
   publicShortRawPath,
   siteOrigin,
   versionedPath,
@@ -62,6 +64,11 @@ describe('Open Graph image paths', () => {
   it('builds the item and collection image paths', () => {
     expect(publicShortOgPath('abc12345')).toBe('/s/abc12345/og');
     expect(publicCollectionOgPath('brad', 'react-hooks')).toBe('/brad/react-hooks/og');
+  });
+
+  it('builds the full snippet image route and the png URL people see', () => {
+    expect(publicShortImagePath('abc12345')).toBe('/s/abc12345/image');
+    expect(publicShortPngPath('abc12345')).toBe('/s/abc12345.png');
   });
 
   it('appends the update time as a version query', () => {

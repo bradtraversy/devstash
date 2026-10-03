@@ -160,7 +160,7 @@ describe('kindLabel', () => {
   it('names snippets by language, commands as Terminal, and other types by name', () => {
     expect(kindLabel({ itemType: snippetType, language: 'python' })).toBe('Python');
     expect(kindLabel({ itemType: snippetType, language: null })).toBe('Plain Text');
-    expect(kindLabel({ itemType: { name: 'command', icon: 'Terminal', color: '#f97316' }, language: null })).toBe('Terminal');
-    expect(kindLabel({ itemType: { name: 'note', icon: 'StickyNote', color: '#fde047' }, language: null })).toBe('Note');
+    expect(kindLabel({ itemType: { name: 'command' }, language: null })).toBe('Terminal');
+    expect(kindLabel({ itemType: { name: 'note' }, language: null })).toBe('Note');
   });
 });

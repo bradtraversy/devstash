@@ -31,6 +31,13 @@ export function getItemTypeIcon(iconName: string): LucideIcon {
   return ITEM_TYPE_ICONS[iconName] || Code;
 }
 
+/** Types whose body is text: they render as code or markdown and can become an image. */
+export const TEXT_ITEM_TYPES = ['snippet', 'command', 'note', 'prompt'] as const;
+
+export function isTextType(name: string): boolean {
+  return (TEXT_ITEM_TYPES as readonly string[]).includes(name);
+}
+
 /** Types whose content lives in the row itself, so a copy into another account needs no file access. */
 export const COPYABLE_ITEM_TYPES = ['snippet', 'command', 'note', 'prompt', 'link'] as const;
 

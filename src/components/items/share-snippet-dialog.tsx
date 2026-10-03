@@ -2,7 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Code, ExternalLink, Link2, Loader2, Share2, Terminal } from "lucide-react";
+import Image from "next/image";
+import {
+  Check,
+  Code,
+  Download,
+  ExternalLink,
+  Image as ImageIcon,
+  Link2,
+  Loader2,
+  Share2,
+  Terminal,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,8 +37,10 @@ import { createItem } from "@/actions/items";
 import { LANGUAGES } from "@/lib/constants/editor";
 import { ITEM_TYPE_COLORS } from "@/lib/constants/item-types";
 import { defaultShareTitle, guessLanguage, type ShareKind } from "@/lib/languages";
-import { publicShortPath } from "@/lib/public/paths";
+import { imageFilename } from "@/lib/og/filename";
+import { publicShortOgPath, publicShortPath, publicShortPngPath } from "@/lib/public/paths";
 import { useClipboard } from "@/hooks/use-clipboard";
+import { useCopyImage } from "@/hooks/use-copy-image";
 import { useOrigin } from "@/hooks/use-origin";
 
 interface ShareSnippetDialogProps {
@@ -44,12 +57,14 @@ export default function ShareSnippetDialog({ open, onOpenChange }: ShareSnippetD
   const router = useRouter();
   const origin = useOrigin();
   const { copied, copy } = useClipboard();
+  const { copyImage } = useCopyImage();
   const [kind, setKind] = useState<ShareKind>("snippet");
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [chosenLanguage, setChosenLanguage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
+  const [created, setCreated] = useState<{ shortId: string; title: string } | null>(null);
 
   // The select follows the guess until the user picks a language themselves.
   const guessed = useMemo(() => guessLanguage(content), [content]);
@@ -86,6 +101,7 @@ export default function ShareSnippetDialog({ open, onOpenChange }: ShareSnippetD
       if (result.success && result.data) {
         const url = `${origin}${publicShortPath(result.data.shortId)}`;
         setLink(url);
+        setCreated({ shortId: result.data.shortId, title: result.data.title });
         await copy(url, "Link copied");
         router.refresh();
       } else {
@@ -144,7 +160,42 @@ export default function ShareSnippetDialog({ open, onOpenChange }: ShareSnippetD
                 Anyone with the link can view it. Change that any time from the item.
               </p>
             </div>
-            <div className="flex justify-end gap-3">
+            {created && (
+              <div className="space-y-2">
+                <div className="overflow-hidden rounded-md border border-border">
+                  <Image
+                    unoptimized
+                    src={publicShortOgPath(created.shortId)}
+                    alt="Link preview card"
+                    width={1200}
+                    height={630}
+                    className="h-auto w-full"
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  This is what Slack, X, and Discord show for the link.
+                </p>
+              </div>
+            )}
+            <div className="flex flex-wrap justify-end gap-3">
+              {created && (
+                <>
+                  <Button type="button" variant="outline" asChild>
+                    <a href={publicShortPngPath(created.shortId)} download={imageFilename(created.title)}>
+                      <Download className="h-4 w-4" />
+                      Download image
+                    </a>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => copyImage(publicShortPngPath(created.shortId))}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    Copy image
+                  </Button>
+                </>
+              )}
               <Button type="button" variant="outline" asChild>
                 <a href={link} target="_blank" rel="noreferrer">
                   <ExternalLink className="h-4 w-4" />
