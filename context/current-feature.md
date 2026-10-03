@@ -2,11 +2,18 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+App Shell Prototype, spec in `context/features/app-shell-prototype-spec.md`:
+
+- Clickable mockup in `prototypes/app-shell/` of Home, Shared, Favorites, a collection, and the item drawer
+- Dense rows that show what is shared, with one-click Share and Copy link
+- Rows by default with a Rows and Code cards switch above every list; by-type sidebar as the default
+- Mockup controls for sidebar (by type or library first) and data (full or new user)
+- Paste box with Save and Save and share, search filtering, visibility changes reflected everywhere
+- Design brief beside the prototype; no changes to `src/`
 
 ## Notes
 
