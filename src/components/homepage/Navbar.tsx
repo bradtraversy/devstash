@@ -30,6 +30,9 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden md:flex gap-8">
+          <Link href="/#sharing" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
+            Sharing
+          </Link>
           <Link href="/#features" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
             Features
           </Link>
@@ -58,6 +61,13 @@ export default function Navbar() {
 
       {mobileOpen && (
         <div className="md:hidden flex flex-col gap-2 px-6 pb-6 border-t border-[#1e1e2e]">
+          <Link
+            href="/#sharing"
+            className="text-[#8888a4] text-sm py-2"
+            onClick={() => setMobileOpen(false)}
+          >
+            Sharing
+          </Link>
           <Link
             href="/#features"
             className="text-[#8888a4] text-sm py-2"

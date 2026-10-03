@@ -127,19 +127,6 @@
   }
 }
 
-/* Homepage chaos animation arrow pulse */
-@keyframes pulse-arrow {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-}
-
 /* Custom scrollbar for editor components */
 .editor-scrollbar {
   scrollbar-width: thin;

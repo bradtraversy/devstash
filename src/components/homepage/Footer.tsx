@@ -31,7 +31,7 @@ export default function Footer() {
               DevStash
             </Link>
             <p className="text-sm text-[#8888a4] max-w-[280px] leading-relaxed">
-              Your developer knowledge hub. One place for snippets, prompts, commands, and more.
+              Your snippets, commands, and prompts in one private stash, each one a link away from sharing.
             </p>
           </div>
 

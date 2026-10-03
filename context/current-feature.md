@@ -1,16 +1,28 @@
-# Current Feature
+# Current Feature: Homepage Sharing
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Homepage rewritten around "Stash it. Share it.": page order Navbar, Hero, ShareFormatsSection, SharedViewSection, PreviewsSection, FeaturesSection, Pricing, CTA, Footer; `/` stays static.
+- `src/components/homepage/samples.ts` with `SAMPLE_ITEM` (TypeScript `useDebounce hook`, handle `sam`, short id `k3j9x2ab`), `SAMPLE_COLLECTION` (`Docker Essentials`, a command, a YAML snippet, a note), and `LIVE_EXAMPLE_PATH` (`/traversymedia/devops`).
+- Hero: the new headline and subhead, `Start sharing free` and `See how it works` buttons, and a looping `ShareDemo` (paste, share, link copied, image) that respects reduced motion, replacing the chaos animation and dashboard preview.
+- `ShareFormatsSection` (`#sharing`): the short link laid out by part, then the page, `/raw` with a curl line, `.png` with a thumbnail, and the collection URL with `.md`, built from the `paths.ts` builders.
+- `SharedViewSection`: browser frames with the real `ItemBlock` for the sample snippet page and the sample collection page, a static Save button, and a `See a real one` link.
+- `PreviewsSection`: a Slack-style unfurl with the real preview card, and Save to your stash with a static button and toast mock.
+- `scripts/render-homepage-images.tsx` writes `public/homepage/sample-card.png` and `sample-image.png` through the real renderers.
+- Features grid of six cards with AI folded in under a Pro badge; a sharing line on the free pricing tier; new CTA copy; `Sharing` in the navbar; root metadata and the site-wide Open Graph tagline updated.
+- `ChaosAnimation.tsx`, `DashboardPreview.tsx`, `AISection.tsx`, and the unused `pulse-arrow` keyframes removed.
+- `npm run verify` green, the sample images viewed, and a browser check at desktop and 375px on a dev server Brad starts.
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/homepage-sharing-spec.md`. Branch `feature/homepage-sharing` off `main`, one implementation commit, then a pull request (the complete step's local merge and push are not used in this repo).
+- Built directly in the app rather than a separate mockup (Brad, 2026-10-03: whatever is easily reversible and changeable); screenshots go to Brad section by section.
+- Decided with Brad: headline "Stash it. Share it.", AI folded into features, demo hero now with the working paste box as the next feature, real components with sample data plus a live link.
+- Out of scope: the working paste-to-share box, the dashboard pass, the public profile, pricing changes beyond the sharing line, new routes.
 
 ## History
 

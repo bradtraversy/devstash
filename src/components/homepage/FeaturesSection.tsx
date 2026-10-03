@@ -1,48 +1,49 @@
-import { Code, Sparkles, Search, Terminal, FileText, FolderOpen } from "lucide-react";
+import { Code, Download, FolderOpen, Lock, Search, Sparkles } from "lucide-react";
 import ScrollFadeIn from "./ScrollFadeIn";
 
 const FEATURES = [
   {
-    icon: Code,
-    title: "Code Snippets",
+    icon: Lock,
+    title: "Private by default",
     description:
-      "Save reusable code with syntax highlighting, language detection, and instant copy. Never rewrite the same function twice.",
-    accent: "#3b82f6",
-  },
-  {
-    icon: Sparkles,
-    title: "AI Prompts",
-    description:
-      "Store and organize your best prompts for ChatGPT, Claude, and other AI tools. Build a personal prompt library.",
-    accent: "#f59e0b",
+      "Everything you save is yours alone until you choose to share it. Change who can see an item or a collection any time.",
+    accent: "#10b981",
   },
   {
     icon: Search,
-    title: "Instant Search",
+    title: "Instant search",
     description:
-      "Find anything in milliseconds. Search across all your items by content, tags, titles, or type with Cmd+K.",
+      "Cmd+K finds any snippet, prompt, command, or note by its title or content.",
     accent: "#06b6d4",
-  },
-  {
-    icon: Terminal,
-    title: "Commands",
-    description:
-      "Keep your most-used terminal commands at your fingertips. No more digging through bash history.",
-    accent: "#22c55e",
-  },
-  {
-    icon: FileText,
-    title: "Files & Docs",
-    description:
-      "Upload and manage files, images, and documents. Keep your project assets organized alongside your code.",
-    accent: "#64748b",
   },
   {
     icon: FolderOpen,
     title: "Collections",
     description:
-      "Group related items into collections. Organize by project, topic, or workflow for quick access.",
+      "Group items by project or topic. Keep a collection private, or publish it as one ordered page.",
     accent: "#6366f1",
+  },
+  {
+    icon: Code,
+    title: "Every kind of snippet",
+    description:
+      "Snippets, prompts, commands, notes, and links, highlighted in 30 languages. Files and images on Pro.",
+    accent: "#3b82f6",
+  },
+  {
+    icon: Sparkles,
+    title: "AI helpers",
+    description:
+      "Suggested tags, plain-English explanations of code, and a prompt optimizer that rewrites your prompts.",
+    accent: "#f59e0b",
+    pro: true,
+  },
+  {
+    icon: Download,
+    title: "Export anytime",
+    description:
+      "Download everything as markdown or JSON on any plan, or as a ZIP with your files on Pro.",
+    accent: "#64748b",
   },
 ];
 
@@ -52,17 +53,12 @@ export default function FeaturesSection() {
       <div className="max-w-[1200px] mx-auto px-6">
         <ScrollFadeIn>
           <h2 className="text-[clamp(1.8rem,3.5vw,2.8rem)] font-extrabold leading-tight mb-4 tracking-tight max-sm:text-[1.6rem]">
-            Everything You Need,
-            <br />
-            <span className="bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 bg-clip-text text-transparent">
-              One Place
-            </span>
+            Everything you share starts in your stash
           </h2>
         </ScrollFadeIn>
         <ScrollFadeIn>
           <p className="text-base text-[#8888a4] max-w-[520px] mx-auto mb-16 leading-relaxed">
-            Stop context-switching between tools. DevStash keeps all your developer resources
-            organized and searchable.
+            Save it privately first, find it in a keystroke, and share it only when you choose.
           </p>
         </ScrollFadeIn>
 
@@ -82,7 +78,14 @@ export default function FeaturesSection() {
                 >
                   <f.icon className="size-6" />
                 </div>
-                <h3 className="text-lg font-bold mb-2 text-[#e4e4ef]">{f.title}</h3>
+                <h3 className="flex items-center gap-2 text-lg font-bold mb-2 text-[#e4e4ef]">
+                  {f.title}
+                  {f.pro && (
+                    <span className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[11px] font-bold text-black">
+                      Pro
+                    </span>
+                  )}
+                </h3>
                 <p className="text-sm text-[#8888a4] leading-relaxed">{f.description}</p>
               </div>
             </ScrollFadeIn>
