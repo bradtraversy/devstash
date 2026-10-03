@@ -17,8 +17,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
-  title: "DevStash - Developer Knowledge Hub",
-  description: "A unified hub for developer knowledge & resources",
+  title: "DevStash - Stash it. Share it.",
+  description:
+    "Save snippets, commands, and prompts in one place and share any of them with a short link, a raw URL, and a clean image.",
 };
 
 export default function RootLayout({

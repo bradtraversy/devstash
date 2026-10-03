@@ -15,6 +15,8 @@ interface ItemBlockProps {
   position?: number;
   /** The block is the whole page: the title is the h1 and there is no anchor. */
   standalone?: boolean;
+  /** Overrides the title's heading level where the block sits inside another page's outline. */
+  headingLevel?: "h1" | "h2" | "h3" | "h4";
 }
 
 function copyTextFor(item: PublicItem): string | null {
@@ -60,9 +62,9 @@ function BlockBody({ item }: { item: PublicItem }) {
   }
 }
 
-export default function ItemBlock({ item, position, standalone = false }: ItemBlockProps) {
+export default function ItemBlock({ item, position, standalone = false, headingLevel }: ItemBlockProps) {
   const anchor = !standalone && position !== undefined ? `b${position}` : null;
-  const Heading = standalone ? "h1" : "h2";
+  const Heading = headingLevel ?? (standalone ? "h1" : "h2");
   const IconComponent = ITEM_TYPE_ICONS[item.itemType.icon] ?? Code;
   const copyText = copyTextFor(item);
   const label = labelFor(item);

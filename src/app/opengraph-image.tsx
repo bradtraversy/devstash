@@ -41,7 +41,7 @@ export default function OpenGraphImage() {
           <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -2 }}>DevStash</div>
         </div>
         <div style={{ marginTop: 36, fontSize: 40, color: "#a1a1aa" }}>
-          Snippets, commands, prompts, and notes in shareable collections
+          Stash it. Share it.
         </div>
       </div>
     ),
