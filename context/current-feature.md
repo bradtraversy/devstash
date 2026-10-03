@@ -2,11 +2,17 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+Item Rows and Layout Switch, spec in `context/features/item-rows-spec.md`:
+
+- Dense `ItemRow` with a visibility pill, Copy content, and one-click Share or Copy link on `/items/[type]`, `/favorites`, and `/collections/[id]`
+- `ItemCodeCard` with highlighted previews for snippets and commands
+- Rows and Code cards switch stored in a cookie, rows by default
+- Collection rows keep move up and move down
+- Tests for `parseListLayout` and `getCodePreviews`
 
 ## Notes
 

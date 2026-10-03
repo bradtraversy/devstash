@@ -1,8 +1,10 @@
 import { redirect, notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { auth } from '@/auth';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import CollectionActions from '@/components/collections/collection-actions';
-import CollectionItemRow from '@/components/collections/collection-item-row';
+import CollectionItemList from '@/components/collections/collection-item-list';
+import ListLayoutSwitch from '@/components/items/list-layout-switch';
 import VisibilityControl from '@/components/collections/visibility-control';
 import Pagination from '@/components/shared/pagination';
 import { getSidebarCollections, getCollectionById } from '@/lib/db/collections';
@@ -10,6 +12,8 @@ import { getItemTypesWithCounts, getItemsByCollection } from '@/lib/db/items';
 import { getUserById, getEditorPreferences } from '@/lib/db/users';
 import { getItemTypeIcon } from '@/lib/constants/item-types';
 import { ITEMS_PER_PAGE } from '@/lib/constants/pagination';
+import { LIST_LAYOUT_COOKIE, parseListLayout } from '@/lib/list-layout';
+import { getCodePreviews } from '@/lib/item-previews';
 import { Star } from 'lucide-react';
 
 interface CollectionDetailPageProps {
@@ -41,14 +45,17 @@ export default async function CollectionDetailPage({ params, searchParams }: Col
   // Parse page number (default to 1)
   const currentPage = Math.max(1, parseInt(pageParam || '1', 10) || 1);
 
-  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences] = await Promise.all([
+  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences, cookieStore] = await Promise.all([
     getItemsByCollection(user.id, collectionId, currentPage, ITEMS_PER_PAGE),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
     getEditorPreferences(user.id),
+    cookies(),
   ]);
 
   const { items, totalPages } = paginatedItems;
+  const layout = parseListLayout(cookieStore.get(LIST_LAYOUT_COOKIE)?.value);
+  const previews = layout === 'cards' ? await getCodePreviews(items) : undefined;
 
   return (
     <DashboardLayout
@@ -105,16 +112,18 @@ export default async function CollectionDetailPage({ params, searchParams }: Col
 
         {/* Items in position order */}
         {items.length > 0 ? (
-          <div className="divide-y divide-border rounded-lg border border-border bg-card">
-            {items.map((item, index) => (
-              <CollectionItemRow
-                key={item.id}
-                item={item}
-                collectionId={collectionId}
-                isFirst={currentPage === 1 && index === 0}
-                isLast={currentPage >= totalPages && index === items.length - 1}
-              />
-            ))}
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <ListLayoutSwitch layout={layout} />
+            </div>
+            <CollectionItemList
+              items={items}
+              collectionId={collectionId}
+              layout={layout}
+              previews={previews}
+              currentPage={currentPage}
+              totalPages={totalPages}
+            />
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-card p-8 text-center">
