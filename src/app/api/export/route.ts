@@ -5,7 +5,7 @@ import { stashToMarkdown } from '@/lib/markdown-export';
 import { isOwnedFileUrl } from '@/lib/file-urls';
 import { isFileType } from '@/lib/db/items';
 import { isProUser } from '@/lib/plans';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import { PassThrough } from 'stream';
 
 function getDateString(): string {
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
   }
 
   // ZIP format: JSON manifest + actual files from R2
-  const archive = archiver('zip', { zlib: { level: 9 } });
+  const archive = new ZipArchive({ zlib: { level: 9 } });
   const chunks: Uint8Array[] = [];
 
   const streamPromise = new Promise<Uint8Array>((resolve, reject) => {
