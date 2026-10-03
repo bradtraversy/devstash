@@ -4,6 +4,7 @@ import { getUserExportData, getUserMarkdownExport } from '@/lib/db/export';
 import { stashToMarkdown } from '@/lib/markdown-export';
 import { isOwnedFileUrl } from '@/lib/file-urls';
 import { isFileType } from '@/lib/db/items';
+import { isProUser } from '@/lib/plans';
 import archiver from 'archiver';
 import { PassThrough } from 'stream';
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
   }
 
   // ZIP export is Pro-only
-  if (format === 'zip' && !(session.user.isPro ?? false)) {
+  if (format === 'zip' && !isProUser(session.user.isPro)) {
     return NextResponse.json(
       { error: 'ZIP export requires a Pro subscription' },
       { status: 403 }

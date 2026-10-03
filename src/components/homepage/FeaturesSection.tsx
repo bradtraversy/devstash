@@ -1,4 +1,5 @@
 import { Code, Download, FolderOpen, Lock, Search, Sparkles } from "lucide-react";
+import { isProEnabled } from "@/lib/plans";
 import ScrollFadeIn from "./ScrollFadeIn";
 
 const FEATURES = [
@@ -26,7 +27,8 @@ const FEATURES = [
   {
     icon: Code,
     title: "Every kind of snippet",
-    description:
+    description: "Snippets, prompts, commands, notes, and links, highlighted in 30 languages.",
+    proDescription:
       "Snippets, prompts, commands, notes, and links, highlighted in 30 languages. Files and images on Pro.",
     accent: "#3b82f6",
   },
@@ -41,13 +43,16 @@ const FEATURES = [
   {
     icon: Download,
     title: "Export anytime",
-    description:
+    description: "Download everything as markdown or JSON whenever you want.",
+    proDescription:
       "Download everything as markdown or JSON on any plan, or as a ZIP with your files on Pro.",
     accent: "#64748b",
   },
 ];
 
 export default function FeaturesSection() {
+  const proEnabled = isProEnabled();
+
   return (
     <section id="features" className="py-[120px] text-center bg-[#12121a]">
       <div className="max-w-[1200px] mx-auto px-6">
@@ -80,13 +85,15 @@ export default function FeaturesSection() {
                 </div>
                 <h3 className="flex items-center gap-2 text-lg font-bold mb-2 text-[#e4e4ef]">
                   {f.title}
-                  {f.pro && (
+                  {proEnabled && f.pro && (
                     <span className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[11px] font-bold text-black">
                       Pro
                     </span>
                   )}
                 </h3>
-                <p className="text-sm text-[#8888a4] leading-relaxed">{f.description}</p>
+                <p className="text-sm text-[#8888a4] leading-relaxed">
+                  {proEnabled && f.proDescription ? f.proDescription : f.description}
+                </p>
               </div>
             </ScrollFadeIn>
           ))}

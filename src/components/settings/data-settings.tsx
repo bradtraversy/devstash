@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Database, Download, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ImportDialog from './import-dialog';
+import { isProEnabled } from '@/lib/plans';
 
 type ExportFormat = 'json' | 'md' | 'zip';
 
@@ -71,7 +72,9 @@ export default function DataSettings({ isPro }: DataSettingsProps) {
             <CardTitle>Data</CardTitle>
           </div>
           <CardDescription>
-            Export your data as JSON, Markdown, or a ZIP with files, or import from a previous export.
+            {isProEnabled()
+              ? "Export your data as JSON, Markdown, or a ZIP with files, or import from a previous export."
+              : "Export your data as JSON or Markdown, or import from a previous export."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -92,19 +95,21 @@ export default function DataSettings({ isPro }: DataSettingsProps) {
               {exportIcon('md')}
               Export Markdown
             </Button>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => handleExport('zip')}
-                disabled={exporting !== null || !isPro}
-              >
-                {exportIcon('zip')}
-                Export ZIP
-              </Button>
-              {!isPro && (
-                <Badge variant="secondary" className="text-xs">PRO</Badge>
-              )}
-            </div>
+            {isProEnabled() && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleExport('zip')}
+                  disabled={exporting !== null || !isPro}
+                >
+                  {exportIcon('zip')}
+                  Export ZIP
+                </Button>
+                {!isPro && (
+                  <Badge variant="secondary" className="text-xs">PRO</Badge>
+                )}
+              </div>
+            )}
           </div>
 
           <Separator />

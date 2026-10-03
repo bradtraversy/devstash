@@ -14,6 +14,7 @@ import NewItemDialog from "@/components/items/new-item-dialog";
 import NewCollectionDialog from "@/components/collections/new-collection-dialog";
 import { useSearch } from "@/components/search/search-provider";
 import { useShareDialog } from "@/components/items/share-dialog-provider";
+import { isProEnabled } from "@/lib/plans";
 
 interface TopBarProps {
   onMenuClick?: () => void;
@@ -70,7 +71,7 @@ export default function TopBar({ onMenuClick, isPro }: TopBarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-        {!isPro && (
+        {isProEnabled() && !isPro && (
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
             <Link href="/upgrade">
               <Sparkles className="h-4 w-4 mr-1" />

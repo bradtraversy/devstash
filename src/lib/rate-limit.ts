@@ -25,8 +25,8 @@ function getRedis(): Redis | null {
 
 type KeyBy = 'ip' | 'ip+id' | 'id'
 
-// Rate limit configurations for different endpoints. failClosed limits protect credentials and
-// deny on a Redis error; the rest fail open.
+// Rate limit configurations for different endpoints. failClosed limits protect credentials and the
+// paid OpenAI calls and deny on a Redis error; the rest fail open.
 export const rateLimitConfigs = {
   // Login: 5 attempts per 15 minutes per IP and email
   login: {
@@ -75,7 +75,7 @@ export const rateLimitConfigs = {
     limiter: Ratelimit.slidingWindow(20, '1 h'),
     prefix: 'ratelimit:ai',
     keyBy: 'id',
-    failClosed: false,
+    failClosed: true,
   },
 } as const satisfies Record<string, { limiter: unknown; prefix: string; keyBy: KeyBy; failClosed: boolean }>
 

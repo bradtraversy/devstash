@@ -7,6 +7,7 @@ import ProfileStats from '@/components/profile/profile-stats';
 import { getSidebarCollections } from '@/lib/db/collections';
 import { getItemTypesWithCounts } from '@/lib/db/items';
 import { getUserWithSettings } from '@/lib/db/users';
+import { isTypeListed } from '@/lib/plans';
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -34,12 +35,14 @@ export default async function ProfilePage() {
   });
 
   const typeCountMap = new Map(itemCounts.map((c) => [c.itemTypeId, c._count.id]));
-  const itemTypeBreakdown = itemTypes.map((type) => ({
-    name: type.name,
-    icon: type.icon,
-    color: type.color,
-    count: typeCountMap.get(type.id) || 0,
-  }));
+  const itemTypeBreakdown = itemTypes
+    .map((type) => ({
+      name: type.name,
+      icon: type.icon,
+      color: type.color,
+      count: typeCountMap.get(type.id) || 0,
+    }))
+    .filter(isTypeListed);
 
   // Get totals
   const [totalItems, totalCollections] = await Promise.all([

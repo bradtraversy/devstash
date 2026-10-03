@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import DashboardLayout from '@/components/layout/dashboard-layout';
@@ -7,8 +7,13 @@ import { getItemTypesWithCounts } from '@/lib/db/items';
 import { getSidebarCollections } from '@/lib/db/collections';
 import { getEditorPreferences } from '@/lib/db/users';
 import { getUserUsage } from '@/lib/usage';
+import { isProEnabled } from '@/lib/plans';
 
 export default async function UpgradePage() {
+  if (!isProEnabled()) {
+    notFound();
+  }
+
   const session = await auth();
 
   if (!session?.user?.id) {

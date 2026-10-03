@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { uploadToR2, validateFile } from '@/lib/r2';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
+import { isProEnabled } from '@/lib/plans';
 
 export async function POST(request: Request) {
   try {
@@ -10,6 +11,10 @@ export async function POST(request: Request) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!isProEnabled()) {
+      return NextResponse.json({ error: 'File uploads are not available right now' }, { status: 403 });
     }
 
     // Check Pro status (file uploads require Pro)

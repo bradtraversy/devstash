@@ -10,6 +10,7 @@ import { getSidebarCollections } from '@/lib/db/collections';
 import { getItemTypesWithCounts } from '@/lib/db/items';
 import { getUserWithSettings } from '@/lib/db/users';
 import { getUserUsage } from '@/lib/usage';
+import { isProEnabled } from '@/lib/plans';
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -54,12 +55,13 @@ export default async function SettingsPage() {
         {/* Editor Settings */}
         <EditorSettings />
 
-        {/* Billing Settings */}
-        <BillingSettings
-          isPro={isPro}
-          itemCount={usage.itemCount}
-          collectionCount={usage.collectionCount}
-        />
+        {isProEnabled() && (
+          <BillingSettings
+            isPro={isPro}
+            itemCount={usage.itemCount}
+            collectionCount={usage.collectionCount}
+          />
+        )}
 
         {/* Data Settings */}
         <DataSettings isPro={isPro} />

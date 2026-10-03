@@ -16,7 +16,8 @@ import {
 import { parseZodErrors, safeUrlSchema, validateId } from '@/lib/validation';
 import { isOwnedFileUrl } from '@/lib/file-urls';
 import { canCreateItem } from '@/lib/usage';
-import { ITEM_LIMIT_ERROR } from '@/lib/constants/limits';
+import { itemLimitError } from '@/lib/constants/limits';
+import { hasFileAccess, isProEnabled } from '@/lib/plans';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 import { COLLECTION_VISIBILITIES, type VisibilityUpdate } from '@/lib/constants/visibility';
 import { publicPathsForItem } from '@/lib/db/public';
@@ -159,17 +160,19 @@ export async function createItem(
     return { success: false, error: 'Validation failed', fieldErrors: parseZodErrors(parsed.error) };
   }
 
-  // Pro type check: file/image require Pro
   const isPro = session.user.isPro ?? false;
   const fileBacked = isFileType(parsed.data.typeName);
-  if (fileBacked && !isPro) {
-    return { success: false, error: 'File and image uploads require a Pro subscription' };
+  if (fileBacked && !hasFileAccess(isPro)) {
+    const error = isProEnabled()
+      ? 'File and image uploads require a Pro subscription'
+      : 'File and image items are not available right now';
+    return { success: false, error };
   }
 
   // Usage limit check
   const allowed = await canCreateItem(session.user.id, isPro);
   if (!allowed) {
-    return { success: false, error: ITEM_LIMIT_ERROR };
+    return { success: false, error: itemLimitError() };
   }
 
   // Validate URL is required for link type

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import NewItemDialog, { type ItemTypeName } from "./new-item-dialog";
+import { isProEnabled } from "@/lib/plans";
 
 interface ItemsPageHeaderProps {
   typeName: string;
@@ -19,6 +20,8 @@ export default function ItemsPageHeader({
   isPro,
 }: ItemsPageHeaderProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  // While Pro is off, existing file and image items stay readable but no new ones are made.
+  const canCreate = isProEnabled() || (typeName !== "file" && typeName !== "image");
 
   return (
     <>
@@ -29,10 +32,12 @@ export default function ItemsPageHeader({
             {itemCount} {itemCount === 1 ? "item" : "items"}
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New {typeName.charAt(0).toUpperCase() + typeName.slice(1)}
-        </Button>
+        {canCreate && (
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New {typeName.charAt(0).toUpperCase() + typeName.slice(1)}
+          </Button>
+        )}
       </div>
 
       <NewItemDialog

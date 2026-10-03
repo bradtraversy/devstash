@@ -1,16 +1,22 @@
-# Current Feature
+# Current Feature: Hide Pro
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- `src/lib/plans.ts` with `isProEnabled()` (off unless `NEXT_PUBLIC_PRO_ENABLED` is `true`), `isProUser`, `hasAiAccess`, and `hasFileAccess`; `.env.example` documents the variable.
+- Limits as functions: 50 items and 3 collections while Pro is on, a 1,000-item and 100-collection ceiling while it is off, with messages that drop the upgrade wording; usage, create, import, and save paths read them.
+- Server gates: AI free while Pro is off; file and image creation, import, uploads, and ZIP export only for Pro users while Pro is on; checkout 404 while off; portal and webhook unchanged.
+- UI: `/upgrade` 404, no Billing card or ZIP button, no Upgrade button, no file or image types in New Item, AI controls without crowns, sidebar PRO badges hidden and Files and Images rows only for users who have them, read-only file and image pages, homepage without Pricing or Pro mentions.
+- Tests for both modes; `npm run verify` green; browser check with a throwaway verified local user.
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/hide-pro-spec.md`. Branch `feature/hide-pro` off `main`, one implementation commit, then a pull request.
+- Decided with Brad on 2026-10-03: files and images disabled and Pro UI hidden but kept; AI free for everyone; a high ceiling instead of the free caps. Brad authorized running this feature through commit, push, PR, and merge without stopping unless something breaks.
+- Existing file and image items stay viewable and downloadable; nothing is deleted.
 
 ## History
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import type { Session } from 'next-auth';
 
 // Mock the auth module
@@ -65,6 +65,15 @@ const mockPublicPathsForCollections = vi.mocked(publicPathsForCollections);
 const mockPublicPathForOwnerSlug = vi.mocked(publicPathForOwnerSlug);
 const mockRevalidatePath = vi.mocked(revalidatePath);
 const revalidated = () => mockRevalidatePath.mock.calls.map((call) => call[0]);
+
+// These tests cover Pro gating, so the switch is on unless a test turns it off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', 'true');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('createCollection server action', () => {
   beforeEach(() => {
@@ -221,6 +230,20 @@ describe('createCollection server action', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('free tier limit of 3 collections');
+  });
+
+  it('reports the 100-collection ceiling without upgrade wording while Pro is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '');
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', isPro: false },
+      expires: new Date().toISOString(),
+    });
+    mockCanCreateCollection.mockResolvedValue(false);
+
+    const result = await createCollection({ name: 'Test Collection', description: null });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('You have reached the limit of 100 collections. Delete some to add more.');
   });
 
   it('trims whitespace from name', async () => {

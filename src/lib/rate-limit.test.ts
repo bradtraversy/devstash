@@ -81,12 +81,14 @@ describe('checkRateLimit', () => {
     expect(reset.success).toBe(false)
   })
 
-  it('fails open for non-credential limits when Redis errors', async () => {
+  it('fails open for the other limits and closed for AI when Redis errors', async () => {
     const { checkRateLimit } = await load()
     limitMock.mockRejectedValue(new Error('redis down'))
     vi.spyOn(console, 'error').mockImplementation(() => {})
+    const upload = await checkRateLimit('upload', 'u1')
     const ai = await checkRateLimit('ai', 'u1')
-    expect(ai.success).toBe(true)
+    expect(upload.success).toBe(true)
+    expect(ai.success).toBe(false)
   })
 
   it('fails open with a warning in development when Upstash is not configured', async () => {

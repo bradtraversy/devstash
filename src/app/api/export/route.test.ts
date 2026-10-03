@@ -90,6 +90,15 @@ function get(query = '') {
   return GET(new NextRequest(`http://localhost/api/export${query}`));
 }
 
+// These tests cover Pro gating, so the switch is on unless a test turns it off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', 'true');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe('GET /api/export', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -133,6 +142,16 @@ describe('GET /api/export', () => {
 
     expect(res.status).toBe(403);
     expect(await res.json()).toEqual({ error: 'ZIP export requires a Pro subscription' });
+    expect(mockGetExportData).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 for a ZIP export even for a Pro user while Pro is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRO_ENABLED', '');
+    mockAuth.mockResolvedValue(proSession);
+
+    const res = await get('?format=zip');
+
+    expect(res.status).toBe(403);
     expect(mockGetExportData).not.toHaveBeenCalled();
   });
 

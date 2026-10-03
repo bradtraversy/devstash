@@ -1,5 +1,6 @@
 import { FolderOpen } from "lucide-react";
 import Link from "next/link";
+import { isProEnabled } from "@/lib/plans";
 
 const FOOTER_LINKS = {
   Product: [
@@ -41,7 +42,7 @@ export default function Footer() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#e4e4ef] mb-1">
                 {title}
               </h4>
-              {links.map((link) => (
+              {links.filter((link) => link.href !== "#pricing" || isProEnabled()).map((link) => (
                 <a
                   key={link.label}
                   href={link.href}

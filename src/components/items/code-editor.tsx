@@ -12,6 +12,7 @@ import type { EditorTheme } from "@/lib/constants/editor";
 import { explainCode } from "@/actions/ai";
 import { toast } from "sonner";
 import ProAiButton from "@/components/shared/pro-ai-button";
+import { hasAiAccess } from "@/lib/plans";
 
 // Configure Monaco to load from CDN
 loader.config({
@@ -119,7 +120,7 @@ export default function CodeEditor({
   const handleCopy = () => copy(value);
 
   const handleExplain = async () => {
-    if (!isPro) return;
+    if (!hasAiAccess(isPro)) return;
     if (isExplaining) return;
 
     setIsExplaining(true);
