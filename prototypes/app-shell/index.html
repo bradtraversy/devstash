@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DevStash app shell mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="mock-strip" role="region" aria-label="Mockup controls">
+      <span class="mock-tag">Mockup</span>
+      <label>Sidebar
+        <select id="opt-sidebar">
+          <option value="type">By type</option>
+          <option value="library">Library first</option>
+        </select>
+      </label>
+      <label>Data
+        <select id="opt-data">
+          <option value="full">Full stash</option>
+          <option value="empty">New user</option>
+        </select>
+      </label>
+      <span class="mock-note">Sample data, nothing is saved</span>
+    </div>
+
+    <div class="app">
+      <header class="topbar">
+        <button class="icon-btn nav-toggle" data-action="open-sidebar" aria-label="Open navigation"><i data-i="menu"></i></button>
+        <a class="brand" href="#" data-action="go" data-view="home"><i data-i="folder-open"></i><span>DevStash</span></a>
+        <label class="search">
+          <span class="sr-only">Search your stash</span>
+          <i data-i="search"></i>
+          <input id="search" type="search" placeholder="Search your stash" autocomplete="off" />
+          <kbd id="search-kbd">Ctrl K</kbd>
+        </label>
+        <div class="top-actions">
+          <div class="menu-wrap">
+            <button class="btn btn-primary" data-action="toggle-menu" data-menu="new" aria-haspopup="menu" aria-expanded="false">
+              <i data-i="plus"></i><span>New</span>
+            </button>
+            <div class="menu" data-menu-panel="new" role="menu" hidden>
+              <button role="menuitem" data-action="new-paste"><i data-i="clipboard-paste"></i>Snippet, command, or link</button>
+              <button role="menuitem" data-action="todo" data-msg="New collection works like it does today"><i data-i="folder-plus"></i>Collection</button>
+            </div>
+          </div>
+          <button class="avatar" data-action="todo" data-msg="The account menu stays as it is today" aria-label="Account">BT</button>
+        </div>
+      </header>
+
+      <div class="shell">
+        <nav class="sidebar" id="sidebar" aria-label="Your stash"></nav>
+        <div class="scrim" data-action="close-sidebar"></div>
+        <main class="main" id="main" tabindex="-1"></main>
+      </div>
+    </div>
+
+    <div class="drawer-scrim" data-action="close-drawer"></div>
+    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden></aside>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <script src="icons.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
