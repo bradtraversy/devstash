@@ -38,6 +38,7 @@ export interface ItemWithType {
   description: string | null;
   content: string | null;
   url: string | null;
+  language: string | null;
   isFavorite: boolean;
   isPinned: boolean;
   visibility: CollectionVisibility;
@@ -80,6 +81,7 @@ type PrismaItemWithType = {
   description: string | null;
   content: string | null;
   url: string | null;
+  language: string | null;
   isFavorite: boolean;
   isPinned: boolean;
   visibility: CollectionVisibility;
@@ -94,7 +96,6 @@ type PrismaItemWithType = {
 };
 
 type PrismaItemWithDetail = PrismaItemWithType & {
-  language: string | null;
   contentType: string;
   collections: { collection: { id: string; name: string; visibility: CollectionVisibility } }[];
 };
@@ -109,6 +110,7 @@ function toItemWithType(item: PrismaItemWithType): ItemWithType {
     description: item.description,
     content: item.content,
     url: item.url,
+    language: item.language,
     isFavorite: item.isFavorite,
     isPinned: item.isPinned,
     visibility: item.visibility,

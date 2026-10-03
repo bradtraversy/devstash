@@ -2,8 +2,11 @@
 
 import { useMemo, useState } from "react";
 import SortableSection from "@/components/shared/sortable-section";
-import FavoriteItemRow from "@/components/favorites/favorite-item-row";
+import ItemList from "@/components/items/item-list";
+import ListLayoutSwitch from "@/components/items/list-layout-switch";
 import type { ItemWithType } from "@/lib/db/items";
+import type { CodePreviews } from "@/lib/item-previews";
+import type { ListLayout } from "@/lib/list-layout";
 
 type SortKey = "name-asc" | "name-desc" | "date-desc" | "date-asc" | "type";
 
@@ -17,6 +20,8 @@ const SORT_OPTIONS = [
 
 interface FavoritesItemListProps {
   items: ItemWithType[];
+  layout: ListLayout;
+  previews?: CodePreviews;
 }
 
 function sortItems(items: ItemWithType[], sort: SortKey): ItemWithType[] {
@@ -38,7 +43,7 @@ function sortItems(items: ItemWithType[], sort: SortKey): ItemWithType[] {
   });
 }
 
-export default function FavoritesItemList({ items }: FavoritesItemListProps) {
+export default function FavoritesItemList({ items, layout, previews }: FavoritesItemListProps) {
   const [sort, setSort] = useState<SortKey>("date-desc");
   const sorted = useMemo(() => sortItems(items, sort), [items, sort]);
 
@@ -49,10 +54,10 @@ export default function FavoritesItemList({ items }: FavoritesItemListProps) {
       sort={sort}
       onSortChange={(v) => setSort(v as SortKey)}
       options={SORT_OPTIONS}
+      actions={<ListLayoutSwitch layout={layout} />}
+      unframed
     >
-      {sorted.map((item) => (
-        <FavoriteItemRow key={item.id} item={item} />
-      ))}
+      <ItemList items={sorted} layout={layout} previews={previews} />
     </SortableSection>
   );
 }

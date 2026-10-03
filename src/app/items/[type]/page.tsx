@@ -1,8 +1,9 @@
 import { redirect, notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import DashboardLayout from '@/components/layout/dashboard-layout';
-import ItemCard from '@/components/dashboard/item-card';
+import ItemList from '@/components/items/item-list';
 import ImageThumbnailCard from '@/components/items/image-thumbnail-card';
 import FileListRow from '@/components/items/file-list-row';
 import ItemsPageHeader from '@/components/items/items-page-header';
@@ -12,6 +13,8 @@ import { getItemsByType, getItemTypesWithCounts, VALID_ITEM_TYPES } from '@/lib/
 import { getEditorPreferences } from '@/lib/db/users';
 import { ITEMS_PER_PAGE } from '@/lib/constants/pagination';
 import { isProEnabled } from '@/lib/plans';
+import { LIST_LAYOUT_COOKIE, parseListLayout } from '@/lib/list-layout';
+import { getCodePreviews } from '@/lib/item-previews';
 
 interface ItemsPageProps {
   params: Promise<{ type: string }>;
@@ -55,14 +58,17 @@ export default async function ItemsPage({ params, searchParams }: ItemsPageProps
     redirect('/upgrade');
   }
 
-  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences] = await Promise.all([
+  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences, cookieStore] = await Promise.all([
     getItemsByType(user.id, typeName, currentPage, ITEMS_PER_PAGE),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
     getEditorPreferences(user.id),
+    cookies(),
   ]);
 
   const { items, totalCount, totalPages } = paginatedItems;
+  const layout = parseListLayout(cookieStore.get(LIST_LAYOUT_COOKIE)?.value);
+  const previews = !isProType && layout === 'cards' ? await getCodePreviews(items) : undefined;
   const displayName = typeName.charAt(0).toUpperCase() + typeName.slice(1) + 's';
 
   return (
@@ -80,6 +86,7 @@ export default async function ItemsPage({ params, searchParams }: ItemsPageProps
           displayName={displayName}
           itemCount={totalCount}
           isPro={user.isPro}
+          layout={isProType ? undefined : layout}
         />
 
         {/* Items Grid/List */}
@@ -91,17 +98,14 @@ export default async function ItemsPage({ params, searchParams }: ItemsPageProps
                 <FileListRow key={item.id} item={item} />
               ))}
             </div>
-          ) : (
-            // Grid for images and other types
+          ) : typeName === 'image' ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {items.map((item) =>
-                typeName === 'image' ? (
-                  <ImageThumbnailCard key={item.id} item={item} />
-                ) : (
-                  <ItemCard key={item.id} item={item} />
-                )
-              )}
+              {items.map((item) => (
+                <ImageThumbnailCard key={item.id} item={item} />
+              ))}
             </div>
+          ) : (
+            <ItemList items={items} layout={layout} previews={previews} />
           )
         ) : (
           <div className="rounded-lg border border-border bg-card p-8 text-center">

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import FavoritesItemList from "@/components/favorites/favorites-item-list";
@@ -6,6 +7,8 @@ import FavoritesCollectionList from "@/components/favorites/favorites-collection
 import { getSidebarCollections, getFavoriteCollections } from "@/lib/db/collections";
 import { getItemTypesWithCounts, getFavoriteItems } from "@/lib/db/items";
 import { getUserById, getEditorPreferences } from "@/lib/db/users";
+import { LIST_LAYOUT_COOKIE, parseListLayout } from "@/lib/list-layout";
+import { getCodePreviews } from "@/lib/item-previews";
 import { Star } from "lucide-react";
 
 export default async function FavoritesPage() {
@@ -27,13 +30,18 @@ export default async function FavoritesPage() {
     itemTypes,
     sidebarCollections,
     editorPreferences,
+    cookieStore,
   ] = await Promise.all([
     getFavoriteItems(user.id),
     getFavoriteCollections(user.id),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
     getEditorPreferences(user.id),
+    cookies(),
   ]);
+
+  const layout = parseListLayout(cookieStore.get(LIST_LAYOUT_COOKIE)?.value);
+  const previews = layout === "cards" ? await getCodePreviews(favoriteItems) : undefined;
 
   const totalFavorites = favoriteItems.length + favoriteCollections.length;
   const hasNoFavorites = totalFavorites === 0;
@@ -64,7 +72,7 @@ export default async function FavoritesPage() {
         ) : (
           <div className="space-y-8">
             {favoriteItems.length > 0 && (
-              <FavoritesItemList items={favoriteItems} />
+              <FavoritesItemList items={favoriteItems} layout={layout} previews={previews} />
             )}
 
             {favoriteCollections.length > 0 && (
