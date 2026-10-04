@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma/client';
 import type { CollectionVisibility, VisibilityUpdate } from '@/lib/constants/visibility';
 import type { HomeFilter } from '@/lib/home';
+import type { FavoriteItemSort } from '@/lib/favorites-sort';
 import { generateShortId } from '@/lib/short-id';
 import { isUniqueViolation } from '@/lib/db/errors';
 import { ensureUserHandle, retryOnHandleCollision } from '@/lib/db/users';
@@ -217,26 +218,14 @@ export async function getHomeItems(
   userId: string,
   filter: HomeFilter,
   page: number = 1,
-  limit: number = 21
+  limit: number = 25
 ): Promise<PaginatedItems> {
-  const where = { userId, ...HOME_FILTER_WHERE[filter] };
-  const [items, totalCount] = await Promise.all([
-    prisma.item.findMany({
-      where,
-      orderBy: [{ isPinned: 'desc' }, { updatedAt: 'desc' }, { id: 'asc' }],
-      skip: (page - 1) * limit,
-      take: limit,
-      include: { itemType: true, tags: true },
-    }),
-    prisma.item.count({ where }),
-  ]);
-
-  return {
-    items: items.map(toItemWithType),
-    totalCount,
-    totalPages: Math.ceil(totalCount / limit),
-    currentPage: page,
-  };
+  return paginateItems(
+    { userId, ...HOME_FILTER_WHERE[filter] },
+    [{ isPinned: 'desc' }, { updatedAt: 'desc' }, { id: 'asc' }],
+    page,
+    limit
+  );
 }
 
 /**
@@ -646,34 +635,57 @@ export async function getSearchableItems(
   });
 }
 
-/**
- * Get all favorite items for a user (sorted by updatedAt desc)
- */
-export async function getFavoriteItems(userId: string): Promise<ItemWithType[]> {
-  const items = await prisma.item.findMany({
-    where: {
-      userId,
-      isFavorite: true,
-    },
-    orderBy: { updatedAt: 'desc' },
-    include: {
-      itemType: true,
-      tags: true,
-    },
-  });
+const FAVORITE_ORDER: Record<FavoriteItemSort, Prisma.ItemOrderByWithRelationInput[]> = {
+  'date-desc': [{ updatedAt: 'desc' }, { id: 'asc' }],
+  'date-asc': [{ updatedAt: 'asc' }, { id: 'asc' }],
+  'name-asc': [{ title: 'asc' }, { id: 'asc' }],
+  'name-desc': [{ title: 'desc' }, { id: 'asc' }],
+  type: [{ itemType: { name: 'asc' } }, { title: 'asc' }, { id: 'asc' }],
+};
 
-  return items.map(toItemWithType);
+async function paginateItems(
+  where: Prisma.ItemWhereInput,
+  orderBy: Prisma.ItemOrderByWithRelationInput[],
+  page: number,
+  limit: number
+): Promise<PaginatedItems> {
+  const [items, totalCount] = await Promise.all([
+    prisma.item.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * limit,
+      take: limit,
+      include: { itemType: true, tags: true },
+    }),
+    prisma.item.count({ where }),
+  ]);
+
+  return {
+    items: items.map(toItemWithType),
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit),
+    currentPage: page,
+  };
 }
 
-/** The user's items that anyone with the link can open, most recently updated first. */
-export async function getSharedItems(userId: string): Promise<ItemWithType[]> {
-  const items = await prisma.item.findMany({
-    where: { userId, visibility: { not: 'PRIVATE' } },
-    orderBy: { updatedAt: 'desc' },
-    include: { itemType: true, tags: true },
-  });
+/** One page of the user's favorite items in the chosen order. */
+export async function getFavoriteItems(
+  userId: string,
+  sort: FavoriteItemSort = 'date-desc',
+  page: number = 1,
+  limit: number = 25
+): Promise<PaginatedItems> {
+  return paginateItems({ userId, isFavorite: true }, FAVORITE_ORDER[sort], page, limit);
+}
 
-  return items.map(toItemWithType);
+/** One page of the user's items that anyone with the link can open, most recently updated first. */
+export async function getSharedItems(userId: string, page: number = 1, limit: number = 25): Promise<PaginatedItems> {
+  return paginateItems(
+    { userId, visibility: { not: 'PRIVATE' } },
+    [{ updatedAt: 'desc' }, { id: 'asc' }],
+    page,
+    limit
+  );
 }
 
 /**

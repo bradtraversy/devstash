@@ -12,12 +12,18 @@ import { getItemTypesWithCounts, getSharedItems } from "@/lib/db/items";
 import { getEditorPreferences, getUserById, getUserHandle } from "@/lib/db/users";
 import { LIST_LAYOUT_COOKIE, parseListLayout } from "@/lib/list-layout";
 import { getCodePreviews } from "@/lib/item-previews";
+import { PAGE_SIZE_COOKIE, parsePageParam, parsePageSize } from "@/lib/page-size";
+import ListFooter from "@/components/shared/list-footer";
 
 export const metadata = {
   title: "Shared - DevStash",
 };
 
-export default async function SharedPage() {
+interface SharedPageProps {
+  searchParams: Promise<{ page?: string | string[] }>;
+}
+
+export default async function SharedPage({ searchParams }: SharedPageProps) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -30,20 +36,28 @@ export default async function SharedPage() {
     redirect("/sign-in");
   }
 
-  const [items, collections, handle, itemTypes, sidebarCollections, editorPreferences, cookieStore] =
+  const currentPage = parsePageParam((await searchParams).page);
+  const cookieStore = await cookies();
+  const pageSize = parsePageSize(cookieStore.get(PAGE_SIZE_COOKIE)?.value);
+
+  const [sharedItems, collections, handle, itemTypes, sidebarCollections, editorPreferences] =
     await Promise.all([
-      getSharedItems(user.id),
+      getSharedItems(user.id, currentPage, pageSize),
       getSharedCollections(user.id),
       getUserHandle(user.id),
       getItemTypesWithCounts(user.id),
       getSidebarCollections(user.id),
       getEditorPreferences(user.id),
-      cookies(),
     ]);
 
+  if (currentPage > 1 && currentPage > sharedItems.totalPages) {
+    redirect("/shared");
+  }
+
+  const { items, totalCount, totalPages } = sharedItems;
   const layout = parseListLayout(cookieStore.get(LIST_LAYOUT_COOKIE)?.value);
   const previews = layout === "cards" ? await getCodePreviews(items) : undefined;
-  const hasNothing = items.length === 0 && collections.length === 0;
+  const hasNothing = totalCount === 0 && collections.length === 0;
 
   return (
     <DashboardLayout
@@ -77,12 +91,21 @@ export default async function SharedPage() {
             <section className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-                  Items ({items.length})
+                  Items ({totalCount})
                 </h2>
-                {items.length > 0 && <ListLayoutSwitch layout={layout} />}
+                {totalCount > 0 && <ListLayoutSwitch layout={layout} />}
               </div>
-              {items.length > 0 ? (
-                <SharedItemList items={items} layout={layout} previews={previews} />
+              {totalCount > 0 ? (
+                <>
+                  <SharedItemList items={items} layout={layout} previews={previews} />
+                  <ListFooter
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalCount={totalCount}
+                    pageSize={pageSize}
+                    baseUrl="/shared"
+                  />
+                </>
               ) : (
                 <p className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
                   No shared items. Share one from its row or its details.
