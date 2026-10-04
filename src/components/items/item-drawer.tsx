@@ -29,18 +29,10 @@ import {
   X,
   Save,
   Download,
-  ExternalLink,
   File,
   Globe,
-  Image as ImageIcon,
   Link2,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { formatFileSize } from "@/lib/r2";
 import { formatLongDate } from "@/lib/utils/date";
 import {
@@ -55,15 +47,9 @@ import { LANGUAGES } from "@/lib/constants/editor";
 import { useItemDrawer } from "./item-drawer-provider";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useOrigin } from "@/hooks/use-origin";
-import { useCopyImage } from "@/hooks/use-copy-image";
-import { imageFilename } from "@/lib/og/filename";
-import { publicShortOgPath, publicShortPath } from "@/lib/public/paths";
+import { publicShortPath } from "@/lib/public/paths";
 import { hasAiAccess } from "@/lib/plans";
-import {
-  VISIBILITY_OPTIONS,
-  getVisibilityOption,
-  type CollectionVisibility,
-} from "@/lib/constants/visibility";
+import { getVisibilityOption, type CollectionVisibility } from "@/lib/constants/visibility";
 import { toast } from "sonner";
 import {
   updateItem,
@@ -77,6 +63,9 @@ import DeleteItemDialog from "./delete-item-dialog";
 import CodeEditor from "./code-editor";
 import MarkdownEditor from "./markdown-editor";
 import CollectionPicker, { type CollectionOption } from "./collection-picker";
+import DrawerShareBlock from "./drawer-share-block";
+import { copyWhenReady } from "@/lib/clipboard";
+import { languageLabel } from "@/lib/languages";
 import SuggestTagsButton from "./suggest-tags-button";
 import GenerateDescriptionButton from "./generate-description-button";
 
@@ -123,7 +112,6 @@ export default function ItemDrawer() {
   const router = useRouter();
   const { isOpen, item, isLoading, isPro, closeDrawer, setItem } = useItemDrawer();
   const { copy } = useClipboard();
-  const { copyImage } = useCopyImage();
   const origin = useOrigin();
 
   // Edit mode state
@@ -167,15 +155,13 @@ export default function ItemDrawer() {
   const isShared = !!item && item.visibility !== "PRIVATE";
   // File pages have no download yet, so a shared file would only confuse the recipient.
   const canShare = !!item && item.itemType.name !== "file";
-  // The owner route renders the image whatever the visibility, so private snippets export too.
-  const canImage = !!item && TEXT_TYPES.includes(item.itemType.name);
-  const ownerImageUrl = item ? `/api/items/${item.id}/image` : "";
 
   const applyVisibility = async (visibility: CollectionVisibility) => {
     if (!item) return false;
     setIsSharing(true);
-    const result = await setItemVisibility({ id: item.id, visibility });
-    setIsSharing(false);
+    const result = await setItemVisibility({ id: item.id, visibility })
+      .catch(() => ({ success: false as const, data: undefined, error: undefined }))
+      .finally(() => setIsSharing(false));
 
     if (result.success && result.data) {
       setItem({ ...item, visibility: result.data.visibility });
@@ -192,13 +178,24 @@ export default function ItemDrawer() {
       copy(shareLink, "Link copied");
       return;
     }
-    if (await applyVisibility("UNLISTED")) {
-      copy(shareLink, "Link copied. Anyone with it can view this item.");
+    const written = applyVisibility("UNLISTED");
+    const copied = copyWhenReady(
+      written.then((ok) => {
+        if (!ok) throw new Error("not shared");
+        return shareLink;
+      })
+    );
+    copied.catch(() => {});
+    if (!(await written)) return;
+    try {
+      await copied;
+      toast.success("Link copied. Anyone with it can view this item.");
+    } catch {
+      toast.success("Shared with a link. Use Copy link to copy it.");
     }
   };
 
-  const handleVisibilityChange = async (value: string) => {
-    const next = value as CollectionVisibility;
+  const handleVisibilityChange = async (next: CollectionVisibility) => {
     if (await applyVisibility(next)) {
       toast.success(`Item is now ${getVisibilityOption(next).label.toLowerCase()}`);
     }
@@ -415,54 +412,29 @@ export default function ItemDrawer() {
                     </Badge>
                     {!isEditing && item.language && (
                       <Badge variant="secondary" className="text-xs">
-                        {item.language}
+                        {languageLabel(item.language)}
                       </Badge>
                     )}
                   </div>
-                  {!isEditing && isShared && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <Select
-                        value={item.visibility}
-                        onValueChange={handleVisibilityChange}
-                        disabled={isSharing}
-                      >
-                        <SelectTrigger className="h-8 w-32 text-xs" aria-label="Visibility">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {VISIBILITY_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <a
-                        href={shareLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="min-w-0 truncate font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
-                        title="Open the public page"
-                      >
-                        {shareLink}
-                      </a>
-                      <a
-                        href={publicShortOgPath(item.shortId)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="shrink-0 text-xs text-muted-foreground hover:text-foreground hover:underline"
-                        title="Preview card, what Slack and X show for the link"
-                      >
-                        Card
-                      </a>
-                    </div>
-                  )}
                 </div>
               </div>
               <SheetDescription className="sr-only">
                 {isEditing ? `Editing ${item.title}` : `Details for ${item.title}`}
               </SheetDescription>
             </SheetHeader>
+
+            {!isEditing && (canShare || isShared) && (
+              <div className="px-6 pt-4">
+                <DrawerShareBlock
+                  item={item}
+                  canShare={canShare}
+                  shareLink={shareLink}
+                  isSharing={isSharing}
+                  onVisibilityChange={handleVisibilityChange}
+                  onShare={handleShare}
+                />
+              </div>
+            )}
 
             {/* Action Bar */}
             {isEditing ? (
@@ -517,52 +489,6 @@ export default function ItemDrawer() {
                   />
                   Pin
                 </button>
-                {canShare && (
-                  <button
-                    onClick={handleShare}
-                    disabled={isSharing}
-                    className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-50"
-                    style={
-                      isShared
-                        ? { color: "#10b981" }
-                        : { color: "var(--color-muted-foreground)" }
-                    }
-                  >
-                    <Link2 className="h-4 w-4" />
-                    Share
-                  </button>
-                )}
-                {canImage && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        aria-label="Image"
-                        title="Image"
-                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted"
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      <DropdownMenuItem asChild>
-                        <a href={ownerImageUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink className="h-4 w-4" />
-                          Open image
-                        </a>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <a href={`${ownerImageUrl}?download=1`} download={imageFilename(item.title)}>
-                          <Download className="h-4 w-4" />
-                          Download PNG
-                        </a>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => copyImage(ownerImageUrl)}>
-                        <Copy className="h-4 w-4" />
-                        Copy image
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
                 <button
                   onClick={handleCopy}
                   className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted"

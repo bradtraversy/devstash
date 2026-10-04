@@ -7,18 +7,10 @@ import { setItemVisibility } from "@/actions/items";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useOrigin } from "@/hooks/use-origin";
 import { publicShortPath } from "@/lib/public/paths";
+import { copyWhenReady } from "@/lib/clipboard";
 import type { ItemWithType } from "@/lib/db/items";
 
 type ShareableItem = Pick<ItemWithType, "id" | "shortId" | "visibility">;
-
-/** Starts the clipboard write inside the click, which Safari requires; the text arrives when the promise does. */
-function copyWhenReady(text: Promise<string>): Promise<void> {
-  if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
-    const blob = text.then((value) => new Blob([value], { type: "text/plain" }));
-    return navigator.clipboard.write([new ClipboardItem({ "text/plain": blob })]);
-  }
-  return text.then((value) => navigator.clipboard.writeText(value));
-}
 
 /** Share copies the link of a shared item, or makes a private one unlisted first. */
 export function useItemShare() {
