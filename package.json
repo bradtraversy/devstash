@@ -6,9 +6,9 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
