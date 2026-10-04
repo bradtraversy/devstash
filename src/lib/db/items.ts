@@ -3,6 +3,7 @@ import type { Prisma } from '@/generated/prisma/client';
 import type { CollectionVisibility, VisibilityUpdate } from '@/lib/constants/visibility';
 import type { HomeFilter } from '@/lib/home';
 import type { FavoriteItemSort } from '@/lib/favorites-sort';
+import { DEFAULT_PAGE_SIZE } from '@/lib/page-size';
 import { generateShortId } from '@/lib/short-id';
 import { isUniqueViolation } from '@/lib/db/errors';
 import { ensureUserHandle, retryOnHandleCollision } from '@/lib/db/users';
@@ -218,7 +219,7 @@ export async function getHomeItems(
   userId: string,
   filter: HomeFilter,
   page: number = 1,
-  limit: number = 25
+  limit: number = DEFAULT_PAGE_SIZE
 ): Promise<PaginatedItems> {
   return paginateItems(
     { userId, ...HOME_FILTER_WHERE[filter] },
@@ -252,47 +253,14 @@ export async function getItemsByType(
   userId: string,
   typeName: string,
   page: number = 1,
-  limit: number = 21
+  limit: number = DEFAULT_PAGE_SIZE
 ): Promise<PaginatedItems> {
-  const skip = (page - 1) * limit;
-
-  const [items, totalCount] = await Promise.all([
-    prisma.item.findMany({
-      where: {
-        userId,
-        itemType: {
-          name: typeName,
-          isSystem: true,
-        },
-      },
-      orderBy: [
-        { isPinned: 'desc' },
-        { updatedAt: 'desc' },
-      ],
-      skip,
-      take: limit,
-      include: {
-        itemType: true,
-        tags: true,
-      },
-    }),
-    prisma.item.count({
-      where: {
-        userId,
-        itemType: {
-          name: typeName,
-          isSystem: true,
-        },
-      },
-    }),
-  ]);
-
-  return {
-    items: items.map(toItemWithType),
-    totalCount,
-    totalPages: Math.ceil(totalCount / limit),
-    currentPage: page,
-  };
+  return paginateItems(
+    { userId, itemType: { name: typeName, isSystem: true } },
+    [{ isPinned: 'desc' }, { updatedAt: 'desc' }, { id: 'asc' }],
+    page,
+    limit
+  );
 }
 
 /**
@@ -302,7 +270,7 @@ export async function getItemsByCollection(
   userId: string,
   collectionId: string,
   page: number = 1,
-  limit: number = 21
+  limit: number = DEFAULT_PAGE_SIZE
 ): Promise<PaginatedItems> {
   const skip = (page - 1) * limit;
   const where = { collectionId, item: { userId } };
@@ -635,13 +603,12 @@ export async function getSearchableItems(
   });
 }
 
-const FAVORITE_ORDER: Record<FavoriteItemSort, Prisma.ItemOrderByWithRelationInput[]> = {
+const FAVORITE_DATE_ORDER: Record<'date-desc' | 'date-asc', Prisma.ItemOrderByWithRelationInput[]> = {
   'date-desc': [{ updatedAt: 'desc' }, { id: 'asc' }],
   'date-asc': [{ updatedAt: 'asc' }, { id: 'asc' }],
-  'name-asc': [{ title: 'asc' }, { id: 'asc' }],
-  'name-desc': [{ title: 'desc' }, { id: 'asc' }],
-  type: [{ itemType: { name: 'asc' } }, { title: 'asc' }, { id: 'asc' }],
 };
+
+const compareTitles = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
 
 async function paginateItems(
   where: Prisma.ItemWhereInput,
@@ -673,13 +640,41 @@ export async function getFavoriteItems(
   userId: string,
   sort: FavoriteItemSort = 'date-desc',
   page: number = 1,
-  limit: number = 25
+  limit: number = DEFAULT_PAGE_SIZE
 ): Promise<PaginatedItems> {
-  return paginateItems({ userId, isFavorite: true }, FAVORITE_ORDER[sort], page, limit);
+  const where: Prisma.ItemWhereInput = { userId, isFavorite: true };
+  if (sort === 'date-desc' || sort === 'date-asc') {
+    return paginateItems(where, FAVORITE_DATE_ORDER[sort], page, limit);
+  }
+
+  // Titles sort in JS, case-insensitively, because the database collation may put "Zebra" before "apple".
+  const keys = await prisma.item.findMany({
+    where,
+    select: { id: true, title: true, itemType: { select: { name: true } } },
+  });
+  keys.sort((a, b) => {
+    const byType = sort === 'type' ? a.itemType.name.localeCompare(b.itemType.name) : 0;
+    const byTitle = sort === 'name-desc' ? compareTitles(b.title, a.title) : compareTitles(a.title, b.title);
+    return byType || byTitle || a.id.localeCompare(b.id);
+  });
+
+  const pageIds = keys.slice((page - 1) * limit, page * limit).map((key) => key.id);
+  const rows = await prisma.item.findMany({
+    where: { id: { in: pageIds } },
+    include: { itemType: true, tags: true },
+  });
+  const byId = new Map(rows.map((row) => [row.id, row]));
+
+  return {
+    items: pageIds.flatMap((id) => (byId.has(id) ? [toItemWithType(byId.get(id)!)] : [])),
+    totalCount: keys.length,
+    totalPages: Math.ceil(keys.length / limit),
+    currentPage: page,
+  };
 }
 
 /** One page of the user's items that anyone with the link can open, most recently updated first. */
-export async function getSharedItems(userId: string, page: number = 1, limit: number = 25): Promise<PaginatedItems> {
+export async function getSharedItems(userId: string, page: number = 1, limit: number = DEFAULT_PAGE_SIZE): Promise<PaginatedItems> {
   return paginateItems(
     { userId, visibility: { not: 'PRIVATE' } },
     [{ updatedAt: 'desc' }, { id: 'asc' }],

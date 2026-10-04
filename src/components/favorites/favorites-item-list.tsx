@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import SortableSection from "@/components/shared/sortable-section";
 import ItemList from "@/components/items/item-list";
@@ -26,14 +26,21 @@ interface FavoritesItemListProps {
 /** Sorting runs on the server so it covers every page, not only the one on screen. */
 export default function FavoritesItemList({ items, totalCount, sort, layout, previews }: FavoritesItemListProps) {
   const router = useRouter();
+  const [shownSort, setShownSort] = useOptimistic(sort);
   const [, startTransition] = useTransition();
 
   return (
     <SortableSection
       title="Items"
       count={totalCount}
-      sort={sort}
-      onSortChange={(value) => startTransition(() => router.push(favoritesPath(parseFavoriteSort(value))))}
+      sort={shownSort}
+      onSortChange={(value) => {
+        const next = parseFavoriteSort(value);
+        startTransition(() => {
+          setShownSort(next);
+          router.push(favoritesPath(next));
+        });
+      }}
       options={FAVORITE_SORT_OPTIONS}
       actions={<ListLayoutSwitch layout={layout} />}
       unframed

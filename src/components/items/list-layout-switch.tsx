@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,14 +14,16 @@ const OPTIONS = [
 
 export default function ListLayoutSwitch({ layout }: { layout: ListLayout }) {
   const router = useRouter();
-  const [current, setCurrent] = useState(layout);
+  const [current, setCurrent] = useOptimistic(layout);
   const [, startTransition] = useTransition();
 
   const choose = (next: ListLayout) => {
-    if (next === current) return;
-    setCurrent(next);
+    if (next === layout) return;
     storeListLayout(next);
-    startTransition(() => router.refresh());
+    startTransition(() => {
+      setCurrent(next);
+      router.refresh();
+    });
   };
 
   return (

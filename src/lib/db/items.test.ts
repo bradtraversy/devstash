@@ -452,7 +452,7 @@ describe('getItemsByCollection', () => {
       where: { collectionId: 'col-1', item: { userId: 'user-1' } },
       orderBy: [{ position: 'asc' }, { addedAt: 'asc' }, { itemId: 'asc' }],
       skip: 0,
-      take: 21,
+      take: 25,
       include: { item: { include: { itemType: true, tags: true } } },
     });
     expect(mockMembershipCount).toHaveBeenCalledWith({
@@ -713,27 +713,49 @@ describe('getFavoriteItems', () => {
     expect(result).toMatchObject({ totalCount: 60, totalPages: 3, currentPage: 1 });
   });
 
-  it('sorts on the server so the order covers every page', async () => {
-    await getFavoriteItems('user-1', 'type', 3, 50);
+  it('orders by oldest in the database', async () => {
+    await getFavoriteItems('user-1', 'date-asc', 3, 50);
 
     expect(prisma.item.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderBy: [{ itemType: { name: 'asc' } }, { title: 'asc' }, { id: 'asc' }],
-        skip: 100,
-        take: 50,
-      })
+      expect.objectContaining({ orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }], skip: 100, take: 50 })
     );
   });
 
-  it('orders by name both ways and by oldest', async () => {
-    await getFavoriteItems('user-1', 'name-desc');
-    await getFavoriteItems('user-1', 'date-asc');
+  it('sorts names case-insensitively across every page, then loads only the page', async () => {
+    const keys = [
+      { id: 'a', title: 'Zebra', itemType: { name: 'snippet' } },
+      { id: 'b', title: 'apple', itemType: { name: 'snippet' } },
+      { id: 'c', title: 'Mango', itemType: { name: 'note' } },
+      { id: 'd', title: 'item 10', itemType: { name: 'note' } },
+      { id: 'e', title: 'item 9', itemType: { name: 'note' } },
+    ];
+    vi.mocked(prisma.item.findMany)
+      .mockResolvedValueOnce(keys as never)
+      .mockResolvedValueOnce([
+        { ...basePrismaItem, id: 'd', title: 'item 10' },
+        { ...basePrismaItem, id: 'e', title: 'item 9' },
+      ] as never);
 
-    const orders = vi.mocked(prisma.item.findMany).mock.calls.map((call) => call[0]?.orderBy);
-    expect(orders).toEqual([
-      [{ title: 'desc' }, { id: 'asc' }],
-      [{ updatedAt: 'asc' }, { id: 'asc' }],
-    ]);
+    const result = await getFavoriteItems('user-1', 'name-asc', 1, 3);
+
+    expect(vi.mocked(prisma.item.findMany).mock.calls[1][0]).toMatchObject({ where: { id: { in: ['b', 'e', 'd'] } } });
+    expect(result.items.map((item) => item.id)).toEqual(['e', 'd']);
+    expect(result).toMatchObject({ totalCount: 5, totalPages: 2, currentPage: 1 });
+  });
+
+  it('reverses names and groups by type', async () => {
+    const keys = [
+      { id: 'a', title: 'beta', itemType: { name: 'snippet' } },
+      { id: 'b', title: 'Alpha', itemType: { name: 'snippet' } },
+      { id: 'c', title: 'Gamma', itemType: { name: 'note' } },
+    ];
+    vi.mocked(prisma.item.findMany).mockResolvedValueOnce(keys as never).mockResolvedValueOnce([] as never);
+    await getFavoriteItems('user-1', 'name-desc');
+    expect(vi.mocked(prisma.item.findMany).mock.calls[1][0]).toMatchObject({ where: { id: { in: ['c', 'a', 'b'] } } });
+
+    vi.mocked(prisma.item.findMany).mockResolvedValueOnce(keys as never).mockResolvedValueOnce([] as never);
+    await getFavoriteItems('user-1', 'type');
+    expect(vi.mocked(prisma.item.findMany).mock.calls[3][0]).toMatchObject({ where: { id: { in: ['c', 'b', 'a'] } } });
   });
 });
 
