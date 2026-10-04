@@ -25,21 +25,21 @@ export default function ItemRow({ item, trailing }: ItemRowProps) {
       >
         <TypeIconTile item={item} />
         <span className="flex min-w-0 flex-1 items-baseline gap-2.5 overflow-hidden">
-          <span className="truncate font-medium text-foreground md:max-w-[60%] md:shrink-0">
+          <span className="truncate font-medium text-foreground xl:max-w-[60%] xl:shrink-0">
             {item.title}
           </span>
           {item.description && (
-            <span className="hidden truncate text-sm text-muted-foreground md:inline">
+            <span className="hidden truncate text-sm text-muted-foreground xl:inline">
               {item.description}
             </span>
           )}
         </span>
         <ItemMarks item={item} className="hidden shrink-0 items-center gap-1 sm:flex" />
-        <span className="hidden w-24 shrink-0 truncate text-right text-xs text-muted-foreground lg:inline">
+        <span className="hidden w-24 shrink-0 truncate text-right text-xs text-muted-foreground xl:inline">
           {itemKindLabel(item)}
         </span>
         <VisibilityPill visibility={item.visibility} />
-        <span className="hidden w-24 shrink-0 text-right text-xs text-muted-foreground md:inline">
+        <span className="hidden w-20 shrink-0 text-right text-xs text-muted-foreground lg:inline">
           {formatRelativeDate(item.updatedAt)}
         </span>
       </button>
