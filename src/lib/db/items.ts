@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma/client';
 import type { CollectionVisibility, VisibilityUpdate } from '@/lib/constants/visibility';
+import type { HomeFilter } from '@/lib/home';
 import { generateShortId } from '@/lib/short-id';
 import { isUniqueViolation } from '@/lib/db/errors';
 import { ensureUserHandle, retryOnHandleCollision } from '@/lib/db/users';
@@ -11,16 +12,6 @@ export const COLLECTION_ITEM_ORDER: Prisma.ItemCollectionOrderByWithRelationInpu
   { addedAt: 'asc' },
   { itemId: 'asc' },
 ];
-
-// Maximum allowed limit for queries to prevent abuse
-const MAX_QUERY_LIMIT = 100;
-
-/**
- * Validate and cap limit parameter
- */
-function validateLimit(limit: number, defaultLimit: number): number {
-  return Math.min(Math.max(1, limit), MAX_QUERY_LIMIT) || defaultLimit;
-}
 
 export interface ItemType {
   name: string;
@@ -164,33 +155,6 @@ function toItemDetail(item: PrismaItemWithDetail): ItemDetail {
   };
 }
 
-export interface DashboardStats {
-  totalItems: number;
-  totalCollections: number;
-  favoriteItems: number;
-  favoriteCollections: number;
-}
-
-/**
- * Get dashboard stats for a user
- */
-export async function getDashboardStats(userId: string): Promise<DashboardStats> {
-  const [totalItems, totalCollections, favoriteItems, favoriteCollections] =
-    await Promise.all([
-      prisma.item.count({ where: { userId } }),
-      prisma.collection.count({ where: { userId } }),
-      prisma.item.count({ where: { userId, isFavorite: true } }),
-      prisma.collection.count({ where: { userId, isFavorite: true } }),
-    ]);
-
-  return {
-    totalItems,
-    totalCollections,
-    favoriteItems,
-    favoriteCollections,
-  };
-}
-
 // Define the display order for item types
 export const ITEM_TYPE_ORDER = ['snippet', 'prompt', 'command', 'note', 'file', 'image', 'link'];
 
@@ -227,48 +191,52 @@ export async function getItemTypesWithCounts(
   });
 }
 
-/**
- * Get pinned items for a user
- */
-export async function getPinnedItems(userId: string): Promise<ItemWithType[]> {
-  const items = await prisma.item.findMany({
-    where: {
-      userId,
-      isPinned: true,
-    },
-    orderBy: { updatedAt: 'desc' },
-    include: {
-      itemType: true,
-      tags: true,
-    },
-  });
-
-  return items.map(toItemWithType);
+export interface HomeCounts {
+  total: number;
+  shared: number;
+  pinned: number;
 }
 
-/**
- * Get recent items for a user (excluding pinned items)
- */
-export async function getRecentItems(
+export async function getHomeCounts(userId: string): Promise<HomeCounts> {
+  const [total, shared, pinned] = await Promise.all([
+    prisma.item.count({ where: { userId } }),
+    prisma.item.count({ where: { userId, visibility: { not: 'PRIVATE' } } }),
+    prisma.item.count({ where: { userId, isPinned: true } }),
+  ]);
+  return { total, shared, pinned };
+}
+
+const HOME_FILTER_WHERE: Record<HomeFilter, Prisma.ItemWhereInput> = {
+  all: {},
+  shared: { visibility: { not: 'PRIVATE' } },
+  pinned: { isPinned: true },
+};
+
+/** One page of the user's items for Home, pinned first, then the most recently updated. */
+export async function getHomeItems(
   userId: string,
-  limit: number = 10
-): Promise<ItemWithType[]> {
-  const safeLimit = validateLimit(limit, 10);
+  filter: HomeFilter,
+  page: number = 1,
+  limit: number = 21
+): Promise<PaginatedItems> {
+  const where = { userId, ...HOME_FILTER_WHERE[filter] };
+  const [items, totalCount] = await Promise.all([
+    prisma.item.findMany({
+      where,
+      orderBy: [{ isPinned: 'desc' }, { updatedAt: 'desc' }, { id: 'asc' }],
+      skip: (page - 1) * limit,
+      take: limit,
+      include: { itemType: true, tags: true },
+    }),
+    prisma.item.count({ where }),
+  ]);
 
-  const items = await prisma.item.findMany({
-    where: {
-      userId,
-      isPinned: false,
-    },
-    orderBy: { updatedAt: 'desc' },
-    take: safeLimit,
-    include: {
-      itemType: true,
-      tags: true,
-    },
-  });
-
-  return items.map(toItemWithType);
+  return {
+    items: items.map(toItemWithType),
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit),
+    currentPage: page,
+  };
 }
 
 /**

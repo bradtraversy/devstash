@@ -2,11 +2,17 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+Home, spec in `context/features/home-spec.md`:
+
+- Paste box with Save and Save and share, guessing link, command, or snippet and the language, result row with the link
+- "Your stash" list with All, Shared, Pinned filters, the layout switch, and pagination
+- New-user invitation with samples
+- Stat cards, collections grid, pinned and recent sections, and their queries removed
+- Tests for `guessPaste`, `parseHomeFilter`, `getHomeItems`, and `getHomeCounts`
 
 ## Notes
 

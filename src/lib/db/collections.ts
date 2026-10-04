@@ -9,16 +9,6 @@ import type { CollectionVisibility, VisibilityUpdate } from '@/lib/constants/vis
 
 export type { VisibilityUpdate };
 
-// Maximum allowed limit for queries to prevent abuse
-const MAX_QUERY_LIMIT = 100;
-
-/**
- * Validate and cap limit parameter
- */
-function validateLimit(limit: number, defaultLimit: number): number {
-  return Math.min(Math.max(1, limit), MAX_QUERY_LIMIT) || defaultLimit;
-}
-
 const DEMO_USER_EMAIL = 'demo@devstash.io';
 
 /**
@@ -123,66 +113,6 @@ function getDominantColor(items: ItemWithType[]): string | null {
   }
 
   return dominantColor;
-}
-
-/**
- * Get recent collections for a user with item type information
- * Returns collections sorted by updatedAt, with aggregated item type data
- * Uses _count for accurate item count and limits items fetched for type aggregation
- */
-export async function getRecentCollections(
-  userId: string,
-  limit: number = 6
-): Promise<CollectionWithTypes[]> {
-  const safeLimit = validateLimit(limit, 6);
-
-  const collections = await prisma.collection.findMany({
-    where: { userId },
-    orderBy: { updatedAt: 'desc' },
-    take: safeLimit,
-    include: {
-      _count: {
-        select: { items: true },
-      },
-      items: {
-        take: MAX_ITEMS_FOR_TYPE_SAMPLE,
-        include: {
-          item: {
-            select: {
-              itemType: {
-                select: {
-                  id: true,
-                  name: true,
-                  icon: true,
-                  color: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  return collections.map((collection) => {
-    const itemTypes = countItemTypes(collection.items);
-    const dominantColor = itemTypes.length > 0 ? itemTypes[0].color : null;
-
-    return {
-      id: collection.id,
-      name: collection.name,
-      slug: collection.slug,
-      shortId: collection.shortId,
-      visibility: collection.visibility,
-      description: collection.description,
-      isFavorite: collection.isFavorite,
-      itemCount: collection._count.items,
-      itemTypes,
-      dominantColor,
-      createdAt: collection.createdAt,
-      updatedAt: collection.updatedAt,
-    };
-  });
 }
 
 export interface SidebarCollection {
