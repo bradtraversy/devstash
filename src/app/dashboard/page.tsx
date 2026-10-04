@@ -8,12 +8,12 @@ import DashboardLayout from '@/components/layout/dashboard-layout';
 import QuickCapture from '@/components/dashboard/quick-capture';
 import ItemList from '@/components/items/item-list';
 import ListLayoutSwitch from '@/components/items/list-layout-switch';
-import Pagination from '@/components/shared/pagination';
+import ListFooter from '@/components/shared/list-footer';
 import { cn } from '@/lib/utils';
 import { getSidebarCollections } from '@/lib/db/collections';
 import { getHomeCounts, getHomeItems, getItemTypesWithCounts } from '@/lib/db/items';
 import { getEditorPreferences } from '@/lib/db/users';
-import { ITEMS_PER_PAGE } from '@/lib/constants/pagination';
+import { PAGE_SIZE_COOKIE, parsePageParam, parsePageSize } from '@/lib/page-size';
 import { HOME_FILTERS, homeFilterPath, parseHomeFilter, type HomeFilter } from '@/lib/home';
 import { LIST_LAYOUT_COOKIE, parseListLayout } from '@/lib/list-layout';
 import { getCodePreviews } from '@/lib/item-previews';
@@ -21,8 +21,6 @@ import { getCodePreviews } from '@/lib/item-previews';
 interface DashboardPageProps {
   searchParams: Promise<{ show?: string | string[]; page?: string }>;
 }
-
-const MAX_HOME_PAGE = 10000;
 
 const FILTER_LABELS: Record<HomeFilter, string> = { all: 'All', shared: 'Shared', pinned: 'Pinned' };
 
@@ -41,8 +39,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const { show, page: pageParam } = await searchParams;
   const filter = parseHomeFilter(show);
-  // Capped so a huge page number never reaches the query as an out-of-range offset.
-  const currentPage = Math.min(Math.max(1, parseInt(pageParam || '1', 10) || 1), MAX_HOME_PAGE);
+  const currentPage = parsePageParam(pageParam);
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -53,13 +50,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect('/sign-in');
   }
 
-  const [counts, home, itemTypes, sidebarCollections, editorPreferences, cookieStore] = await Promise.all([
+  const cookieStore = await cookies();
+  const pageSize = parsePageSize(cookieStore.get(PAGE_SIZE_COOKIE)?.value);
+
+  const [counts, home, itemTypes, sidebarCollections, editorPreferences] = await Promise.all([
     getHomeCounts(user.id),
-    getHomeItems(user.id, filter, currentPage, ITEMS_PER_PAGE),
+    getHomeItems(user.id, filter, currentPage, pageSize),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
     getEditorPreferences(user.id),
-    cookies(),
   ]);
 
   // A page past the end, from a stale link or a deletion, goes back to the filter's first page.
@@ -137,7 +136,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               </p>
             )}
 
-            <Pagination currentPage={currentPage} totalPages={home.totalPages} baseUrl={homeFilterPath(filter)} />
+            <ListFooter
+              currentPage={currentPage}
+              totalPages={home.totalPages}
+              totalCount={home.totalCount}
+              pageSize={pageSize}
+              baseUrl={homeFilterPath(filter)}
+            />
           </section>
         )}
       </div>

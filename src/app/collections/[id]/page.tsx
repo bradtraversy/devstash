@@ -6,12 +6,12 @@ import CollectionActions from '@/components/collections/collection-actions';
 import CollectionItemList from '@/components/collections/collection-item-list';
 import ListLayoutSwitch from '@/components/items/list-layout-switch';
 import VisibilityControl from '@/components/collections/visibility-control';
-import Pagination from '@/components/shared/pagination';
+import ListFooter from '@/components/shared/list-footer';
 import { getSidebarCollections, getCollectionById } from '@/lib/db/collections';
 import { getItemTypesWithCounts, getItemsByCollection } from '@/lib/db/items';
 import { getUserById, getEditorPreferences } from '@/lib/db/users';
 import { getItemTypeIcon } from '@/lib/constants/item-types';
-import { ITEMS_PER_PAGE } from '@/lib/constants/pagination';
+import { PAGE_SIZE_COOKIE, parsePageParam, parsePageSize } from '@/lib/page-size';
 import { LIST_LAYOUT_COOKIE, parseListLayout } from '@/lib/list-layout';
 import { getCodePreviews } from '@/lib/item-previews';
 import { Star } from 'lucide-react';
@@ -42,18 +42,22 @@ export default async function CollectionDetailPage({ params, searchParams }: Col
     notFound();
   }
 
-  // Parse page number (default to 1)
-  const currentPage = Math.max(1, parseInt(pageParam || '1', 10) || 1);
+  const currentPage = parsePageParam(pageParam);
+  const cookieStore = await cookies();
+  const pageSize = parsePageSize(cookieStore.get(PAGE_SIZE_COOKIE)?.value);
 
-  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences, cookieStore] = await Promise.all([
-    getItemsByCollection(user.id, collectionId, currentPage, ITEMS_PER_PAGE),
+  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences] = await Promise.all([
+    getItemsByCollection(user.id, collectionId, currentPage, pageSize),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
     getEditorPreferences(user.id),
-    cookies(),
   ]);
 
-  const { items, totalPages } = paginatedItems;
+  const { items, totalCount, totalPages } = paginatedItems;
+
+  if (currentPage > 1 && currentPage > totalPages) {
+    redirect(`/collections/${collectionId}`);
+  }
   const layout = parseListLayout(cookieStore.get(LIST_LAYOUT_COOKIE)?.value);
   const previews = layout === 'cards' ? await getCodePreviews(items) : undefined;
 
@@ -133,10 +137,11 @@ export default async function CollectionDetailPage({ params, searchParams }: Col
           </div>
         )}
 
-        {/* Pagination */}
-        <Pagination
+        <ListFooter
           currentPage={currentPage}
           totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
           baseUrl={`/collections/${collectionId}`}
         />
       </div>

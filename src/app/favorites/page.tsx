@@ -8,10 +8,17 @@ import { getSidebarCollections, getFavoriteCollections } from "@/lib/db/collecti
 import { getItemTypesWithCounts, getFavoriteItems } from "@/lib/db/items";
 import { getUserById, getEditorPreferences } from "@/lib/db/users";
 import { LIST_LAYOUT_COOKIE, parseListLayout } from "@/lib/list-layout";
+import { PAGE_SIZE_COOKIE, parsePageParam, parsePageSize } from "@/lib/page-size";
+import { favoritesPath, parseFavoriteSort } from "@/lib/favorites-sort";
 import { getCodePreviews } from "@/lib/item-previews";
+import ListFooter from "@/components/shared/list-footer";
 import { Star } from "lucide-react";
 
-export default async function FavoritesPage() {
+interface FavoritesPageProps {
+  searchParams: Promise<{ sort?: string | string[]; page?: string | string[] }>;
+}
+
+export default async function FavoritesPage({ searchParams }: FavoritesPageProps) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -24,26 +31,34 @@ export default async function FavoritesPage() {
     redirect("/sign-in");
   }
 
+  const { sort: sortParam, page: pageParam } = await searchParams;
+  const sort = parseFavoriteSort(sortParam);
+  const currentPage = parsePageParam(pageParam);
+  const cookieStore = await cookies();
+  const pageSize = parsePageSize(cookieStore.get(PAGE_SIZE_COOKIE)?.value);
+
   const [
     favoriteItems,
     favoriteCollections,
     itemTypes,
     sidebarCollections,
     editorPreferences,
-    cookieStore,
   ] = await Promise.all([
-    getFavoriteItems(user.id),
+    getFavoriteItems(user.id, sort, currentPage, pageSize),
     getFavoriteCollections(user.id),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
     getEditorPreferences(user.id),
-    cookies(),
   ]);
 
-  const layout = parseListLayout(cookieStore.get(LIST_LAYOUT_COOKIE)?.value);
-  const previews = layout === "cards" ? await getCodePreviews(favoriteItems) : undefined;
+  if (currentPage > 1 && currentPage > favoriteItems.totalPages) {
+    redirect(favoritesPath(sort));
+  }
 
-  const totalFavorites = favoriteItems.length + favoriteCollections.length;
+  const layout = parseListLayout(cookieStore.get(LIST_LAYOUT_COOKIE)?.value);
+  const previews = layout === "cards" ? await getCodePreviews(favoriteItems.items) : undefined;
+
+  const totalFavorites = favoriteItems.totalCount + favoriteCollections.length;
   const hasNoFavorites = totalFavorites === 0;
 
   return (
@@ -71,8 +86,23 @@ export default async function FavoritesPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {favoriteItems.length > 0 && (
-              <FavoritesItemList items={favoriteItems} layout={layout} previews={previews} />
+            {favoriteItems.totalCount > 0 && (
+              <div className="space-y-4">
+                <FavoritesItemList
+                  items={favoriteItems.items}
+                  totalCount={favoriteItems.totalCount}
+                  sort={sort}
+                  layout={layout}
+                  previews={previews}
+                />
+                <ListFooter
+                  currentPage={currentPage}
+                  totalPages={favoriteItems.totalPages}
+                  totalCount={favoriteItems.totalCount}
+                  pageSize={pageSize}
+                  baseUrl={favoritesPath(sort)}
+                />
+              </div>
             )}
 
             {favoriteCollections.length > 0 && (

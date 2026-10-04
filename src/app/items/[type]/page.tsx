@@ -7,11 +7,11 @@ import ItemList from '@/components/items/item-list';
 import ImageThumbnailCard from '@/components/items/image-thumbnail-card';
 import FileListRow from '@/components/items/file-list-row';
 import ItemsPageHeader from '@/components/items/items-page-header';
-import Pagination from '@/components/shared/pagination';
+import ListFooter from '@/components/shared/list-footer';
 import { getSidebarCollections } from '@/lib/db/collections';
 import { getItemsByType, getItemTypesWithCounts, VALID_ITEM_TYPES } from '@/lib/db/items';
 import { getEditorPreferences } from '@/lib/db/users';
-import { ITEMS_PER_PAGE } from '@/lib/constants/pagination';
+import { PAGE_SIZE_COOKIE, parsePageParam, parsePageSize } from '@/lib/page-size';
 import { isProEnabled } from '@/lib/plans';
 import { LIST_LAYOUT_COOKIE, parseListLayout } from '@/lib/list-layout';
 import { getCodePreviews } from '@/lib/item-previews';
@@ -33,8 +33,7 @@ export default async function ItemsPage({ params, searchParams }: ItemsPageProps
     notFound();
   }
 
-  // Parse page number (default to 1)
-  const currentPage = Math.max(1, parseInt(pageParam || '1', 10) || 1);
+  const currentPage = parsePageParam(pageParam);
 
   const session = await auth();
 
@@ -58,15 +57,21 @@ export default async function ItemsPage({ params, searchParams }: ItemsPageProps
     redirect('/upgrade');
   }
 
-  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences, cookieStore] = await Promise.all([
-    getItemsByType(user.id, typeName, currentPage, ITEMS_PER_PAGE),
+  const cookieStore = await cookies();
+  const pageSize = parsePageSize(cookieStore.get(PAGE_SIZE_COOKIE)?.value);
+
+  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences] = await Promise.all([
+    getItemsByType(user.id, typeName, currentPage, pageSize),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
     getEditorPreferences(user.id),
-    cookies(),
   ]);
 
   const { items, totalCount, totalPages } = paginatedItems;
+
+  if (currentPage > 1 && currentPage > totalPages) {
+    redirect(`/items/${typeParam}`);
+  }
   const layout = parseListLayout(cookieStore.get(LIST_LAYOUT_COOKIE)?.value);
   const previews = !isProType && layout === 'cards' ? await getCodePreviews(items) : undefined;
   const displayName = typeName.charAt(0).toUpperCase() + typeName.slice(1) + 's';
@@ -117,10 +122,11 @@ export default async function ItemsPage({ params, searchParams }: ItemsPageProps
           </div>
         )}
 
-        {/* Pagination */}
-        <Pagination
+        <ListFooter
           currentPage={currentPage}
           totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
           baseUrl={`/items/${typeParam}`}
         />
       </div>

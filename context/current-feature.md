@@ -2,11 +2,15 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+Page Size and Pagination, spec in `context/features/page-size-spec.md`:
+
+- 25 per page by default with 50 and 100, stored in a cookie, on Home, type pages, collection pages, Favorites, and Shared
+- Favorites sorted on the server and paged; Shared items paged
+- Pages past the end redirect to the first page; absurd page numbers capped
 
 ## Notes
 

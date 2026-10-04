@@ -6,6 +6,7 @@ import {
   createItem,
   getItemsByCollection,
   getSharedItems,
+  getFavoriteItems,
   getHomeItems,
   getHomeCounts,
   setItemVisibility,
@@ -653,18 +654,24 @@ describe('setItemVisibility', () => {
 describe('getSharedItems', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(prisma.item.count).mockResolvedValue(30);
   });
 
-  it('asks only for the owner\'s items that are not private, newest update first', async () => {
+  it('pages through the owner\'s items that are not private, newest update first', async () => {
     vi.mocked(prisma.item.findMany).mockResolvedValue([]);
 
-    await getSharedItems('user-1');
+    const result = await getSharedItems('user-1', 2, 25);
 
+    const where = { userId: 'user-1', visibility: { not: 'PRIVATE' } };
     expect(prisma.item.findMany).toHaveBeenCalledWith({
-      where: { userId: 'user-1', visibility: { not: 'PRIVATE' } },
-      orderBy: { updatedAt: 'desc' },
+      where,
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      skip: 25,
+      take: 25,
       include: { itemType: true, tags: true },
     });
+    expect(prisma.item.count).toHaveBeenCalledWith({ where });
+    expect(result).toMatchObject({ totalCount: 30, totalPages: 2, currentPage: 2 });
   });
 
   it('maps rows to list items with their visibility, short id, and language', async () => {
@@ -672,9 +679,9 @@ describe('getSharedItems', () => {
       { ...basePrismaItem, visibility: 'UNLISTED', shortId: 'abc12345' },
     ] as never);
 
-    const [item] = await getSharedItems('user-1');
+    const { items } = await getSharedItems('user-1');
 
-    expect(item).toMatchObject({
+    expect(items[0]).toMatchObject({
       id: 'item-1',
       visibility: 'UNLISTED',
       shortId: 'abc12345',
@@ -682,6 +689,51 @@ describe('getSharedItems', () => {
       tags: ['react', 'hooks'],
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
     });
+  });
+});
+
+describe('getFavoriteItems', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(prisma.item.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.item.count).mockResolvedValue(60);
+  });
+
+  it('pages through favorites, newest first by default', async () => {
+    const result = await getFavoriteItems('user-1');
+
+    expect(prisma.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 'user-1', isFavorite: true },
+        orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+        skip: 0,
+        take: 25,
+      })
+    );
+    expect(result).toMatchObject({ totalCount: 60, totalPages: 3, currentPage: 1 });
+  });
+
+  it('sorts on the server so the order covers every page', async () => {
+    await getFavoriteItems('user-1', 'type', 3, 50);
+
+    expect(prisma.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ itemType: { name: 'asc' } }, { title: 'asc' }, { id: 'asc' }],
+        skip: 100,
+        take: 50,
+      })
+    );
+  });
+
+  it('orders by name both ways and by oldest', async () => {
+    await getFavoriteItems('user-1', 'name-desc');
+    await getFavoriteItems('user-1', 'date-asc');
+
+    const orders = vi.mocked(prisma.item.findMany).mock.calls.map((call) => call[0]?.orderBy);
+    expect(orders).toEqual([
+      [{ title: 'desc' }, { id: 'asc' }],
+      [{ updatedAt: 'asc' }, { id: 'asc' }],
+    ]);
   });
 });
 
