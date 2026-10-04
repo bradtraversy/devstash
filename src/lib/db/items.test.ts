@@ -6,6 +6,8 @@ import {
   createItem,
   getItemsByCollection,
   getSharedItems,
+  getHomeItems,
+  getHomeCounts,
   setItemVisibility,
   UnknownCollectionError,
 } from './items';
@@ -17,6 +19,7 @@ vi.mock('@/lib/prisma', () => {
       findUnique: vi.fn(),
       findFirst: vi.fn(),
       findMany: vi.fn(),
+      count: vi.fn(),
       delete: vi.fn(),
       update: vi.fn(),
       create: vi.fn(),
@@ -679,5 +682,59 @@ describe('getSharedItems', () => {
       tags: ['react', 'hooks'],
       itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
     });
+  });
+});
+
+describe('getHomeItems', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(prisma.item.findMany).mockResolvedValue([basePrismaItem] as never);
+    vi.mocked(prisma.item.count).mockResolvedValue(45);
+  });
+
+  it('lists every item pinned first, then newest, one page at a time', async () => {
+    const result = await getHomeItems('user-1', 'all', 2, 21);
+
+    expect(prisma.item.findMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+      orderBy: [{ isPinned: 'desc' }, { updatedAt: 'desc' }, { id: 'asc' }],
+      skip: 21,
+      take: 21,
+      include: { itemType: true, tags: true },
+    });
+    expect(prisma.item.count).toHaveBeenCalledWith({ where: { userId: 'user-1' } });
+    expect(result).toMatchObject({ totalCount: 45, totalPages: 3, currentPage: 2 });
+    expect(result.items[0]).toMatchObject({ id: 'item-1', title: 'useAuth Hook' });
+  });
+
+  it('narrows to shared items', async () => {
+    await getHomeItems('user-1', 'shared');
+
+    const where = { userId: 'user-1', visibility: { not: 'PRIVATE' } };
+    expect(vi.mocked(prisma.item.findMany).mock.calls[0][0]).toMatchObject({ where, skip: 0 });
+    expect(prisma.item.count).toHaveBeenCalledWith({ where });
+  });
+
+  it('narrows to pinned items', async () => {
+    await getHomeItems('user-1', 'pinned');
+
+    expect(vi.mocked(prisma.item.findMany).mock.calls[0][0]).toMatchObject({
+      where: { userId: 'user-1', isPinned: true },
+    });
+  });
+});
+
+describe('getHomeCounts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('counts all, shared, and pinned items for the owner', async () => {
+    vi.mocked(prisma.item.count).mockResolvedValueOnce(12).mockResolvedValueOnce(4).mockResolvedValueOnce(2);
+
+    expect(await getHomeCounts('user-1')).toEqual({ total: 12, shared: 4, pinned: 2 });
+    expect(prisma.item.count).toHaveBeenNthCalledWith(1, { where: { userId: 'user-1' } });
+    expect(prisma.item.count).toHaveBeenNthCalledWith(2, { where: { userId: 'user-1', visibility: { not: 'PRIVATE' } } });
+    expect(prisma.item.count).toHaveBeenNthCalledWith(3, { where: { userId: 'user-1', isPinned: true } });
   });
 });

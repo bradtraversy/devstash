@@ -1,39 +1,76 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { Pin, Share2 } from 'lucide-react';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import DashboardLayout from '@/components/layout/dashboard-layout';
-import StatsCards from '@/components/dashboard/stats-cards';
-import CollectionsSection from '@/components/dashboard/collections-section';
-import PinnedItems from '@/components/dashboard/pinned-items';
-import RecentItems from '@/components/dashboard/recent-items';
-import { getRecentCollections, getSidebarCollections } from '@/lib/db/collections';
-import { getPinnedItems, getRecentItems, getDashboardStats, getItemTypesWithCounts } from '@/lib/db/items';
+import QuickCapture from '@/components/dashboard/quick-capture';
+import ItemList from '@/components/items/item-list';
+import ListLayoutSwitch from '@/components/items/list-layout-switch';
+import Pagination from '@/components/shared/pagination';
+import { cn } from '@/lib/utils';
+import { getSidebarCollections } from '@/lib/db/collections';
+import { getHomeCounts, getHomeItems, getItemTypesWithCounts } from '@/lib/db/items';
 import { getEditorPreferences } from '@/lib/db/users';
-import { DASHBOARD_COLLECTIONS_LIMIT, DASHBOARD_RECENT_ITEMS_LIMIT } from '@/lib/constants/pagination';
+import { ITEMS_PER_PAGE } from '@/lib/constants/pagination';
+import { HOME_FILTERS, homeFilterPath, parseHomeFilter, type HomeFilter } from '@/lib/home';
+import { LIST_LAYOUT_COOKIE, parseListLayout } from '@/lib/list-layout';
+import { getCodePreviews } from '@/lib/item-previews';
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams: Promise<{ show?: string | string[]; page?: string }>;
+}
+
+const MAX_HOME_PAGE = 10000;
+
+const FILTER_LABELS: Record<HomeFilter, string> = { all: 'All', shared: 'Shared', pinned: 'Pinned' };
+
+const FILTER_EMPTY: Record<HomeFilter, string> = {
+  all: 'Nothing here yet.',
+  shared: 'Nothing shared yet. Use Share on any row.',
+  pinned: 'Nothing pinned yet. Pin an item from its details.',
+};
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const session = await auth();
 
   if (!session?.user?.id) {
     redirect('/sign-in');
   }
 
+  const { show, page: pageParam } = await searchParams;
+  const filter = parseHomeFilter(show);
+  // Capped so a huge page number never reaches the query as an out-of-range offset.
+  const currentPage = Math.min(Math.max(1, parseInt(pageParam || '1', 10) || 1), MAX_HOME_PAGE);
+
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { id: true, name: true, email: true, image: true },
   });
 
-  const [collections, pinnedItems, recentItems, stats, itemTypes, sidebarCollections, editorPreferences] = user
-    ? await Promise.all([
-        getRecentCollections(user.id, DASHBOARD_COLLECTIONS_LIMIT),
-        getPinnedItems(user.id),
-        getRecentItems(user.id, DASHBOARD_RECENT_ITEMS_LIMIT),
-        getDashboardStats(user.id),
-        getItemTypesWithCounts(user.id),
-        getSidebarCollections(user.id),
-        getEditorPreferences(user.id),
-      ])
-    : [[], [], [], { totalItems: 0, totalCollections: 0, favoriteItems: 0, favoriteCollections: 0 }, [], { favorites: [], recents: [] }, undefined];
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  const [counts, home, itemTypes, sidebarCollections, editorPreferences, cookieStore] = await Promise.all([
+    getHomeCounts(user.id),
+    getHomeItems(user.id, filter, currentPage, ITEMS_PER_PAGE),
+    getItemTypesWithCounts(user.id),
+    getSidebarCollections(user.id),
+    getEditorPreferences(user.id),
+    cookies(),
+  ]);
+
+  // A page past the end, from a stale link or a deletion, goes back to the filter's first page.
+  if (currentPage > 1 && currentPage > home.totalPages) {
+    redirect(homeFilterPath(filter));
+  }
+
+  const layout = parseListLayout(cookieStore.get(LIST_LAYOUT_COOKIE)?.value);
+  const previews = layout === 'cards' ? await getCodePreviews(home.items) : undefined;
+  const isNew = counts.total === 0;
+  const chipCounts: Record<HomeFilter, number> = { all: counts.total, shared: counts.shared, pinned: counts.pinned };
 
   return (
     <DashboardLayout
@@ -43,24 +80,66 @@ export default async function DashboardPage() {
       editorPreferences={editorPreferences}
       isPro={session.user.isPro}
     >
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Your developer knowledge hub</p>
-        </div>
+      <div className="mx-auto max-w-6xl space-y-8">
+        {isNew ? (
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Start your stash</h1>
+            <p className="mt-1 max-w-2xl text-muted-foreground">
+              Paste code, a command, or a link. Keep it to yourself, or share it with a link anyone can open.
+            </p>
+          </div>
+        ) : (
+          <h1 className="sr-only">Home</h1>
+        )}
 
-        {/* Stats Cards */}
-        <StatsCards stats={stats} />
+        <QuickCapture showSamples={isNew} />
 
-        {/* Collections */}
-        <CollectionsSection collections={collections} />
+        {!isNew && (
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="text-lg font-semibold text-foreground">Your stash</h2>
+              <span className="text-sm text-muted-foreground">
+                {counts.total} {counts.total === 1 ? 'item' : 'items'}, {counts.shared} shared
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <nav aria-label="Filter your stash" className="flex min-w-0 flex-1 gap-2 overflow-x-auto [scrollbar-width:none]">
+                {HOME_FILTERS.map((option) => {
+                  const active = option === filter;
+                  return (
+                    <Link
+                      key={option}
+                      href={homeFilterPath(option)}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors',
+                        active
+                          ? 'border-foreground bg-foreground text-background'
+                          : 'border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground'
+                      )}
+                    >
+                      {option === 'shared' && <Share2 className="h-3.5 w-3.5" aria-hidden="true" />}
+                      {option === 'pinned' && <Pin className="h-3.5 w-3.5" aria-hidden="true" />}
+                      {FILTER_LABELS[option]}
+                      <span className="opacity-70">{chipCounts[option]}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+              <ListLayoutSwitch layout={layout} />
+            </div>
 
-        {/* Pinned Items */}
-        <PinnedItems items={pinnedItems} />
+            {home.items.length > 0 ? (
+              <ItemList items={home.items} layout={layout} previews={previews} />
+            ) : (
+              <p className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+                {FILTER_EMPTY[filter]}
+              </p>
+            )}
 
-        {/* Recent Items */}
-        <RecentItems items={recentItems} />
+            <Pagination currentPage={currentPage} totalPages={home.totalPages} baseUrl={homeFilterPath(filter)} />
+          </section>
+        )}
       </div>
     </DashboardLayout>
   );
