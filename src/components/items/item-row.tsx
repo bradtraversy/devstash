@@ -5,16 +5,23 @@ import { useItemDrawer } from "@/components/items/item-drawer-provider";
 import VisibilityPill from "@/components/items/visibility-pill";
 import { CopyContentButton, ShareItemButton } from "@/components/items/item-actions";
 import { ItemMarks, TypeIconTile, itemKindLabel } from "@/components/items/item-row-parts";
+import ShortLinkText from "@/components/items/short-link-text";
+import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/lib/utils/date";
 import type { ItemWithType } from "@/lib/db/items";
+
+export type ItemDetailLine = "description" | "link";
 
 interface ItemRowProps {
   item: ItemWithType;
   trailing?: ReactNode;
+  /** What follows the title: the description, or the readable share link. */
+  detail?: ItemDetailLine;
 }
 
-export default function ItemRow({ item, trailing }: ItemRowProps) {
+export default function ItemRow({ item, trailing, detail = "description" }: ItemRowProps) {
   const { openDrawer } = useItemDrawer();
+  const isLink = detail === "link";
 
   return (
     <li className="group flex items-center gap-1 pr-2 transition-colors hover:bg-muted/50">
@@ -25,13 +32,25 @@ export default function ItemRow({ item, trailing }: ItemRowProps) {
       >
         <TypeIconTile item={item} />
         <span className="flex min-w-0 flex-1 items-baseline gap-2.5 overflow-hidden">
-          <span className="truncate font-medium text-foreground xl:max-w-[60%] xl:shrink-0">
+          <span
+            className={cn(
+              "truncate font-medium text-foreground",
+              !isLink && "xl:max-w-[60%] xl:shrink-0"
+            )}
+          >
             {item.title}
           </span>
-          {item.description && (
-            <span className="hidden truncate text-sm text-muted-foreground xl:inline">
-              {item.description}
-            </span>
+          {isLink ? (
+            <ShortLinkText
+              shortId={item.shortId}
+              className="hidden shrink-0 font-mono text-xs text-blue-300 md:inline"
+            />
+          ) : (
+            item.description && (
+              <span className="hidden truncate text-sm text-muted-foreground xl:inline">
+                {item.description}
+              </span>
+            )
           )}
         </span>
         <ItemMarks item={item} className="hidden shrink-0 items-center gap-1 sm:flex" />
@@ -39,9 +58,11 @@ export default function ItemRow({ item, trailing }: ItemRowProps) {
           {itemKindLabel(item)}
         </span>
         <VisibilityPill visibility={item.visibility} />
-        <span className="hidden w-20 shrink-0 text-right text-xs text-muted-foreground lg:inline">
-          {formatRelativeDate(item.updatedAt)}
-        </span>
+        {!isLink && (
+          <span className="hidden w-20 shrink-0 text-right text-xs text-muted-foreground lg:inline">
+            {formatRelativeDate(item.updatedAt)}
+          </span>
+        )}
       </button>
       <div className="flex shrink-0 items-center gap-1">
         <CopyContentButton item={item} className="hidden sm:inline-flex" />

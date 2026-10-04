@@ -6,6 +6,7 @@ import {
   createCollection,
   setCollectionVisibility,
   moveCollectionItem,
+  getSharedCollections,
 } from './collections';
 import { SHORT_ID_PATTERN } from '@/lib/short-id';
 import { COLLECTION_ITEM_ORDER } from '@/lib/db/items';
@@ -642,5 +643,36 @@ describe('moveCollectionItem', () => {
 
     expect(result).toBe(false);
     expect(mockMembershipUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe('getSharedCollections', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('asks only for the owner\'s collections that are not private and flattens the count', async () => {
+    vi.mocked(prisma.collection.findMany).mockResolvedValue([
+      {
+        id: 'col-1',
+        name: 'DevOps',
+        slug: 'devops',
+        shortId: 'abc12345',
+        visibility: 'PUBLIC',
+        _count: { items: 3 },
+      },
+    ] as never);
+
+    const result = await getSharedCollections('user-1');
+
+    expect(prisma.collection.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 'user-1', visibility: { not: 'PRIVATE' } },
+        orderBy: { updatedAt: 'desc' },
+      })
+    );
+    expect(result).toEqual([
+      { id: 'col-1', name: 'DevOps', slug: 'devops', shortId: 'abc12345', visibility: 'PUBLIC', itemCount: 3 },
+    ]);
   });
 });

@@ -8,6 +8,7 @@ import {
   publicShortImagePath,
   publicShortOgPath,
   publicShortPath,
+  readableShortLink,
   publicShortPngPath,
   publicShortRawPath,
   siteOrigin,
@@ -74,5 +75,16 @@ describe('Open Graph image paths', () => {
   it('appends the update time as a version query', () => {
     const date = new Date('2026-10-02T08:00:00Z');
     expect(versionedPath('/s/abc12345/og', date)).toBe(`/s/abc12345/og?v=${date.getTime()}`);
+  });
+});
+
+describe('readableShortLink', () => {
+  it('drops the protocol for display', () => {
+    expect(readableShortLink('https://devstash.io', 'abc12345')).toBe('devstash.io/s/abc12345');
+    expect(readableShortLink('http://localhost:3001', 'abc12345')).toBe('localhost:3001/s/abc12345');
+  });
+
+  it('shows the bare path before the origin is known', () => {
+    expect(readableShortLink('', 'abc12345')).toBe('/s/abc12345');
   });
 });

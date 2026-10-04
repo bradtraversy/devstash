@@ -10,6 +10,7 @@ import { getItemTypeIcon } from "@/lib/constants/item-types";
 import { isTypeListed, showsProBadge } from "@/lib/plans";
 import type { ItemTypeWithCount } from "@/lib/db/items";
 import type { SidebarCollections } from "@/lib/db/collections";
+import PrimaryNav from "./primary-nav";
 
 interface SidebarNavProps {
   itemTypes: ItemTypeWithCount[];
@@ -26,6 +27,9 @@ export default function SidebarNav({
 
   return (
     <>
+      <PrimaryNav onLinkClick={onLinkClick} />
+      <Separator className="my-4" />
+
       {/* Types Section */}
       <div className="space-y-1">
         <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
