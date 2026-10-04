@@ -2,11 +2,16 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+Drawer Share Block, spec in `context/features/drawer-share-block-spec.md`:
+
+- One share block at the top of the drawer: Private, Unlisted, Public control, the link with Copy link, Open page, Raw, Card, and the Image menu
+- Share with a link on a private item copies inside the click (Safari safe) through a shared `copyWhenReady`
+- Action bar trimmed to Favorite, Pin, Copy, Edit, Download, Delete
+- Visibility row removed from the header, language badge shows its label
 
 ## Notes
 
