@@ -5,8 +5,10 @@ import { useItemDrawer } from "@/components/items/item-drawer-provider";
 import VisibilityPill from "@/components/items/visibility-pill";
 import { CopyContentButton, ShareItemButton } from "@/components/items/item-actions";
 import { ItemMarks, TypeIconTile, itemKindLabel } from "@/components/items/item-row-parts";
+import ShortLinkText from "@/components/items/short-link-text";
 import { formatRelativeDate } from "@/lib/utils/date";
 import type { ItemWithType } from "@/lib/db/items";
+import type { ItemDetailLine } from "@/components/items/item-row";
 import type { HighlightedToken } from "@/lib/public/highlight";
 
 const PREVIEW_LINES = 7;
@@ -15,6 +17,7 @@ interface ItemCodeCardProps {
   item: ItemWithType;
   preview?: HighlightedToken[][];
   trailing?: ReactNode;
+  detail?: ItemDetailLine;
 }
 
 function Preview({ item, preview }: { item: ItemWithType; preview?: HighlightedToken[][] }) {
@@ -47,7 +50,7 @@ function Preview({ item, preview }: { item: ItemWithType; preview?: HighlightedT
   return <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{text}</p>;
 }
 
-export default function ItemCodeCard({ item, preview, trailing }: ItemCodeCardProps) {
+export default function ItemCodeCard({ item, preview, trailing, detail = "description" }: ItemCodeCardProps) {
   const { openDrawer } = useItemDrawer();
 
   return (
@@ -61,6 +64,12 @@ export default function ItemCodeCard({ item, preview, trailing }: ItemCodeCardPr
         <span className="min-w-0 flex-1 truncate font-medium text-foreground">{item.title}</span>
         <ItemMarks item={item} className="flex shrink-0 items-center gap-1" />
       </button>
+      {detail === "link" && (
+        <ShortLinkText
+          shortId={item.shortId}
+          className="-mt-1 block truncate px-3 pb-2 font-mono text-xs text-blue-300"
+        />
+      )}
       {/* The header button is the keyboard path; the preview is a larger mouse target for the same action. */}
       <div
         onClick={() => openDrawer(item.id)}

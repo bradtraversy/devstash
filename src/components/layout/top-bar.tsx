@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Menu, Star, Plus, FolderPlus, FilePlus, FolderOpen, Sparkles, Share2 } from "lucide-react";
+import { Search, Menu, Plus, FolderPlus, FilePlus, FolderOpen, Sparkles, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -79,12 +79,6 @@ export default function TopBar({ onMenuClick, isPro }: TopBarProps) {
             </Link>
           </Button>
         )}
-
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/favorites" title="Favorites">
-            <Star className="h-5 w-5" />
-          </Link>
-        </Button>
 
         {/* Mobile: + dropdown */}
         <DropdownMenu>

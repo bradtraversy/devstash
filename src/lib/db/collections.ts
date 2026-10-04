@@ -772,6 +772,33 @@ export async function getFavoriteCollections(
   }));
 }
 
+export interface SharedCollection {
+  id: string;
+  name: string;
+  slug: string;
+  shortId: string;
+  visibility: CollectionVisibility;
+  itemCount: number;
+}
+
+/** The user's collections that are not private, most recently updated first. */
+export async function getSharedCollections(userId: string): Promise<SharedCollection[]> {
+  const collections = await prisma.collection.findMany({
+    where: { userId, visibility: { not: 'PRIVATE' } },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      shortId: true,
+      visibility: true,
+      _count: { select: { items: true } },
+    },
+  });
+
+  return collections.map(({ _count, ...collection }) => ({ ...collection, itemCount: _count.items }));
+}
+
 export interface SearchableCollection {
   id: string;
   name: string;

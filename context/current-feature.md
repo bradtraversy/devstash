@@ -2,11 +2,16 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+Shared Page and Sidebar, spec in `context/features/shared-page-spec.md`:
+
+- `/shared` lists shared items (rows or cards with the short link and Stop sharing) and shared collections (path, count, Copy link, Stop sharing)
+- `getSharedItems` and `getSharedCollections` queries with tests
+- Home, Shared, and Favorites above the types in the desktop and mobile sidebars; top-bar Favorites star removed
+- `shared` reserved as a handle
 
 ## Notes
 

@@ -22,6 +22,11 @@ export function publicShortPath(shortId: string): string {
   return `/s/${shortId}`;
 }
 
+/** The short link without its protocol, for display; links stay full when copied. */
+export function readableShortLink(origin: string, shortId: string): string {
+  return `${origin}${publicShortPath(shortId)}`.replace(/^https?:\/\//, '');
+}
+
 export function publicShortRawPath(shortId: string): string {
   return `/s/${shortId}/raw`;
 }

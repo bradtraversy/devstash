@@ -5,6 +5,7 @@ import {
   updateItem,
   createItem,
   getItemsByCollection,
+  getSharedItems,
   setItemVisibility,
   UnknownCollectionError,
 } from './items';
@@ -15,6 +16,7 @@ vi.mock('@/lib/prisma', () => {
     item: {
       findUnique: vi.fn(),
       findFirst: vi.fn(),
+      findMany: vi.fn(),
       delete: vi.fn(),
       update: vi.fn(),
       create: vi.fn(),
@@ -642,5 +644,40 @@ describe('setItemVisibility', () => {
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(2);
     expect(result?.handle).toBe('brad');
+  });
+});
+
+describe('getSharedItems', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('asks only for the owner\'s items that are not private, newest update first', async () => {
+    vi.mocked(prisma.item.findMany).mockResolvedValue([]);
+
+    await getSharedItems('user-1');
+
+    expect(prisma.item.findMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1', visibility: { not: 'PRIVATE' } },
+      orderBy: { updatedAt: 'desc' },
+      include: { itemType: true, tags: true },
+    });
+  });
+
+  it('maps rows to list items with their visibility, short id, and language', async () => {
+    vi.mocked(prisma.item.findMany).mockResolvedValue([
+      { ...basePrismaItem, visibility: 'UNLISTED', shortId: 'abc12345' },
+    ] as never);
+
+    const [item] = await getSharedItems('user-1');
+
+    expect(item).toMatchObject({
+      id: 'item-1',
+      visibility: 'UNLISTED',
+      shortId: 'abc12345',
+      language: 'typescript',
+      tags: ['react', 'hooks'],
+      itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
+    });
   });
 });

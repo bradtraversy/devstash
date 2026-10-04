@@ -12,6 +12,7 @@ export const RESERVED_HANDLES = new Set([
   'items',
   'profile',
   'settings',
+  'shared',
   'upgrade',
   'sign-in',
   'register',

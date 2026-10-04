@@ -697,6 +697,17 @@ export async function getFavoriteItems(userId: string): Promise<ItemWithType[]> 
   return items.map(toItemWithType);
 }
 
+/** The user's items that anyone with the link can open, most recently updated first. */
+export async function getSharedItems(userId: string): Promise<ItemWithType[]> {
+  const items = await prisma.item.findMany({
+    where: { userId, visibility: { not: 'PRIVATE' } },
+    orderBy: { updatedAt: 'desc' },
+    include: { itemType: true, tags: true },
+  });
+
+  return items.map(toItemWithType);
+}
+
 /**
  * Toggle isFavorite on an item (with ownership check)
  * Returns the new isFavorite value, or null if not found/not owned

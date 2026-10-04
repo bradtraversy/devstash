@@ -22,6 +22,7 @@ import { getItemTypeIcon } from "@/lib/constants/item-types";
 import { isTypeListed, showsProBadge } from "@/lib/plans";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import UserMenuContent from "./user-menu";
+import PrimaryNav from "./primary-nav";
 import type { ItemTypeWithCount } from "@/lib/db/items";
 import type { SidebarCollections } from "@/lib/db/collections";
 
@@ -80,6 +81,9 @@ export default function Sidebar({
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto p-4">
+        <PrimaryNav isCollapsed={isCollapsed} />
+        <Separator className="my-4" />
+
         {/* Types Section */}
         <div className="space-y-1">
           {!isCollapsed && (
