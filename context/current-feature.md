@@ -2,11 +2,15 @@
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+Paste Box Types, spec in `context/features/paste-types-spec.md`:
+
+- Detect notes and prompts besides links, commands, and snippets, and multi-line commands
+- Type switch under the paste box to change the guess before saving
+- Tests for `detectPasteType`, `pasteAs`, and `canBeLink`
 
 ## Notes
 
