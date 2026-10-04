@@ -1,6 +1,6 @@
 import { getResend } from './resend'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
 const FROM_EMAIL = 'DevStash <noreply@devstash.io>'
 
 export async function sendVerificationEmail(email: string, token: string) {

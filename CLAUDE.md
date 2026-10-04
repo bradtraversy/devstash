@@ -13,7 +13,7 @@ Read the following to get the full context of the project:
 
 ## Commands
 
-- **Dev server**: `npm run dev` (runs on http://localhost:3000)
+- **Dev server**: `npm run dev` (runs on http://localhost:3001)
 - **Build**: `npm run build`
 - **Production server**: `npm run start`
 - **Lint**: `npm run lint`

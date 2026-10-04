@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       })
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
 
     const checkoutSession = await getStripe().checkout.sessions.create({
       customer: customerId,

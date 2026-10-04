@@ -24,7 +24,7 @@ describe('siteOrigin', () => {
     expect(siteOrigin()).toBe('https://devstash.io');
 
     vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
-    expect(siteOrigin()).toBe('http://localhost:3000');
+    expect(siteOrigin()).toBe('http://localhost:3001');
   });
 });
 

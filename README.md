@@ -108,11 +108,11 @@ cp .env.example .env
 
 | Variable | Description |
 | -------- | ----------- |
-| `NEXT_PUBLIC_APP_URL` | App URL (default `http://localhost:3000`) |
+| `NEXT_PUBLIC_APP_URL` | App URL (default `http://localhost:3001`) |
 | `NEXT_PUBLIC_PRO_ENABLED` | `true` turns on the Pro plan, billing, and file and image items; off when empty |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `DIRECT_DATABASE_URL` | Direct (non-pooler) Neon connection for `prisma migrate`; leave empty for a local database |
-| `AUTH_URL` | Base URL NextAuth uses for redirects (default `http://localhost:3000`) |
+| `AUTH_URL` | Base URL NextAuth uses for redirects (default `http://localhost:3001`) |
 | `AUTH_SECRET` | NextAuth secret (generate with `npx auth secret`) |
 | `AUTH_GITHUB_ID` | GitHub OAuth app ID (optional, for GitHub sign-in) |
 | `AUTH_GITHUB_SECRET` | GitHub OAuth app secret (optional) |
@@ -153,7 +153,7 @@ npm run db:seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3001](http://localhost:3001).
 
 ## Scripts
 
