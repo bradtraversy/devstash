@@ -2,7 +2,19 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Code, Copy, Image as ImageIcon, Link as LinkIcon, Loader2, Share2, Terminal, X } from "lucide-react";
+import {
+  Check,
+  Code,
+  Copy,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  Loader2,
+  Share2,
+  Sparkles,
+  StickyNote,
+  Terminal,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createItem } from "@/actions/items";
@@ -10,9 +22,9 @@ import { useItemDrawer } from "@/components/items/item-drawer-provider";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useOrigin } from "@/hooks/use-origin";
 import { copyWhenReady } from "@/lib/clipboard";
-import { isTextType } from "@/lib/constants/item-types";
+import { ITEM_TYPE_COLORS, isTextType } from "@/lib/constants/item-types";
 import { languageLabel } from "@/lib/languages";
-import { guessPaste, type PasteGuess } from "@/lib/paste";
+import { canBeLink, detectPasteType, pasteAs, type PasteGuess, type PasteType } from "@/lib/paste";
 import { publicShortPath, readableShortLink } from "@/lib/public/paths";
 
 const SAMPLES = [
@@ -22,6 +34,11 @@ const SAMPLES = [
     text: "export const sleep = (ms: number) =>\n  new Promise((resolve) => setTimeout(resolve, ms));\n",
   },
   { label: "A command", Icon: Terminal, text: "npx prisma migrate dev --name add_slugs" },
+  {
+    label: "A prompt",
+    Icon: Sparkles,
+    text: "Review this diff like a senior engineer. Point out bugs and edge cases first, then anything that changes behavior.",
+  },
   { label: "A link", Icon: LinkIcon, text: "https://nextjs.org/docs/app/api-reference/functions/revalidatePath" },
 ];
 
@@ -31,11 +48,19 @@ interface SharedResult {
   typeName: string;
 }
 
-function describeGuess(guess: PasteGuess): string {
-  if (guess.typeName === "link") return `Looks like a link, saved as “${guess.title}”`;
-  if (guess.typeName === "command") return "Looks like a command";
-  const kind = guess.language ? `${languageLabel(guess.language)} snippet` : "snippet";
-  return `Looks like a ${kind}, saved as “${guess.title}”`;
+const TYPE_OPTIONS: { value: PasteType; label: string; Icon: typeof Code }[] = [
+  { value: "snippet", label: "Snippet", Icon: Code },
+  { value: "command", label: "Command", Icon: Terminal },
+  { value: "note", label: "Note", Icon: StickyNote },
+  { value: "prompt", label: "Prompt", Icon: Sparkles },
+  { value: "link", label: "Link", Icon: LinkIcon },
+];
+
+function describeGuess(guess: PasteGuess, chosen: boolean): string {
+  const kind =
+    guess.typeName === "snippet" && guess.language ? `${languageLabel(guess.language)} snippet` : guess.typeName;
+  const lead = chosen ? `Saving as a ${kind}` : `Looks like a ${kind}`;
+  return guess.typeName === "command" ? lead : `${lead}, titled “${guess.title}”`;
 }
 
 export default function QuickCapture({ showSamples = false }: { showSamples?: boolean }) {
@@ -48,7 +73,12 @@ export default function QuickCapture({ showSamples = false }: { showSamples?: bo
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"save" | "share" | null>(null);
   const [shared, setShared] = useState<SharedResult | null>(null);
-  const guess = useMemo(() => guessPaste(text), [text]);
+  // The detected type until the user picks one; a picked Link falls back once the text stops being a URL.
+  const [chosenType, setChosenType] = useState<PasteType | null>(null);
+  const detected = useMemo(() => detectPasteType(text), [text]);
+  const linkable = useMemo(() => canBeLink(text), [text]);
+  const typeName = chosenType && (chosenType !== "link" || linkable) ? chosenType : detected;
+  const guess = useMemo(() => (typeName ? pasteAs(text, typeName) : null), [text, typeName]);
 
   const save = async (share: boolean) => {
     if (busy) return;
@@ -95,6 +125,7 @@ export default function QuickCapture({ showSamples = false }: { showSamples?: bo
 
     setText("");
     setError(null);
+    setChosenType(null);
     if (share) {
       setShared({ id: result.data.id, shortId: result.data.shortId, typeName: guess.typeName });
       try {
@@ -116,7 +147,7 @@ export default function QuickCapture({ showSamples = false }: { showSamples?: bo
     <div>
       <div className="rounded-xl border border-border bg-card transition-colors focus-within:border-blue-500/60">
         <label htmlFor="quick-capture" className="sr-only">
-          Paste code, a command, or a link
+          Paste code, a command, a note, or a link
         </label>
         <textarea
           id="quick-capture"
@@ -126,10 +157,11 @@ export default function QuickCapture({ showSamples = false }: { showSamples?: bo
           aria-describedby="quick-capture-hint"
           aria-invalid={error ? true : undefined}
           spellCheck={false}
-          placeholder="Paste code, a command, or a link"
+          placeholder="Paste code, a command, a note, or a link"
           onChange={(e) => {
             setText(e.target.value);
             setError(null);
+            if (!e.target.value.trim()) setChosenType(null);
           }}
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -139,32 +171,63 @@ export default function QuickCapture({ showSamples = false }: { showSamples?: bo
           }}
           className="block max-h-80 min-h-24 w-full resize-y bg-transparent px-4 pb-2 pt-3.5 font-mono text-sm leading-relaxed outline-none placeholder:font-sans placeholder:text-muted-foreground"
         />
-        <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-3">
+          {detected && (
+            <div role="group" aria-label="Save as" className="flex flex-wrap items-center gap-1">
+              {TYPE_OPTIONS.map(({ value, label, Icon }) => {
+                const selected = typeName === value;
+                const unavailable = value === "link" && !linkable;
+                const color = ITEM_TYPE_COLORS[value];
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={selected}
+                    aria-disabled={unavailable || undefined}
+                    disabled={busy !== null}
+                    title={unavailable ? "Paste one web address to save a link" : `Save as a ${value}`}
+                    onClick={() => {
+                      if (!unavailable) setChosenType(value);
+                    }}
+                    style={selected ? { backgroundColor: `${color}26`, color } : undefined}
+                    className={`inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${
+                      selected ? "border-transparent font-medium" : "border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="ml-auto flex w-full gap-2 sm:w-auto">
+            <Button variant="outline" size="sm" onClick={() => save(false)} disabled={busy !== null} className="flex-1 sm:flex-none">
+              {busy === "save" && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => save(true)}
+              disabled={busy !== null}
+              className="flex-1 bg-blue-600 text-white hover:bg-blue-500 sm:flex-none"
+            >
+              {busy === "share" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+              Save and share
+            </Button>
+          </div>
           <p
             id="quick-capture-hint"
-            className={`min-w-0 flex-1 basis-full truncate text-xs sm:basis-auto ${error ? "text-red-400" : "text-muted-foreground"}`}
+            className={`basis-full truncate text-xs ${error ? "text-red-400" : "text-muted-foreground"}`}
           >
             {error ? (
               <span role="alert">{error}</span>
             ) : guess ? (
-              describeGuess(guess)
+              describeGuess(guess, chosenType !== null && typeName === chosenType)
             ) : (
-              "Snippets, commands, and links. Private until you share it."
+              "Snippets, commands, notes, prompts, and links. Private until you share it."
             )}
           </p>
-          <Button variant="outline" size="sm" onClick={() => save(false)} disabled={busy !== null} className="flex-1 sm:flex-none">
-            {busy === "save" && <Loader2 className="h-4 w-4 animate-spin" />}
-            Save
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => save(true)}
-            disabled={busy !== null}
-            className="flex-1 bg-blue-600 text-white hover:bg-blue-500 sm:flex-none"
-          >
-            {busy === "share" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
-            Save and share
-          </Button>
         </div>
       </div>
 
@@ -210,6 +273,7 @@ export default function QuickCapture({ showSamples = false }: { showSamples?: bo
               onClick={() => {
                 setText(sample);
                 setError(null);
+                setChosenType(null);
                 textareaRef.current?.focus();
               }}
               className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border px-3 text-xs transition-colors hover:border-muted-foreground/50 hover:text-foreground"

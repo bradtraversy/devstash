@@ -85,7 +85,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <div>
             <h1 className="text-2xl font-bold text-foreground">Start your stash</h1>
             <p className="mt-1 max-w-2xl text-muted-foreground">
-              Paste code, a command, or a link. Keep it to yourself, or share it with a link anyone can open.
+              Paste code, a command, a note, or a link. Keep it to yourself, or share it with a link anyone can open.
             </p>
           </div>
         ) : (
