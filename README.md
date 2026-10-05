@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="https://img.icons8.com/fluency/96/code-folder.png" alt="DevStash" width="80" />
+  <img src="public/brand/devstash-lockup.svg" alt="DevStash" width="320" />
 </p>
-
-<h1 align="center">DevStash</h1>
 
 <p align="center">
   Stash it. Share it.

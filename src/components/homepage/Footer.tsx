@@ -1,5 +1,5 @@
-import { FolderOpen } from "lucide-react";
 import Link from "next/link";
+import DevStashMark from "@/components/shared/devstash-mark";
 import { isProEnabled } from "@/lib/plans";
 
 const FOOTER_LINKS = {
@@ -28,7 +28,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="max-md:col-span-2 max-sm:col-span-1">
             <Link href="/" className="flex items-center gap-2.5 font-bold text-lg text-[#e4e4ef] mb-3">
-              <FolderOpen className="size-6" />
+              <DevStashMark className="size-6" />
               DevStash
             </Link>
             <p className="text-sm text-[#8888a4] max-w-[280px] leading-relaxed">

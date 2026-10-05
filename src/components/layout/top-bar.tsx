@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Menu, Plus, FolderPlus, FilePlus, FolderOpen, Sparkles, Share2 } from "lucide-react";
+import { Search, Menu, Plus, FolderPlus, FilePlus, Sparkles, Share2 } from "lucide-react";
+import DevStashMark from "@/components/shared/devstash-mark";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,8 +41,12 @@ export default function TopBar({ onMenuClick, isPro }: TopBarProps) {
       </Button>
 
       {/* Logo */}
-      <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-        <FolderOpen className="h-6 w-6 text-primary" />
+      <Link
+        href="/dashboard"
+        className="flex items-center gap-2 shrink-0"
+        aria-label="DevStash dashboard"
+      >
+        <DevStashMark className="h-6 w-6" />
         <span className="hidden sm:inline text-lg font-semibold">DevStash</span>
       </Link>
 
