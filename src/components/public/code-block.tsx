@@ -1,4 +1,5 @@
 import { highlightCode } from "@/lib/public/highlight";
+import { SHIKI_HTML_CLASS } from "./code-fence";
 
 interface CodeBlockProps {
   code: string;
@@ -10,7 +11,7 @@ export default async function CodeBlock({ code, language }: CodeBlockProps) {
 
   return (
     <div
-      className="text-sm leading-relaxed [&_pre]:m-0 [&_pre]:overflow-x-auto [&_pre]:p-4 [&_code]:font-mono"
+      className={SHIKI_HTML_CLASS}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

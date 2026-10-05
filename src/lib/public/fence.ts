@@ -1,4 +1,5 @@
-import { fenceLanguage } from '@/lib/languages';
+import { COMMAND_LANGUAGE, fenceLanguage } from '@/lib/languages';
+import { commandCopyText } from '@/lib/public/copy';
 
 export interface Fence {
   code: string;
@@ -21,4 +22,9 @@ export function fenceFromCodeProps(props: { className?: string; children?: unkno
     code: textOf(props.children).replace(/\n$/, ''),
     language: fenceLanguage(info),
   };
+}
+
+/** Clipboard text for a fence: shell fences drop their `$ ` prompts like command items. */
+export function fenceCopyText(fence: Fence): string {
+  return fence.language === COMMAND_LANGUAGE ? commandCopyText(fence.code) : fence.code;
 }
