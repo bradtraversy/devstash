@@ -45,7 +45,7 @@ function labelFor(item: PublicItem): string | null {
   }
 }
 
-function BlockBody({ item }: { item: PublicItem }) {
+function BlockBody({ item, anchor }: { item: PublicItem; anchor: string | null }) {
   switch (item.itemType.name) {
     case "snippet":
       return <CodeBlock code={item.content ?? ""} language={item.language} />;
@@ -58,7 +58,9 @@ function BlockBody({ item }: { item: PublicItem }) {
     case "file":
       return <FileBlock item={item} />;
     default:
-      return item.content ? <MarkdownBlock content={item.content} /> : null;
+      return item.content ? (
+        <MarkdownBlock content={item.content} headingIdPrefix={anchor ? `${anchor}-` : ""} />
+      ) : null;
   }
 }
 
@@ -101,7 +103,7 @@ export default function ItemBlock({ item, position, standalone = false, headingL
       {item.description && (
         <p className="px-4 pt-3 text-sm text-muted-foreground">{item.description}</p>
       )}
-      <BlockBody item={item} />
+      <BlockBody item={item} anchor={anchor} />
     </section>
   );
 }

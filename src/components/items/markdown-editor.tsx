@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Check } from "lucide-react";
 import { useClipboard } from "@/hooks/use-clipboard";
 import EditorHeader from "./editor-header";
+import MarkdownFence from "./markdown-fence";
 import { optimizePrompt } from "@/actions/ai";
 import { toast } from "sonner";
 import ProAiButton from "@/components/shared/pro-ai-button";
@@ -92,10 +93,13 @@ export default function MarkdownEditor({
   const lineCount = value.split("\n").length;
   const lineHeight = 24;
   const padding = 32;
+  // Each fenced block gains a header and padding in the preview.
+  const fenceCount = Math.floor((value.match(/^[ \t]*(```|~~~)/gm)?.length ?? 0) / 2);
+  const fenceExtra = 48;
   const minHeight = 200;
   const maxHeight = 400;
   const calculatedHeight = Math.min(
-    Math.max(lineCount * lineHeight + padding, minHeight),
+    Math.max(lineCount * lineHeight + fenceCount * fenceExtra + padding, minHeight),
     maxHeight
   );
 
@@ -183,7 +187,7 @@ export default function MarkdownEditor({
           }}
         >
           {displayContent ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownFence }}>
               {displayContent}
             </ReactMarkdown>
           ) : (

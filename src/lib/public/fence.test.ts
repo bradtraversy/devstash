@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fenceFromCodeProps } from './fence';
+import { fenceCopyText, fenceFromCodeProps } from './fence';
 
 describe('fenceFromCodeProps', () => {
   it('reads the grammar from the language class and trims the trailing newline', () => {
@@ -32,5 +32,17 @@ describe('fenceFromCodeProps', () => {
 
   it('ignores non-text children', () => {
     expect(fenceFromCodeProps({ className: 'language-go', children: { some: 'element' } }).code).toBe('');
+  });
+});
+
+describe('fenceCopyText', () => {
+  it('drops a leading $ prompt from every line of a shell fence', () => {
+    const fence = fenceFromCodeProps({ className: 'language-sh', children: '$ npm ci\n$ npm test\necho done\n' });
+    expect(fenceCopyText(fence)).toBe('npm ci\nnpm test\necho done');
+  });
+
+  it('copies other fences unchanged', () => {
+    expect(fenceCopyText({ code: '$ not a prompt', language: 'javascript' })).toBe('$ not a prompt');
+    expect(fenceCopyText({ code: '$ plain', language: null })).toBe('$ plain');
   });
 });

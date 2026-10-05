@@ -1,16 +1,22 @@
-# Current Feature
+# Current Feature: Note Pages
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Every fenced code block in a note or prompt gets a header with its language label and a Copy button, on public pages and in the drawer
+- Bash fences copy without leading `$ ` prompts (`fenceCopyText`)
+- Fences in the drawer and dialogs are highlighted on the client with the public pages' Shiki theme, loaded on demand, plain code until ready
+- Headings in notes and prompts on public pages get GitHub-style ids and a hover `#` link, prefixed with the block anchor on collection pages
+- Unit tests for `fenceCopyText` and `createHeadingIds`
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/note-pages-spec.md`
+- Always on, no setting and no new item type (Brad, 2026-10-05)
+- First user: the CI/CD Crash Course gist imported as one note
 
 ## History
 
