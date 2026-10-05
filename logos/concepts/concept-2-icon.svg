@@ -1,0 +1,12 @@
+<svg viewBox="0 0 512 512" role="img" aria-labelledby="title description" xmlns="http://www.w3.org/2000/svg">
+  <title id="title">DevStash open tray logo</title>
+  <desc id="description">A geometric blue tray with a single tile lifting out of it.</desc>
+  <g id="icon">
+    <g id="stash" fill="#2563eb">
+      <path d="M72 218h104v78h160v-78h104v176c0 25-21 46-46 46H118c-25 0-46-21-46-46V218Z"/>
+    </g>
+    <g id="shared-item" fill="#60a5fa">
+      <rect x="216" y="40" width="152" height="152" rx="28"/>
+    </g>
+  </g>
+</svg>

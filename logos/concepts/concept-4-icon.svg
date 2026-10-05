@@ -1,0 +1,11 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">DevStash open vault logo</title>
+  <desc id="desc">A geometric blue card seated inside an open storage container.</desc>
+  <g id="icon">
+    <path fill="#2563EB" d="M72 184a40 40 0 0 1 40-40h80v64h-56v184h240V208h-56v-64h80a40 40 0 0 1 40 40v232a40 40 0 0 1-40 40H112a40 40 0 0 1-40-40V184Z"/>
+    <rect width="160" height="248" x="176" y="56" fill="#60A5FA" rx="40"/>
+    <rect width="96" height="24" x="208" y="104" fill="#DBEAFE" rx="12"/>
+    <rect width="96" height="24" x="208" y="152" fill="#DBEAFE" rx="12"/>
+    <path fill="#1D4ED8" d="M176 256h160v48a40 40 0 0 1-40 40h-80a40 40 0 0 1-40-40v-48Z"/>
+  </g>
+</svg>

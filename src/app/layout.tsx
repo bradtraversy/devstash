@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   title: "DevStash - Stash it. Share it.",
   description:
     "Save snippets, commands, and prompts in one place and share any of them with a short link, a raw URL, and a clean image.",
+  icons: {
+    icon: [{ url: "/brand/devstash-mark.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevStash Logo Concepts</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    color-scheme: dark;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0a0a0f;
+    color: #e4e4ef;
+  }
+  body { margin: 0; padding: 48px 24px 72px; }
+  main { width: min(1180px, 100%); margin: 0 auto; }
+  header { margin-bottom: 36px; }
+  h1 { margin: 0 0 10px; font-size: clamp(32px, 5vw, 56px); letter-spacing: -0.04em; }
+  header p { max-width: 680px; margin: 0; color: #8888a4; font-size: 17px; line-height: 1.6; }
+  .concepts { display: grid; gap: 28px; }
+  .concept { border: 1px solid #1e1e2e; border-radius: 18px; overflow: hidden; background: #12121a; }
+  .concept-heading { display: flex; justify-content: space-between; gap: 24px; padding: 22px 24px; border-bottom: 1px solid #1e1e2e; }
+  .concept-heading h2 { margin: 0 0 4px; font-size: 18px; }
+  .concept-heading p { margin: 0; color: #8888a4; font-size: 14px; line-height: 1.5; }
+  .number { color: #60a5fa; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; }
+  .samples { display: grid; grid-template-columns: 220px 220px minmax(360px, 1fr); }
+  .sample { min-height: 250px; padding: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; border-right: 1px solid #1e1e2e; }
+  .sample:last-child { border-right: 0; }
+  .sample.light { background: #f8fafc; color: #111827; }
+  .sample.dark { background: #0a0a0f; }
+  .sample img.icon { width: 132px; height: 132px; }
+  .sample img.lockup { width: min(100%, 520px); height: auto; }
+  .label { color: #8888a4; font-size: 12px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; }
+  .sizes { display: flex; align-items: end; gap: 14px; padding-top: 2px; }
+  .size { display: grid; justify-items: center; gap: 6px; color: #8888a4; font-size: 10px; }
+  .size img { display: block; }
+  @media (max-width: 850px) {
+    .samples { grid-template-columns: 1fr 1fr; }
+    .sample:nth-child(2) { border-right: 0; }
+    .sample:last-child { grid-column: 1 / -1; border-top: 1px solid #1e1e2e; }
+  }
+  @media (max-width: 540px) {
+    body { padding: 28px 14px 48px; }
+    .concept-heading { flex-direction: column; }
+    .samples { grid-template-columns: 1fr; }
+    .sample { border-right: 0; border-bottom: 1px solid #1e1e2e; }
+    .sample:last-child { grid-column: auto; border-bottom: 0; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>DevStash logo concepts</h1>
+    <p>Four minimal geometric directions built around the idea of a stash, using the blue already established in the DevStash interface.</p>
+  </header>
+  <div class="concepts">
+    <section class="concept">
+      <div class="concept-heading">
+        <div><h2>Nested stash</h2><p>Stored layers held inside an open geometric container.</p></div>
+        <span class="number">Concept 1</span>
+      </div>
+      <div class="samples">
+        <div class="sample light"><img class="icon" src="concepts/concept-1-icon.svg" alt="Concept 1 icon on light"><div class="sizes"><span class="size"><img src="concepts/concept-1-icon.svg" width="64" height="64" alt=""><b>64</b></span><span class="size"><img src="concepts/concept-1-icon.svg" width="32" height="32" alt=""><b>32</b></span><span class="size"><img src="concepts/concept-1-icon.svg" width="16" height="16" alt=""><b>16</b></span></div><span class="label">Icon on light</span></div>
+        <div class="sample dark"><img class="icon" src="concepts/concept-1-icon.svg" alt="Concept 1 icon on dark"><span class="label">Icon on dark</span></div>
+        <div class="sample light"><img class="lockup" src="concepts/concept-1-lockup.svg" alt="Concept 1 DevStash lockup"><span class="label">Combination mark</span></div>
+      </div>
+    </section>
+    <section class="concept">
+      <div class="concept-heading">
+        <div><h2>Shared tile</h2><p>A saved item lifting out of its container to become shareable.</p></div>
+        <span class="number">Concept 2</span>
+      </div>
+      <div class="samples">
+        <div class="sample light"><img class="icon" src="concepts/concept-2-icon.svg" alt="Concept 2 icon on light"><div class="sizes"><span class="size"><img src="concepts/concept-2-icon.svg" width="64" height="64" alt=""><b>64</b></span><span class="size"><img src="concepts/concept-2-icon.svg" width="32" height="32" alt=""><b>32</b></span><span class="size"><img src="concepts/concept-2-icon.svg" width="16" height="16" alt=""><b>16</b></span></div><span class="label">Icon on light</span></div>
+        <div class="sample dark"><img class="icon" src="concepts/concept-2-icon.svg" alt="Concept 2 icon on dark"><span class="label">Icon on dark</span></div>
+        <div class="sample light"><img class="lockup" src="concepts/concept-2-lockup.svg" alt="Concept 2 DevStash lockup"><span class="label">Combination mark</span></div>
+      </div>
+    </section>
+    <section class="concept">
+      <div class="concept-heading">
+        <div><h2>Card stack</h2><p>Layered resources with one selected shareable item pulled forward.</p></div>
+        <span class="number">Concept 3</span>
+      </div>
+      <div class="samples">
+        <div class="sample light"><img class="icon" src="concepts/concept-3-icon.svg" alt="Concept 3 icon on light"><div class="sizes"><span class="size"><img src="concepts/concept-3-icon.svg" width="64" height="64" alt=""><b>64</b></span><span class="size"><img src="concepts/concept-3-icon.svg" width="32" height="32" alt=""><b>32</b></span><span class="size"><img src="concepts/concept-3-icon.svg" width="16" height="16" alt=""><b>16</b></span></div><span class="label">Icon on light</span></div>
+        <div class="sample dark"><img class="icon" src="concepts/concept-3-icon.svg" alt="Concept 3 icon on dark"><span class="label">Icon on dark</span></div>
+        <div class="sample light"><img class="lockup" src="concepts/concept-3-lockup.svg" alt="Concept 3 DevStash lockup"><span class="label">Combination mark</span></div>
+      </div>
+    </section>
+    <section class="concept">
+      <div class="concept-heading">
+        <div><h2>Open vault</h2><p>A single developer resource seated inside a sturdy open stash.</p></div>
+        <span class="number">Concept 4</span>
+      </div>
+      <div class="samples">
+        <div class="sample light"><img class="icon" src="concepts/concept-4-icon.svg" alt="Concept 4 icon on light"><div class="sizes"><span class="size"><img src="concepts/concept-4-icon.svg" width="64" height="64" alt=""><b>64</b></span><span class="size"><img src="concepts/concept-4-icon.svg" width="32" height="32" alt=""><b>32</b></span><span class="size"><img src="concepts/concept-4-icon.svg" width="16" height="16" alt=""><b>16</b></span></div><span class="label">Icon on light</span></div>
+        <div class="sample dark"><img class="icon" src="concepts/concept-4-icon.svg" alt="Concept 4 icon on dark"><span class="label">Icon on dark</span></div>
+        <div class="sample light"><img class="lockup" src="concepts/concept-4-lockup.svg" alt="Concept 4 DevStash lockup"><span class="label">Combination mark</span></div>
+      </div>
+    </section>
+  </div>
+</main>
+</body>
+</html>

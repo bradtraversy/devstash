@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FolderOpen, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import DevStashMark from "@/components/shared/devstash-mark";
 import { Button } from "@/components/ui/button";
 import { isProEnabled } from "@/lib/plans";
 
@@ -26,7 +27,7 @@ export default function Navbar() {
     >
       <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 font-bold text-lg text-[#e4e4ef]">
-          <FolderOpen className="size-7" />
+          <DevStashMark className="size-7" />
           DevStash
         </Link>
 

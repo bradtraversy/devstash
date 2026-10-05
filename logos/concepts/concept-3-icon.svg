@@ -1,0 +1,13 @@
+<svg viewBox="0 0 512 512" role="img" aria-labelledby="title description" xmlns="http://www.w3.org/2000/svg">
+  <title id="title">DevStash stacked cards icon</title>
+  <desc id="description">Three offset rounded cards with the top card pulled forward from the stash.</desc>
+  <g id="icon">
+    <g id="stash">
+      <rect x="64" y="168" width="280" height="280" rx="44" fill="#1D4ED8"/>
+      <rect x="112" y="120" width="280" height="280" rx="44" fill="#3B82F6"/>
+    </g>
+    <g id="shareable-unit">
+      <rect x="160" y="72" width="280" height="280" rx="44" fill="#60A5FA"/>
+    </g>
+  </g>
+</svg>
