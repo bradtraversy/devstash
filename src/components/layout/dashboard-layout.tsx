@@ -45,7 +45,8 @@ export default function DashboardLayout({
   // Wrap content with EditorPreferencesProvider if preferences are provided
   const content = (
     <>
-      <main className="flex-1 overflow-auto p-6">{children}</main>
+      {/* relative keeps absolutely positioned descendants, like sr-only labels, inside the scroll area; without it they stretch the page into a second scrollbar. */}
+      <main className="relative flex-1 overflow-auto p-6">{children}</main>
       <ItemDrawer />
       <CommandPalette />
     </>
