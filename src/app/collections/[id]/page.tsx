@@ -7,7 +7,7 @@ import CollectionItemList from '@/components/collections/collection-item-list';
 import ListLayoutSwitch from '@/components/items/list-layout-switch';
 import VisibilityControl from '@/components/collections/visibility-control';
 import ListFooter from '@/components/shared/list-footer';
-import { getSidebarCollections, getCollectionById } from '@/lib/db/collections';
+import { countPrivateCollectionItems, getSidebarCollections, getCollectionById } from '@/lib/db/collections';
 import { getItemTypesWithCounts, getItemsByCollection } from '@/lib/db/items';
 import { getUserById, getEditorPreferences } from '@/lib/db/users';
 import { getItemTypeIcon } from '@/lib/constants/item-types';
@@ -46,11 +46,12 @@ export default async function CollectionDetailPage({ params, searchParams }: Col
   const cookieStore = await cookies();
   const pageSize = parsePageSize(cookieStore.get(PAGE_SIZE_COOKIE)?.value);
 
-  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences] = await Promise.all([
+  const [paginatedItems, itemTypes, sidebarCollections, editorPreferences, privateItemCount] = await Promise.all([
     getItemsByCollection(user.id, collectionId, currentPage, pageSize),
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
     getEditorPreferences(user.id),
+    countPrivateCollectionItems(collectionId, user.id),
   ]);
 
   const { items, totalCount, totalPages } = paginatedItems;
@@ -112,6 +113,7 @@ export default async function CollectionDetailPage({ params, searchParams }: Col
           key={collection.id}
           collection={collection}
           handle={collection.ownerHandle}
+          privateItemCount={privateItemCount}
         />
 
         {/* Items in position order */}

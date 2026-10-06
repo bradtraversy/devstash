@@ -32,3 +32,20 @@ export interface VisibilityUpdate {
 export function getVisibilityOption(value: CollectionVisibility): VisibilityOption {
   return VISIBILITY_OPTIONS.find((option) => option.value === value) ?? VISIBILITY_OPTIONS[0];
 }
+
+/** Says plainly that sharing a collection exposes every item in it, whatever each item's own setting. */
+export function collectionShareNotice(
+  itemCount: number,
+  privateItemCount: number,
+  visibility: CollectionVisibility
+): string | null {
+  if (itemCount <= 0) return null;
+  const all = itemCount === 1 ? 'its 1 item' : `all ${itemCount} of its items`;
+  const privatePart =
+    privateItemCount > 0 ? `, including ${privateItemCount} set to Private` : '';
+  if (visibility === 'PRIVATE') {
+    return `Sharing this collection makes ${all} visible to anyone with the link${privatePart}.`;
+  }
+  if (privateItemCount <= 0) return null;
+  return `This collection is shared, so ${all} ${itemCount === 1 ? 'is' : 'are'} visible to anyone with the link${privatePart}.`;
+}

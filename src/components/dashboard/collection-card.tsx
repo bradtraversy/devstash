@@ -57,7 +57,7 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
     const result = await setCollectionVisibility({ id: collection.id, visibility: "UNLISTED" });
 
     if (result.success) {
-      copy(shareLink, "Link copied. Anyone with it can view this collection.");
+      copy(shareLink, "Link copied. Anyone with it can view this collection and every item in it.");
       router.refresh();
     } else {
       toast.error(result.error || "Failed to share collection");

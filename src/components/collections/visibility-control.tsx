@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Globe, Link2, Lock } from "lucide-react";
+import { Check, Globe, Link2, Lock, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,6 +18,7 @@ import { useClipboard } from "@/hooks/use-clipboard";
 import { useOrigin } from "@/hooks/use-origin";
 import {
   VISIBILITY_OPTIONS,
+  collectionShareNotice,
   getVisibilityOption,
   type CollectionVisibility,
 } from "@/lib/constants/visibility";
@@ -34,11 +35,13 @@ interface VisibilityControlProps {
     slug: string;
     shortId: string;
     visibility: CollectionVisibility;
+    itemCount: number;
   };
   handle: string | null;
+  privateItemCount: number;
 }
 
-export default function VisibilityControl({ collection, handle }: VisibilityControlProps) {
+export default function VisibilityControl({ collection, handle, privateItemCount }: VisibilityControlProps) {
   const router = useRouter();
   const origin = useOrigin();
   const { copied, copy } = useClipboard();
@@ -51,6 +54,7 @@ export default function VisibilityControl({ collection, handle }: VisibilityCont
   const isShared = visibility !== "PRIVATE";
   const readableUrl = origin && ownerHandle ? `${origin}/${ownerHandle}/${collection.slug}` : null;
   const shortLink = `${origin}/s/${collection.shortId}`;
+  const notice = collectionShareNotice(collection.itemCount, privateItemCount, visibility);
 
   const handleChange = async (value: string) => {
     const next = value as CollectionVisibility;
@@ -102,6 +106,12 @@ export default function VisibilityControl({ collection, handle }: VisibilityCont
           )}
         </div>
       </div>
+      {notice && (
+        <p className="flex items-start gap-2 text-sm text-amber-400">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+          {notice}
+        </p>
+      )}
       {isShared && readableUrl && (
         <a
           href={readableUrl}

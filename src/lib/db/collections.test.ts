@@ -7,6 +7,7 @@ import {
   setCollectionVisibility,
   moveCollectionItem,
   getSharedCollections,
+  countPrivateCollectionItems,
 } from './collections';
 import { SHORT_ID_PATTERN } from '@/lib/short-id';
 import { COLLECTION_ITEM_ORDER } from '@/lib/db/items';
@@ -29,6 +30,7 @@ vi.mock('@/lib/prisma', () => {
     itemCollection: {
       findMany: vi.fn(),
       update: vi.fn(),
+      count: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
@@ -674,5 +676,16 @@ describe('getSharedCollections', () => {
     expect(result).toEqual([
       { id: 'col-1', name: 'DevOps', slug: 'devops', shortId: 'abc12345', visibility: 'PUBLIC', itemCount: 3 },
     ]);
+  });
+});
+
+describe('countPrivateCollectionItems', () => {
+  it('counts the owner\'s collection items that are private on their own', async () => {
+    vi.mocked(prisma.itemCollection.count).mockResolvedValue(2);
+
+    await expect(countPrivateCollectionItems('col-1', 'user-1')).resolves.toBe(2);
+    expect(prisma.itemCollection.count).toHaveBeenCalledWith({
+      where: { collectionId: 'col-1', collection: { userId: 'user-1' }, item: { visibility: 'PRIVATE' } },
+    });
   });
 });
