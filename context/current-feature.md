@@ -1,20 +1,16 @@
-# Current Feature: Shared Via Collection
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Item lists load each item's shared collections (`sharedVia`)
-- Private items in a shared collection show a blue "Via collection" pill on rows and cards and a folder mark on image and file cards, titled with which collection shares them
-- The drawer says a private item is shared via its collection in place of "Only you can see this"
-- Tests for the wording and the list include
+<!-- Define goals here -->
 
 ## Notes
 
-- Spec: `context/features/shared-via-collection-spec.md`
-- Labels only; item settings never change when a collection is shared (Brad, 2026-10-06)
+<!-- Additional context here -->
 
 ## History
 
@@ -108,3 +104,4 @@ In Progress
 - **Homepage Glow** - Soft blue radial glow behind the hero headline and a fainter one behind the closing call to action, matching the docs, plus a thin divider between the hero and the Sharing section so the long black run reads as two sections; checked on the dev server at 1440px; no tests needed (Completed)
 - **Footer, Privacy, and Terms** - Plain-language /privacy and /terms pages from src/content/legal through MarkdownBlock on the docs content panel (LegalPage component and legalMetadata, src/lib/legal.ts with the pages and last-updated date), naming Traversy Media as operator and brad@traversymedia.com as contact (Brad, 2026-10-06); Privacy lists account details including the stored GitHub tokens, the handle and where it shows, rate limit counters by IP and email, cookieless page views, every processing service including jsDelivr for the editor, cookies, export, unsharing, and account deletion with what it leaves (others' saved copies, backups, uploaded files on request); Terms cover the account, content ownership and the permission to host, share, copy into others' stashes, and send to OpenAI, what sharing exposes, acceptable use, the free service, shutdown notice, no warranty, and limited liability; both pages and the docs say sharing a collection shares every item in it, including items that are private on their own; footer without dead links (Product, Resources with Docs and GitHub, Legal) and Traversy Media in the copyright; register and sign-in forms link the Terms and Privacy Policy; privacy and terms reserved as handles; verified with npm run verify, an independent review of code and every policy claim with its findings applied, and a browser check of both pages, the footer, and the forms at desktop and phone widths; 3 new tests (918 total) (Completed)
 - **Collection Share Notice** - The collection page says plainly in amber that sharing a collection exposes every item in it: "Sharing this collection makes all N of its items visible to anyone with the link, including P set to Private." while private, and "This collection is shared, so all N of its items are visible to anyone with the link, including P set to Private." once shared with private items inside, from countPrivateCollectionItems and collectionShareNotice; item visibility itself is unchanged, and the collection card's one-click Share toast says anyone with the link can view the collection and every item in it; spec in context/features/collection-share-notice-spec.md; verified with npm run verify, an independent review, and a browser check of a collection with two private items before and after switching it to Unlisted; 5 new tests (923 total) (Completed)
+- **Shared Via Collection** - Item lists (Home, type pages, collection pages, Favorites, Shared) load each item's shared collections through ITEM_LIST_INCLUDE into ItemWithType.sharedVia; describeSharedVia words it ("Shared via the X collection, so anyone with its link can see it", two names, or "N collections: X, Y, and M more"); a private item in a shared collection shows a blue "Via collection" pill with a folder icon on rows (the full sentence as title and screen reader text), an icon-only pill on code cards, and a folder mark on image and file cards; the drawer shows the sentence under the visibility control, and on its own for files, which have no share block; item settings never change when a collection is shared, so making the collection private again turns the labels back (Brad, 2026-10-06); spec in context/features/shared-via-collection-spec.md; verified with npm run verify, an independent review with its findings applied, and a browser check of rows, the drawer, and switching the collection back to private; 6 new tests (929 total) (Completed)
