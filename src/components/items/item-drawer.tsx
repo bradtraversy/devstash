@@ -49,7 +49,7 @@ import { useClipboard } from "@/hooks/use-clipboard";
 import { useOrigin } from "@/hooks/use-origin";
 import { publicShortPath } from "@/lib/public/paths";
 import { hasAiAccess } from "@/lib/plans";
-import { getVisibilityOption, type CollectionVisibility } from "@/lib/constants/visibility";
+import { describeSharedVia, getVisibilityOption, type CollectionVisibility } from "@/lib/constants/visibility";
 import { toast } from "sonner";
 import {
   updateItem,
@@ -155,6 +155,7 @@ export default function ItemDrawer() {
   const isShared = !!item && item.visibility !== "PRIVATE";
   // File pages have no download yet, so a shared file would only confuse the recipient.
   const canShare = !!item && item.itemType.name !== "file";
+  const sharedViaNote = item && !isShared ? describeSharedVia(item.collections) : null;
 
   const applyVisibility = async (visibility: CollectionVisibility) => {
     if (!item) return false;
@@ -433,6 +434,15 @@ export default function ItemDrawer() {
                   onVisibilityChange={handleVisibilityChange}
                   onShare={handleShare}
                 />
+              </div>
+            )}
+
+            {/* Files get no share block, but one in a shared collection is still visible through it. */}
+            {!isEditing && !canShare && sharedViaNote && (
+              <div className="px-6 pt-4">
+                <p className="rounded-lg border border-border bg-muted/30 p-4 text-xs text-blue-300">
+                  {sharedViaNote}.
+                </p>
               </div>
             )}
 

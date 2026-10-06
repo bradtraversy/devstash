@@ -82,7 +82,7 @@ export default function ItemCodeCard({ item, preview, trailing, detail = "descri
           {itemKindLabel(item)}
           <span className="ml-2">{formatRelativeDate(item.updatedAt)}</span>
         </span>
-        <VisibilityPill visibility={item.visibility} compact />
+        <VisibilityPill visibility={item.visibility} sharedVia={item.sharedVia} compact />
         <CopyContentButton item={item} />
         <ShareItemButton item={item} compact />
         {trailing}

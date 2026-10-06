@@ -57,7 +57,7 @@ export default function ItemRow({ item, trailing, detail = "description" }: Item
         <span className="hidden w-24 shrink-0 truncate text-right text-xs text-muted-foreground xl:inline">
           {itemKindLabel(item)}
         </span>
-        <VisibilityPill visibility={item.visibility} />
+        <VisibilityPill visibility={item.visibility} sharedVia={item.sharedVia} />
         {!isLink && (
           <span className="hidden w-20 shrink-0 text-right text-xs text-muted-foreground lg:inline">
             {formatRelativeDate(item.updatedAt)}
