@@ -4,12 +4,12 @@ import { isProEnabled } from "@/lib/plans";
 
 const FOOTER_LINKS = {
   Product: [
-    { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "Features", href: "/#features" },
+    { label: "Pricing", href: "/#pricing" },
     { label: "Changelog", href: "#" },
   ],
   Resources: [
-    { label: "Documentation", href: "#" },
+    { label: "Documentation", href: "/docs" },
     { label: "API", href: "#" },
     { label: "Blog", href: "#" },
   ],
@@ -42,7 +42,7 @@ export default function Footer() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#e4e4ef] mb-1">
                 {title}
               </h4>
-              {links.filter((link) => link.href !== "#pricing" || isProEnabled()).map((link) => (
+              {links.filter((link) => link.href !== "/#pricing" || isProEnabled()).map((link) => (
                 <a
                   key={link.label}
                   href={link.href}

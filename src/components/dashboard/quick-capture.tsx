@@ -225,7 +225,7 @@ export default function QuickCapture({ showSamples = false }: { showSamples?: bo
             ) : guess ? (
               describeGuess(guess, chosenType !== null && typeName === chosenType)
             ) : (
-              "Snippets, commands, notes, prompts, and links. Private until you share it."
+              "Code, commands, prompts, links, or a whole gist as one page. Private until you share it."
             )}
           </p>
         </div>

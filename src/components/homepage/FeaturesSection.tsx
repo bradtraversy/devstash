@@ -26,10 +26,11 @@ const FEATURES = [
   },
   {
     icon: Code,
-    title: "Every kind of snippet",
-    description: "Snippets, prompts, commands, notes, and links, highlighted in 30 languages.",
+    title: "Snippets to whole pages",
+    description:
+      "Snippets, prompts, commands, and links, highlighted in 30 languages. Paste a whole gist and share it as one page.",
     proDescription:
-      "Snippets, prompts, commands, notes, and links, highlighted in 30 languages. Files and images on Pro.",
+      "Snippets, prompts, commands, and links, highlighted in 30 languages. Paste a whole gist and share it as one page. Files and images on Pro.",
     accent: "#3b82f6",
   },
   {
