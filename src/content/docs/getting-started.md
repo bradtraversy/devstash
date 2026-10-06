@@ -18,6 +18,8 @@ If the guess is wrong, pick another type from the chips under the box before sav
 
 For the full form with a title, description, language, tags, and collections, use **New Item** in the top bar.
 
+> **Tip:** Paste first and decide later. Everything stays private until you share it, and you can change the type, title, and tags afterwards.
+
 ## Find things again
 
 - The sidebar lists Home, Shared, Favorites, your item types, and your collections.

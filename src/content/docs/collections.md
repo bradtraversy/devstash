@@ -8,6 +8,8 @@ A collection groups items in a fixed order, like the commands for one lesson or 
 
 Deleting a collection keeps its items; they stay in your stash.
 
+> **Tip:** A collection holds the item itself, not a copy, so editing an item changes it in every collection it belongs to.
+
 ## Publish a collection
 
 Set the visibility on the collection's page to Unlisted or Public (see [Sharing and links](/docs/sharing) for what each means). A shared collection gets two links:

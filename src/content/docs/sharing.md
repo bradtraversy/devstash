@@ -10,6 +10,8 @@ Every item starts private. Sharing gives it a short link that keeps working for 
 
 Change it from the sharing block at the top of an item's drawer.
 
+> **Tip:** Every Share button uses Unlisted. Switch to Public only for things you want people to find through search.
+
 ## Share an item
 
 There are a few ways to get a link:
