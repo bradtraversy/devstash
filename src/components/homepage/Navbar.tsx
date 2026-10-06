@@ -52,7 +52,7 @@ export default function Navbar() {
           <Button variant="outline" asChild className="border-[#1e1e2e] text-[#8888a4] hover:text-[#e4e4ef] hover:border-[#8888a4] bg-transparent">
             <Link href="/sign-in">Sign In</Link>
           </Button>
-          <Button asChild className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-400 text-white border-0 hover:opacity-90">
+          <Button asChild variant="brand">
             <Link href="/register">Get Started</Link>
           </Button>
         </div>
@@ -101,7 +101,7 @@ export default function Navbar() {
           <Button variant="outline" asChild className="border-[#1e1e2e] text-[#8888a4] hover:text-[#e4e4ef] bg-transparent mt-1 justify-center">
             <Link href="/sign-in" onClick={() => setMobileOpen(false)}>Sign In</Link>
           </Button>
-          <Button asChild className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-400 text-white border-0 justify-center">
+          <Button asChild variant="brand" className="justify-center">
             <Link href="/register" onClick={() => setMobileOpen(false)}>Get Started</Link>
           </Button>
         </div>

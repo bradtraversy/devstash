@@ -93,7 +93,7 @@ export default function PricingSection() {
           {/* Pro */}
           <ScrollFadeIn>
             <div className="bg-gradient-to-b from-blue-500/[0.06] to-[#12121a] border border-blue-500 rounded-xl p-10 text-left relative transition-all duration-300 hover:-translate-y-1 max-sm:p-8">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-700 via-blue-600 to-blue-400 text-white text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-800 to-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
                 Most Popular
               </span>
               <div className="mb-8">
@@ -116,7 +116,7 @@ export default function PricingSection() {
                   </li>
                 ))}
               </ul>
-              <Button asChild className="w-full bg-gradient-to-r from-blue-700 via-blue-600 to-blue-400 text-white border-0 hover:opacity-90">
+              <Button asChild variant="brand" className="w-full">
                 <Link href="/register">Start Free Trial</Link>
               </Button>
             </div>

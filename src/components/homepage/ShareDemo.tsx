@@ -117,7 +117,7 @@ export default function ShareDemo() {
             <>
               <span className="flex-1 font-mono text-xs text-[#8888a4]">TypeScript</span>
               <span
-                className={`rounded-md bg-gradient-to-r from-blue-700 via-blue-600 to-blue-400 px-4 py-2 text-sm font-medium text-white transition-transform duration-150 ${state.phase === "pressing" ? "scale-95 opacity-80" : ""}`}
+                className={`rounded-md bg-gradient-to-r from-blue-800 to-blue-600 px-4 py-2 text-sm font-medium text-white transition-transform duration-150 ${state.phase === "pressing" ? "scale-95 opacity-80" : ""}`}
               >
                 Share
               </span>

@@ -1,16 +1,18 @@
-# Current Feature
+# Current Feature: Darker Brand Buttons
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- One primary button style: the brand variant as a blue-800 to blue-600 gradient
+- Homepage buttons use the brand variant, with no light blue end under AA contrast
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/fixes/darker-brand-buttons.md`
+- Brad wanted darker buttons that can keep a gradient (2026-10-06)
 
 ## History
 
