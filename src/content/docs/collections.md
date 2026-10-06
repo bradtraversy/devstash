@@ -26,7 +26,3 @@ curl -s https://devstash.io/yourhandle/react-patterns.md
 Your handle is the first part of every collection URL. It is created from your email the first time you share, and you can change it in Settings.
 
 The slug comes from the collection's name. Change it in the collection's Edit dialog. Old URLs redirect to the new one, so links you have already posted keep working.
-
-## Limits
-
-You can have up to 100 collections.

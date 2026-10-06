@@ -35,8 +35,8 @@ export default async function DocPage({ params }: DocPageProps) {
   const { previous, next } = docNeighbors(slug);
 
   return (
-    // -mx-4 lines the text up with the docs nav; the markdown block brings its own p-4.
-    <article className="-mx-4">
+    // -mx-4 lines the text up with the docs nav (the markdown block brings its own p-4); about 70 characters a line.
+    <article className="-mx-4 max-w-[calc(70ch+2rem)]">
       <header className="px-4">
         <h1 className="text-3xl font-bold tracking-tight">{page.title}</h1>
         <p className="mt-3 max-w-2xl text-[#8888a4]">{page.description}</p>

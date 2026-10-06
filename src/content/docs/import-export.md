@@ -12,6 +12,7 @@ Your stash is yours to take with you. Everything here is in **Settings**, under 
 - With **Skip duplicates** on, an item with the same title and type as one you already have is skipped.
 - Collections are matched by name. Items for a collection you already have are added to the end of it.
 - File and image uploads are switched off for now, so file and image items in an import are skipped.
+- When it finishes, it tells you how many items and collections were imported and how many were skipped.
 
 A minimal import file with one note in one collection:
 
@@ -30,7 +31,3 @@ A minimal import file with one note in one collection:
   ]
 }
 ```
-
-## Limits
-
-An account holds up to 1,000 items and 100 collections. An import that would go past either stops adding at the limit and reports what it skipped.
