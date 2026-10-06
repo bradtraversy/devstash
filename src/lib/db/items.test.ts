@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getItemById,
+  ITEM_LIST_INCLUDE,
   deleteItem,
   updateItem,
   createItem,
@@ -453,7 +454,7 @@ describe('getItemsByCollection', () => {
       orderBy: [{ position: 'asc' }, { addedAt: 'asc' }, { itemId: 'asc' }],
       skip: 0,
       take: 25,
-      include: { item: { include: { itemType: true, tags: true } } },
+      include: { item: { include: ITEM_LIST_INCLUDE } },
     });
     expect(mockMembershipCount).toHaveBeenCalledWith({
       where: { collectionId: 'col-1', item: { userId: 'user-1' } },
@@ -668,10 +669,34 @@ describe('getSharedItems', () => {
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
       skip: 25,
       take: 25,
-      include: { itemType: true, tags: true },
+      include: ITEM_LIST_INCLUDE,
     });
     expect(prisma.item.count).toHaveBeenCalledWith({ where });
     expect(result).toMatchObject({ totalCount: 30, totalPages: 2, currentPage: 2 });
+  });
+
+  it('maps the shared collections an item sits in to sharedVia', async () => {
+    vi.mocked(prisma.item.findMany).mockResolvedValue([
+      {
+        ...basePrismaItem,
+        collections: [
+          { collection: { id: 'col-2', name: 'DevOps', visibility: 'PUBLIC' } },
+          { collection: { id: 'col-1', name: 'Drafts', visibility: 'PRIVATE' } },
+        ],
+      },
+    ] as never);
+
+    const { items } = await getSharedItems('user-1');
+
+    expect(items[0].sharedVia).toEqual([{ id: 'col-2', name: 'DevOps', visibility: 'PUBLIC' }]);
+  });
+
+  it('loads only shared collections, by name, for every list', () => {
+    expect(ITEM_LIST_INCLUDE.collections).toEqual({
+      where: { collection: { visibility: { not: 'PRIVATE' } } },
+      select: { collection: { select: { id: true, name: true, visibility: true } } },
+      orderBy: { collection: { name: 'asc' } },
+    });
   });
 
   it('maps rows to list items with their visibility, short id, and language', async () => {
@@ -774,7 +799,7 @@ describe('getHomeItems', () => {
       orderBy: [{ isPinned: 'desc' }, { updatedAt: 'desc' }, { id: 'asc' }],
       skip: 21,
       take: 21,
-      include: { itemType: true, tags: true },
+      include: ITEM_LIST_INCLUDE,
     });
     expect(prisma.item.count).toHaveBeenCalledWith({ where: { userId: 'user-1' } });
     expect(result).toMatchObject({ totalCount: 45, totalPages: 3, currentPage: 2 });

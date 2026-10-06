@@ -26,6 +26,7 @@ import { isTextType } from "@/lib/constants/item-types";
 import { publicShortOgPath, publicShortRawPath } from "@/lib/public/paths";
 import {
   VISIBILITY_OPTIONS,
+  describeSharedVia,
   getVisibilityOption,
   type CollectionVisibility,
 } from "@/lib/constants/visibility";
@@ -88,6 +89,7 @@ export default function DrawerShareBlock({
   const isShared = item.visibility !== "PRIVATE";
   const isText = isTextType(item.itemType.name);
   const option = getVisibilityOption(item.visibility);
+  const viaCollection = item.visibility === "PRIVATE" ? describeSharedVia(item.collections) : null;
 
   return (
     <section aria-label="Sharing" className="rounded-lg border border-border bg-muted/30 p-4">
@@ -117,7 +119,9 @@ export default function DrawerShareBlock({
           );
         })}
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">{option.description}.</p>
+      <p className={cn("mt-2 text-xs", viaCollection ? "text-blue-300" : "text-muted-foreground")}>
+        {viaCollection ?? option.description}.
+      </p>
 
       {!canShare ? null : isShared ? (
         <>

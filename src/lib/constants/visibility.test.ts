@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { collectionShareNotice } from './visibility';
+import { collectionShareNotice, describeSharedVia } from './visibility';
 
 describe('collectionShareNotice', () => {
   it('says nothing for an empty collection', () => {
@@ -28,6 +28,33 @@ describe('collectionShareNotice', () => {
     );
     expect(collectionShareNotice(5, 3, 'PUBLIC')).toBe(
       'This collection is shared, so all 5 of its items are visible to anyone with the link, including 3 set to Private.'
+    );
+  });
+});
+
+describe('describeSharedVia', () => {
+  const shared = (name: string, visibility: 'UNLISTED' | 'PUBLIC' = 'UNLISTED') => ({ name, visibility });
+
+  it('returns null when no collection is shared', () => {
+    expect(describeSharedVia([])).toBeNull();
+    expect(describeSharedVia([{ name: 'Drafts', visibility: 'PRIVATE' }])).toBeNull();
+  });
+
+  it('names one shared collection and ignores private ones', () => {
+    expect(describeSharedVia([{ name: 'Drafts', visibility: 'PRIVATE' }, shared('DevOps', 'PUBLIC')])).toBe(
+      'Shared via the DevOps collection, so anyone with its link can see it'
+    );
+  });
+
+  it('names two shared collections', () => {
+    expect(describeSharedVia([shared('DevOps'), shared('React')])).toBe(
+      'Shared via the DevOps and React collections, so anyone with their links can see it'
+    );
+  });
+
+  it('summarizes three or more', () => {
+    expect(describeSharedVia([shared('A'), shared('B'), shared('C'), shared('D')])).toBe(
+      'Shared via 4 collections: A, B, and 2 more, so anyone with their links can see it'
     );
   });
 });

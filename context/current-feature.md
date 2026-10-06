@@ -1,16 +1,20 @@
-# Current Feature
+# Current Feature: Shared Via Collection
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Item lists load each item's shared collections (`sharedVia`)
+- Private items in a shared collection show a blue "Via collection" pill on rows and cards and a folder mark on image and file cards, titled with which collection shares them
+- The drawer says a private item is shared via its collection in place of "Only you can see this"
+- Tests for the wording and the list include
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/shared-via-collection-spec.md`
+- Labels only; item settings never change when a collection is shared (Brad, 2026-10-06)
 
 ## History
 

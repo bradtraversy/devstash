@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma/client';
-import type { CollectionVisibility, VisibilityUpdate } from '@/lib/constants/visibility';
+import type { CollectionVisibility, SharedViaCollection, VisibilityUpdate } from '@/lib/constants/visibility';
 import type { HomeFilter } from '@/lib/home';
 import type { FavoriteItemSort } from '@/lib/favorites-sort';
 import { DEFAULT_PAGE_SIZE } from '@/lib/page-size';
@@ -38,6 +38,8 @@ export interface ItemWithType {
   shortId: string;
   itemType: ItemType;
   tags: string[];
+  /** Shared collections the item sits in; they show it even when the item itself is private. */
+  sharedVia: SharedViaCollection[];
   fileUrl: string | null;
   fileName: string | null;
   fileSize: number | null;
@@ -86,12 +88,23 @@ type PrismaItemWithType = {
   updatedAt: Date;
   itemType: { name: string; icon: string; color: string };
   tags: { name: string }[];
+  collections: { collection: SharedViaCollection }[];
 };
 
 type PrismaItemWithDetail = PrismaItemWithType & {
   contentType: string;
-  collections: { collection: { id: string; name: string; visibility: CollectionVisibility } }[];
 };
+
+/** What item lists load: the type, tags, and the shared collections the item sits in. */
+export const ITEM_LIST_INCLUDE = {
+  itemType: true,
+  tags: true,
+  collections: {
+    where: { collection: { visibility: { not: 'PRIVATE' } } },
+    select: { collection: { select: { id: true, name: true, visibility: true } } },
+    orderBy: { collection: { name: 'asc' } },
+  },
+} as const satisfies Prisma.ItemInclude;
 
 /**
  * Transform Prisma item to ItemWithType
@@ -114,6 +127,9 @@ function toItemWithType(item: PrismaItemWithType): ItemWithType {
       color: item.itemType.color,
     },
     tags: item.tags.map((tag) => tag.name),
+    sharedVia: item.collections
+      .map((membership) => membership.collection)
+      .filter((collection) => collection.visibility !== 'PRIVATE'),
     fileUrl: item.fileUrl,
     fileName: item.fileName,
     fileSize: item.fileSize,
@@ -281,14 +297,7 @@ export async function getItemsByCollection(
       orderBy: COLLECTION_ITEM_ORDER,
       skip,
       take: limit,
-      include: {
-        item: {
-          include: {
-            itemType: true,
-            tags: true,
-          },
-        },
-      },
+      include: { item: { include: ITEM_LIST_INCLUDE } },
     }),
     prisma.itemCollection.count({ where }),
   ]);
@@ -622,7 +631,7 @@ async function paginateItems(
       orderBy,
       skip: (page - 1) * limit,
       take: limit,
-      include: { itemType: true, tags: true },
+      include: ITEM_LIST_INCLUDE,
     }),
     prisma.item.count({ where }),
   ]);
@@ -661,7 +670,7 @@ export async function getFavoriteItems(
   const pageIds = keys.slice((page - 1) * limit, page * limit).map((key) => key.id);
   const rows = await prisma.item.findMany({
     where: { id: { in: pageIds } },
-    include: { itemType: true, tags: true },
+    include: ITEM_LIST_INCLUDE,
   });
   const byId = new Map(rows.map((row) => [row.id, row]));
 
