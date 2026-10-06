@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import AuthCard from "@/components/auth/auth-card";
 import FormError from "@/components/shared/form-error";
 
 export function ForgotPasswordForm() {
@@ -52,7 +52,7 @@ export function ForgotPasswordForm() {
 
   if (isSubmitted) {
     return (
-      <Card className="w-full max-w-md">
+      <AuthCard>
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <CheckCircle className="h-6 w-6 text-primary" />
@@ -84,12 +84,12 @@ export function ForgotPasswordForm() {
             </Button>
           </Link>
         </CardFooter>
-      </Card>
+      </AuthCard>
     );
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <AuthCard>
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Forgot your password?</CardTitle>
         <CardDescription>
@@ -112,7 +112,7 @@ export function ForgotPasswordForm() {
               disabled={isLoading}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" variant="brand" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Send reset link
           </Button>
@@ -127,6 +127,6 @@ export function ForgotPasswordForm() {
           Back to sign in
         </Link>
       </CardFooter>
-    </Card>
+    </AuthCard>
   );
 }

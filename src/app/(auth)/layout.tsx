@@ -16,7 +16,9 @@ export default async function AuthLayout({
   return (
     <>
       <Navbar />
-      <div className="pt-16">{children}</div>
+      <div className="flex min-h-svh items-start justify-center px-4 pt-24 pb-12 sm:pt-[max(6rem,16vh)]">
+        {children}
+      </div>
     </>
   );
 }

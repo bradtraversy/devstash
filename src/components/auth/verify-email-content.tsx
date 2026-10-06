@@ -6,13 +6,13 @@ import Link from 'next/link'
 import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import AuthCard from '@/components/auth/auth-card'
 
 type VerificationStatus = 'loading' | 'success' | 'error' | 'no-token'
 
@@ -49,7 +49,7 @@ export function VerifyEmailContent() {
   }, [token])
 
   return (
-    <Card className="w-full max-w-md">
+    <AuthCard>
       <CardHeader className="text-center">
         <div className="mx-auto mb-4">
           {status === 'loading' && (
@@ -88,7 +88,7 @@ export function VerifyEmailContent() {
       </CardContent>
       <CardFooter className="flex flex-col gap-3">
         {status === 'success' && (
-          <Button asChild className="w-full">
+          <Button asChild variant="brand" className="w-full">
             <Link href="/sign-in">Sign in to your account</Link>
           </Button>
         )}
@@ -103,6 +103,6 @@ export function VerifyEmailContent() {
           </Button>
         )}
       </CardFooter>
-    </Card>
+    </AuthCard>
   )
 }

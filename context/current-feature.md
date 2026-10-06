@@ -1,16 +1,20 @@
-# Current Feature
+# Current Feature: Auth Page Polish
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- GitHub first on sign-in and register, then an "or" divider and the email form
+- Blue gradient brand button for the primary action on every auth page
+- No card on the five auth pages, no redundant subtitles, no dots placeholder
+- Short fine print at the bottom, content sits higher on tall screens
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/auth-page-polish-spec.md`
+- Brad agreed to the login page polish after a comparison with other dev tools (2026-10-06)
 
 ## History
 
