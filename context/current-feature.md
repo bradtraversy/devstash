@@ -1,18 +1,16 @@
-# Current Feature: Darker Brand Buttons
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- One primary button style: the brand variant as a blue-800 to blue-600 gradient
-- Homepage buttons use the brand variant, with no light blue end under AA contrast
+<!-- Define goals here -->
 
 ## Notes
 
-- Spec: `context/fixes/darker-brand-buttons.md`
-- Brad wanted darker buttons that can keep a gradient (2026-10-06)
+<!-- Additional context here -->
 
 ## History
 
@@ -111,3 +109,4 @@ In Progress
 - **Rows Cleanup** - Item rows lose the date (lists are already ordered; the drawer keeps the dates), the Private pill becomes a quiet lock icon (sr-only label and title kept) so shared pills stand out, and the type label column becomes a mono file-name chip for snippets only (.ts, .py, .yml, .sh, Dockerfile) from LANGUAGE_FILE_NAMES and languageFileName, with .tsx or .jsx when the code holds JSX (closing tags, fragments, or self-closing elements whose props may carry braces and arrows, after blanking comments and string and template literals so HTML in strings does not count; linear on adversarial input), titled and screen-read as the language name; shared snippet pages (block header and the line under the title) and the homepage sample use the same file label through snippetFileLabel (Brad, 2026-10-06); spec in context/features/rows-cleanup-spec.md; verified with npm run verify, an independent review with its findings applied, and browser checks of rows with private, shared, and via-collection items and the homepage sample; 11 new tests (940 total) (Completed)
 - **Dashboard Double Scrollbar** - main in the dashboard layout is now relative, so absolutely positioned descendants (sr-only labels on visibility pills and file chips) are clipped by its scroll area instead of escaping to the viewport and stretching the page into a second scrollbar after the list scrolls; scrollbars app-wide are thin and dark (scrollbar-width thin, a faint thumb on a transparent track, color-scheme dark) instead of the platform's light gray; fix notes in context/fixes/dashboard-double-scrollbar.md; verified in Brad's Chrome on the dev server (page stays window height after scrolling Home, type pages, Favorites, Shared, Collections, and Settings) and with npm run verify (Completed)
 - **Auth Page Polish** - Sign-in and register lead with a full-width Continue with GitHub button, then an "or" divider and the email form (GitHubAuthSection renders the button before the divider), matching dev tools like Supabase and Railway and the local restore's 368 GitHub to 329 password accounts; an AuthCard wrapper drops the card border, background, and shadow on all five auth pages (sign-in, register, forgot-password, reset-password, verify-email); a brand Button variant (blue-700 to blue-600 gradient, which keeps white text at 5.26:1 or better where the homepage's to-blue-400 end falls under AA) for every primary auth action; subtitles and dots placeholders removed, new password fields say At least 8 characters, form errors sit between the divider and the form, the Terms and Privacy fine print moved to the bottom; the (auth) layout owns the page wrapper and sits content higher on tall screens; no auth logic changed; spec in context/features/auth-page-polish-spec.md; verified with npm run verify, an independent review with its contrast finding applied, and a browser check of all five pages, a wrong password, the OAuthAccountNotLinked error, and phone width (Completed)
+- **Darker Brand Buttons** - One primary button style across the site: the brand Button variant is a blue-800 to blue-600 gradient (white text at 5.26:1 or better across the width; blue-900 to blue-700 was tried and its low-chroma left end looked gray on full-width buttons), and the homepage Navbar Get Started (desktop and mobile), Hero and CTA Start sharing free, and Pricing Pro buttons use variant="brand" in place of the inline blue-700 to blue-400 gradient whose light end fell to about 2.6:1; the ShareDemo Share button and the Pricing badge take the same gradient; the headline text gradients are unchanged (Brad, 2026-10-06); notes in context/fixes/darker-brand-buttons.md; verified with npm run verify and a browser check of the homepage and sign-in page (Completed)
