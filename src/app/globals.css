@@ -117,9 +117,13 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* Thin dark scrollbars everywhere, like the code editor's, instead of the platform's light gray. */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
   }
   html {
     scroll-behavior: smooth;
+    color-scheme: dark;
   }
   html,
   body {
