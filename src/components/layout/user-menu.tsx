@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LogOut, User, Settings } from "lucide-react";
+import { BookOpen, LogOut, User, Settings } from "lucide-react";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,6 +26,12 @@ export default function UserMenuContent({ onNavigate }: UserMenuProps) {
         <Link href="/settings" onClick={onNavigate} className="flex items-center">
           <Settings className="mr-2 h-4 w-4" />
           Settings
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <Link href="/docs" onClick={onNavigate} className="flex items-center">
+          <BookOpen className="mr-2 h-4 w-4" />
+          Docs
         </Link>
       </DropdownMenuItem>
       <DropdownMenuSeparator />

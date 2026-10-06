@@ -8,6 +8,7 @@ export const RESERVED_HANDLES = new Set([
   'api',
   'collections',
   'dashboard',
+  'docs',
   'favorites',
   'items',
   'profile',

@@ -1,16 +1,22 @@
-# Current Feature
+# Current Feature: Docs
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Public docs at `/docs` with six markdown pages rendered by the note renderer (Getting started, Sharing and links, Notes as pages, Collections, AI helpers, Import and export)
+- Index page, statically generated page routes with previous and next links, a docs nav, and per-page metadata; unknown slugs 404
+- `docs` reserved as a handle
+- Entry points: homepage Navbar and Footer, signed-in user menu, the Home paste box hint, and the homepage features grid mention long notes as pages
+- Tests for the docs manifest, files, and internal links
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/docs-spec.md`
+- Markdown files over MDX, no new packages (Brad, 2026-10-06)
+- Copy describes the app with Pro off
 
 ## History
 

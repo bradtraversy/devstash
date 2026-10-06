@@ -43,6 +43,9 @@ export default function Navbar() {
               Pricing
             </Link>
           )}
+          <Link href="/docs" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
+            Docs
+          </Link>
         </div>
 
         <div className="hidden md:flex items-center gap-3">
@@ -88,6 +91,13 @@ export default function Navbar() {
               Pricing
             </Link>
           )}
+          <Link
+            href="/docs"
+            className="text-[#8888a4] text-sm py-2"
+            onClick={() => setMobileOpen(false)}
+          >
+            Docs
+          </Link>
           <Button variant="outline" asChild className="border-[#1e1e2e] text-[#8888a4] hover:text-[#e4e4ef] bg-transparent mt-1 justify-center">
             <Link href="/sign-in" onClick={() => setMobileOpen(false)}>Sign In</Link>
           </Button>
