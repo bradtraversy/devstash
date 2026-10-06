@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: DocPageProps): Promise<Metada
 }
 
 const NEIGHBOR_CLASS =
-  "flex items-center gap-2 text-sm text-[#8888a4] transition-colors hover:text-[#e4e4ef]";
+  "flex flex-col gap-1 rounded-xl border border-[#1e1e2e] bg-[#12121a] px-5 py-4 transition-colors hover:border-[#2e2e44] hover:bg-[#16161f]";
 
 export default async function DocPage({ params }: DocPageProps) {
   const { slug } = await params;
@@ -35,29 +35,31 @@ export default async function DocPage({ params }: DocPageProps) {
   const { previous, next } = docNeighbors(slug);
 
   return (
-    // -mx-4 lines the text up with the docs nav (the markdown block brings its own p-4); about 70 characters a line.
-    <article className="-mx-4 max-w-[calc(70ch+2rem)]">
-      <header className="px-4">
-        <h1 className="text-3xl font-bold tracking-tight">{page.title}</h1>
-        <p className="mt-3 max-w-2xl text-[#8888a4]">{page.description}</p>
-      </header>
-      <MarkdownBlock content={markdown} />
-      <nav
-        aria-label="Previous and next page"
-        className="mx-4 mt-12 flex items-center justify-between gap-4 border-t border-white/10 pt-6"
-      >
-        {previous ? (
+    <article className="max-w-[calc(70ch+4rem)]">
+      <div className="docs-content rounded-2xl border border-[#1e1e2e] bg-[#0f0f16] p-2 sm:p-4">
+        <header className="px-4 pt-4">
+          <h1 className="text-3xl font-bold tracking-tight">{page.title}</h1>
+          <p className="mt-3 text-[#8888a4]">{page.description}</p>
+        </header>
+        <MarkdownBlock content={markdown} />
+      </div>
+      <nav aria-label="Previous and next page" className="mt-6 grid gap-4 sm:grid-cols-2">
+        {previous && (
           <Link href={`/docs/${previous.slug}`} className={NEIGHBOR_CLASS}>
-            <ArrowLeft className="h-4 w-4" />
-            {previous.title}
+            <span className="flex items-center gap-1.5 text-xs text-[#8888a4]">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Previous
+            </span>
+            <span className="font-medium">{previous.title}</span>
           </Link>
-        ) : (
-          <span />
         )}
         {next && (
-          <Link href={`/docs/${next.slug}`} className={NEIGHBOR_CLASS}>
-            {next.title}
-            <ArrowRight className="h-4 w-4" />
+          <Link href={`/docs/${next.slug}`} className={`${NEIGHBOR_CLASS} sm:col-start-2 sm:items-end sm:text-right`}>
+            <span className="flex items-center gap-1.5 text-xs text-[#8888a4]">
+              Next
+              <ArrowRight className="h-3.5 w-3.5" />
+            </span>
+            <span className="font-medium">{next.title}</span>
           </Link>
         )}
       </nav>
