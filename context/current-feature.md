@@ -1,16 +1,19 @@
-# Current Feature
+# Current Feature: Rows Cleanup
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- No date on item rows
+- Label column shows only a snippet's language
+- Private pill on rows is the lock icon only; shared pills keep their text
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/rows-cleanup-spec.md`
+- Brad asked for cleaner rows (2026-10-06)
 
 ## History
 

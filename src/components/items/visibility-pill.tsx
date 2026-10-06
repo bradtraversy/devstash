@@ -41,7 +41,8 @@ export default function VisibilityPill({ visibility, sharedVia = [], compact = f
           <span className="sr-only">{viaCollection}</span>
         </>
       ) : (
-        <span className={compact ? "sr-only" : "sr-only sm:not-sr-only"}>{option.label}</span>
+        // Private reads as a quiet lock so the shared pills stand out down a list.
+        <span className={compact || !shared ? "sr-only" : "sr-only sm:not-sr-only"}>{option.label}</span>
       )}
     </span>
   );
