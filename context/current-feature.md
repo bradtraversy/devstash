@@ -1,16 +1,22 @@
-# Current Feature
+# Current Feature: Footer, Privacy, and Terms
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Plain-language `/privacy` and `/terms` pages from markdown on the docs content panel, with metadata and a last-updated date
+- Footer without dead links: Product, Resources (Docs, GitHub), Legal (Privacy, Terms); copyright names Traversy Media
+- `privacy` and `terms` reserved as handles
+- Register form says creating an account means agreeing to the Terms and Privacy Policy
+- Tests for the legal page files
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/legal-pages-spec.md`
+- Operator Traversy Media, contact brad@traversymedia.com (Brad, 2026-10-06)
+- Through merge (Brad, 2026-10-06); drafts are plain language, not legal review
 
 ## History
 

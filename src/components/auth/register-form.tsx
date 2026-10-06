@@ -133,6 +133,18 @@ export function RegisterForm() {
         </form>
 
         <GitHubAuthSection />
+
+        <p className="text-center text-xs text-muted-foreground">
+          By creating an account, you agree to the{" "}
+          <Link href="/terms" className="underline hover:text-foreground">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline hover:text-foreground">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">

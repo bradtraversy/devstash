@@ -8,7 +8,7 @@ Every item starts private. Sharing gives it a short link that keeps working for 
 | Unlisted | Anyone with the link. It is not listed anywhere or indexed by search engines |
 | Public | Anyone, and search engines may index it |
 
-Change it from the sharing block at the top of an item's drawer.
+Change it from the sharing block at the top of an item's drawer. Sharing a collection shares every item in it, including items that are private on their own (see [Collections](/docs/collections)).
 
 > **Tip:** Every Share button uses Unlisted. Switch to Public only for things you want people to find through search.
 
