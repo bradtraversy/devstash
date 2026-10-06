@@ -36,6 +36,48 @@ export function useDebounce<T>(value: T, delay = 300): T {
   handle: "sam",
 };
 
+export const SAMPLE_NOTE: PublicSharedItem = {
+  id: "sample-ship-note",
+  title: "Ship checklist",
+  description: "What to run before shipping, and the CI that checks it.",
+  content: `##### Build and test
+
+Install from the lockfile and run every check before you push.
+
+\`\`\`bash
+npm ci
+npm run verify
+\`\`\`
+
+##### Check pushes to main
+
+Add the workflow so each push to \`main\` runs the same checks.
+
+\`\`\`yaml
+on:
+  push:
+    branches: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm ci && npm run verify
+\`\`\`
+`,
+  url: null,
+  language: null,
+  fileUrl: null,
+  fileName: null,
+  fileSize: null,
+  itemType: { name: "note", icon: "StickyNote", color: "#fde047" },
+  shortId: "n7c4p1qe",
+  visibility: "PUBLIC",
+  publishedAt: EXAMPLE_DATE,
+  updatedAt: EXAMPLE_DATE,
+  handle: "sam",
+};
+
 export const SAMPLE_COLLECTION: PublicCollection = {
   id: "sample-collection",
   name: "Docker Essentials",

@@ -5,7 +5,7 @@ import { languageLabel } from "@/lib/languages";
 import { publicCollectionPath, publicShortPath } from "@/lib/public/paths";
 import BrowserFrame, { StaticSaveButton } from "./BrowserFrame";
 import ScrollFadeIn from "./ScrollFadeIn";
-import { LIVE_EXAMPLE_PATH, SAMPLE_COLLECTION, SAMPLE_ITEM } from "./samples";
+import { LIVE_EXAMPLE_PATH, SAMPLE_COLLECTION, SAMPLE_ITEM, SAMPLE_NOTE } from "./samples";
 
 function SnippetPage() {
   return (
@@ -37,6 +37,23 @@ function SnippetPage() {
   );
 }
 
+function NotePage() {
+  return (
+    // The note's headings sit at h5 under the frame's h4 title; prose leaves h5 unstyled.
+    <div className="space-y-4 p-5 [&_pre]:text-xs [&_pre]:leading-5 [&_h5]:font-semibold [&_h5]:text-[#e4e4ef]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="flex flex-wrap gap-x-2 font-mono text-xs text-muted-foreground">
+          <span>@{SAMPLE_NOTE.handle}</span>
+          <span aria-hidden="true">·</span>
+          <span>Note</span>
+        </p>
+        <StaticSaveButton />
+      </div>
+      <ItemBlock item={SAMPLE_NOTE} standalone headingLevel="h4" />
+    </div>
+  );
+}
+
 function CollectionPage() {
   return (
     <div className="space-y-5 p-5 [&_pre]:text-xs [&_pre]:leading-5">
@@ -64,7 +81,8 @@ function CollectionPage() {
 export default function SharedViewSection() {
   return (
     <section id="shared-view" className="py-[120px] bg-[#12121a] scroll-mt-16">
-      <div className="max-w-[1200px] mx-auto px-6">
+      {/* Anchors inside the samples land below the fixed navbar. */}
+      <div className="max-w-[1200px] mx-auto px-6 [&_[id]]:scroll-mt-20">
         <ScrollFadeIn className="text-center">
           <h2 className="text-[clamp(1.8rem,3.5vw,2.8rem)] font-extrabold leading-tight mb-4 tracking-tight max-sm:text-[1.6rem]">
             What people see when you share
@@ -90,6 +108,21 @@ export default function SharedViewSection() {
               A collection as one page, every block in the order you set.
             </figcaption>
           </figure>
+        </div>
+
+        <ScrollFadeIn className="mt-24 text-center">
+          <h3 className="text-[clamp(1.5rem,2.8vw,2.2rem)] font-extrabold leading-tight mb-4 tracking-tight">
+            Whole gists, one page
+          </h3>
+          <p className="text-base text-[#8888a4] max-w-[560px] mx-auto mb-10 leading-relaxed">
+            Paste a markdown doc or gist as a note and share it as one page, with a Copy button on every code
+            block and a link on every heading.
+          </p>
+        </ScrollFadeIn>
+        <div className="mx-auto max-w-3xl">
+          <BrowserFrame path={publicShortPath(SAMPLE_NOTE.shortId)}>
+            <NotePage />
+          </BrowserFrame>
         </div>
 
         <p className="mt-12 text-center">

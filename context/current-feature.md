@@ -1,16 +1,18 @@
-# Current Feature
+# Current Feature: Homepage Page Sample
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- A sample note shown as a shared page in the homepage's "What people see when you share" section, through the real ItemBlock
+- Copy on every code block and links on its headings, with a correct heading outline
+- Readable at desktop and phone widths
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/homepage-page-sample-spec.md`
 
 ## History
 
