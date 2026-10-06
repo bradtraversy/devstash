@@ -1,18 +1,16 @@
-# Current Feature: Homepage Page Sample
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- A sample note shown as a shared page in the homepage's "What people see when you share" section, through the real ItemBlock
-- Copy on every code block and links on its headings, with a correct heading outline
-- Readable at desktop and phone widths
+<!-- Define goals here -->
 
 ## Notes
 
-- Spec: `context/features/homepage-page-sample-spec.md`
+<!-- Additional context here -->
 
 ## History
 
@@ -107,3 +105,4 @@ In Progress
 - **Footer, Privacy, and Terms** - Plain-language /privacy and /terms pages from src/content/legal through MarkdownBlock on the docs content panel (LegalPage component and legalMetadata, src/lib/legal.ts with the pages and last-updated date), naming Traversy Media as operator and brad@traversymedia.com as contact (Brad, 2026-10-06); Privacy lists account details including the stored GitHub tokens, the handle and where it shows, rate limit counters by IP and email, cookieless page views, every processing service including jsDelivr for the editor, cookies, export, unsharing, and account deletion with what it leaves (others' saved copies, backups, uploaded files on request); Terms cover the account, content ownership and the permission to host, share, copy into others' stashes, and send to OpenAI, what sharing exposes, acceptable use, the free service, shutdown notice, no warranty, and limited liability; both pages and the docs say sharing a collection shares every item in it, including items that are private on their own; footer without dead links (Product, Resources with Docs and GitHub, Legal) and Traversy Media in the copyright; register and sign-in forms link the Terms and Privacy Policy; privacy and terms reserved as handles; verified with npm run verify, an independent review of code and every policy claim with its findings applied, and a browser check of both pages, the footer, and the forms at desktop and phone widths; 3 new tests (918 total) (Completed)
 - **Collection Share Notice** - The collection page says plainly in amber that sharing a collection exposes every item in it: "Sharing this collection makes all N of its items visible to anyone with the link, including P set to Private." while private, and "This collection is shared, so all N of its items are visible to anyone with the link, including P set to Private." once shared with private items inside, from countPrivateCollectionItems and collectionShareNotice; item visibility itself is unchanged, and the collection card's one-click Share toast says anyone with the link can view the collection and every item in it; spec in context/features/collection-share-notice-spec.md; verified with npm run verify, an independent review, and a browser check of a collection with two private items before and after switching it to Unlisted; 5 new tests (923 total) (Completed)
 - **Shared Via Collection** - Item lists (Home, type pages, collection pages, Favorites, Shared) load each item's shared collections through ITEM_LIST_INCLUDE into ItemWithType.sharedVia; describeSharedVia words it ("Shared via the X collection, so anyone with its link can see it", two names, or "N collections: X, Y, and M more"); a private item in a shared collection shows a blue "Via collection" pill with a folder icon on rows (the full sentence as title and screen reader text), an icon-only pill on code cards, and a folder mark on image and file cards; the drawer shows the sentence under the visibility control, and on its own for files, which have no share block; item settings never change when a collection is shared, so making the collection private again turns the labels back (Brad, 2026-10-06); spec in context/features/shared-via-collection-spec.md; verified with npm run verify, an independent review with its findings applied, and a browser check of rows, the drawer, and switching the collection back to private; 6 new tests (929 total) (Completed)
+- **Homepage Page Sample** - The homepage's "What people see when you share" section gains its own "Whole gists, one page" heading and line (a markdown doc or gist pasted as a note becomes one page with Copy on every code block and a link on every heading), then a fictional "Ship checklist" note by @sam (SAMPLE_NOTE, two ##### sections with bash and yaml blocks) rendered as a shared page through the real ItemBlock in a BrowserFrame; outline h2, h3, h4, h5 with the h5s styled; anchors in the section land below the fixed navbar (scroll-mt-20), which also fixes the collection sample's block links; spec in context/features/homepage-page-sample-spec.md; verified with npm run verify (the homepage stays static), an independent review with its findings applied, and a browser check at desktop and phone widths (Completed)
