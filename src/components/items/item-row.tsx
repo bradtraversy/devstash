@@ -4,10 +4,9 @@ import type { ReactNode } from "react";
 import { useItemDrawer } from "@/components/items/item-drawer-provider";
 import VisibilityPill from "@/components/items/visibility-pill";
 import { CopyContentButton, ShareItemButton } from "@/components/items/item-actions";
-import { ItemMarks, TypeIconTile, itemKindLabel } from "@/components/items/item-row-parts";
+import { FileChip, ItemMarks, TypeIconTile } from "@/components/items/item-row-parts";
 import ShortLinkText from "@/components/items/short-link-text";
 import { cn } from "@/lib/utils";
-import { formatRelativeDate } from "@/lib/utils/date";
 import type { ItemWithType } from "@/lib/db/items";
 
 export type ItemDetailLine = "description" | "link";
@@ -54,15 +53,10 @@ export default function ItemRow({ item, trailing, detail = "description" }: Item
           )}
         </span>
         <ItemMarks item={item} className="hidden shrink-0 items-center gap-1 sm:flex" />
-        <span className="hidden w-24 shrink-0 truncate text-right text-xs text-muted-foreground xl:inline">
-          {itemKindLabel(item)}
+        <span className="hidden w-[5.5rem] shrink-0 justify-end lg:flex">
+          <FileChip item={item} />
         </span>
         <VisibilityPill visibility={item.visibility} sharedVia={item.sharedVia} />
-        {!isLink && (
-          <span className="hidden w-20 shrink-0 text-right text-xs text-muted-foreground lg:inline">
-            {formatRelativeDate(item.updatedAt)}
-          </span>
-        )}
       </button>
       <div className="flex shrink-0 items-center gap-1">
         <CopyContentButton item={item} className="hidden sm:inline-flex" />

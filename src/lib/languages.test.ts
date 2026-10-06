@@ -6,6 +6,8 @@ import {
   defaultShareTitle,
   fenceLanguage,
   guessLanguage,
+  languageFileName,
+  snippetFileLabel,
   languageLabel,
   shikiLanguage,
   PLAIN_TEXT_LABEL,
@@ -157,3 +159,63 @@ describe('defaultShareTitle', () => {
     expect(defaultShareTitle('command', null)).toBe('Command');
   });
 });
+
+describe('languageFileName', () => {
+  it('has a file name for every editor language', () => {
+    for (const { value } of LANGUAGES) expect(languageFileName(value), value).toBeTruthy();
+  });
+
+  it('uses the extension developers know, or the file name when there is no extension', () => {
+    expect(languageFileName('typescript')).toBe('.ts');
+    expect(languageFileName('yaml')).toBe('.yml');
+    expect(languageFileName('bash')).toBe('.sh');
+    expect(languageFileName('dockerfile')).toBe('Dockerfile');
+    expect(languageFileName('Python')).toBe('.py');
+  });
+
+  it('returns null for a missing or unknown language', () => {
+    expect(languageFileName(null)).toBeNull();
+    expect(languageFileName('brainfuck')).toBeNull();
+  });
+
+  it('uses .tsx and .jsx for code with JSX', () => {
+    expect(languageFileName('typescript', 'export function Card() {\n  return <div className="card">Hi</div>;\n}')).toBe('.tsx');
+    expect(languageFileName('javascript', 'const App = () => <Button variant="ghost" />;')).toBe('.jsx');
+    expect(languageFileName('typescript', 'return (\n  <>\n    <Header />\n  </>\n);')).toBe('.tsx');
+  });
+
+  it('keeps .ts for TypeScript without JSX, generics included', () => {
+    expect(languageFileName('typescript', 'const [value, setValue] = useState<T>(initial);')).toBe('.ts');
+    expect(languageFileName('typescript', 'function first<T>(items: Array<T>): T | undefined { return items[0]; }')).toBe('.ts');
+    expect(languageFileName('typescript', 'if (a < b && c > d) return;')).toBe('.ts');
+    expect(languageFileName('python', 'print("</div>")')).toBe('.py');
+  });
+
+  it('ignores HTML inside strings, template literals, and comments', () => {
+    expect(languageFileName('javascript', "el.innerHTML = '<p>Hello</p>';")).toBe('.js');
+    expect(languageFileName('typescript', 'render() { return html`<div>${this.x}</div>`; }')).toBe('.ts');
+    expect(languageFileName('typescript', "template: '<h1>{{title}}</h1>'")).toBe('.ts');
+    expect(languageFileName('javascript', "const s = 'line<br/>';")).toBe('.js');
+    expect(languageFileName('typescript', '// wraps the result in <span>...</span>\nconst x = 1;')).toBe('.ts');
+  });
+
+  it('finds JSX with arrow functions in props and bare fragments', () => {
+    expect(languageFileName('typescript', '<input value={v} onChange={(e) => setV(e.target.value)} />')).toBe('.tsx');
+    expect(languageFileName('javascript', "<Button onClick={() => alert('hi')} />")).toBe('.jsx');
+    expect(languageFileName('typescript', 'return <>{children}</>;')).toBe('.tsx');
+    expect(languageFileName('typescript', 'const n = a<b?c:d/>;')).toBe('.ts');
+  });
+});
+
+describe('snippetFileLabel', () => {
+  it('reads as the file name, with JSX detected', () => {
+    expect(snippetFileLabel('typescript', 'export const A = () => <a href="/">Home</a>;')).toBe('.tsx');
+    expect(snippetFileLabel('yaml')).toBe('.yml');
+  });
+
+  it('falls back to the language label when there is no file name', () => {
+    expect(snippetFileLabel(null)).toBe('Plain Text');
+    expect(snippetFileLabel('brainfuck')).toBe('brainfuck');
+  });
+});
+

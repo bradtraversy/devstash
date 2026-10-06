@@ -1,6 +1,6 @@
 import { Code, Hash } from "lucide-react";
 import { ITEM_TYPE_ICONS } from "@/lib/constants/item-types";
-import { COMMAND_LANGUAGE, languageLabel } from "@/lib/languages";
+import { COMMAND_LANGUAGE, languageLabel, snippetFileLabel } from "@/lib/languages";
 import { commandCopyText } from "@/lib/public/copy";
 import type { PublicItem } from "@/lib/db/public";
 import CopyButton from "./copy-button";
@@ -37,7 +37,7 @@ function copyTextFor(item: PublicItem): string | null {
 function labelFor(item: PublicItem): string | null {
   switch (item.itemType.name) {
     case "snippet":
-      return languageLabel(item.language);
+      return snippetFileLabel(item.language, item.content);
     case "command":
       return "Terminal";
     default:
@@ -84,8 +84,18 @@ export default function ItemBlock({ item, position, standalone = false, headingL
           {item.title}
         </Heading>
         {label && (
-          <span className="hidden shrink-0 font-mono text-xs text-muted-foreground sm:inline">
-            {label}
+          <span
+            className="hidden shrink-0 font-mono text-xs text-muted-foreground sm:inline"
+            title={item.itemType.name === "snippet" ? languageLabel(item.language) : undefined}
+          >
+            {item.itemType.name === "snippet" ? (
+              <>
+                <span aria-hidden="true">{label}</span>
+                <span className="sr-only">{languageLabel(item.language)}</span>
+              </>
+            ) : (
+              label
+            )}
           </span>
         )}
         {anchor && (

@@ -89,6 +89,63 @@ export function fenceLanguage(info: string | null | undefined): string | null {
   return shikiLanguage(FENCE_LANGUAGE_ALIASES[name] ?? name);
 }
 
+/** The file name or extension developers know each language by, shown as a chip on item rows. */
+export const LANGUAGE_FILE_NAMES: Record<string, string> = {
+  plaintext: '.txt',
+  javascript: '.js',
+  typescript: '.ts',
+  python: '.py',
+  html: '.html',
+  css: '.css',
+  json: '.json',
+  markdown: '.md',
+  bash: '.sh',
+  sql: '.sql',
+  java: '.java',
+  csharp: '.cs',
+  cpp: '.cpp',
+  c: '.c',
+  go: '.go',
+  rust: '.rs',
+  ruby: '.rb',
+  php: '.php',
+  swift: '.swift',
+  kotlin: '.kt',
+  dart: '.dart',
+  yaml: '.yml',
+  xml: '.xml',
+  graphql: '.graphql',
+  dockerfile: 'Dockerfile',
+  scss: '.scss',
+  less: '.less',
+  lua: '.lua',
+  perl: '.pl',
+  r: '.r',
+  powershell: '.ps1',
+};
+
+// A closing tag (fragments included) or a self-closing element whose props may hold braces and arrows;
+// TypeScript generics such as useState<T> never close a tag.
+const JSX_PATTERN =
+  /<\/(?:[A-Za-z][\w.]*)?\s*>|<[A-Za-z][\w.]*(?:\s(?:[^<>{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)?\/>/;
+// Comments and string or template literals, blanked first so HTML inside them is not read as JSX.
+const NON_CODE_PATTERN = /\/\/[^\n]*|\/\*[\s\S]*?\*\/|'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|`(?:\\.|[^`\\])*`/g;
+
+/** The chip text for an item language, or null for a missing or unknown one; code with JSX gets .tsx or .jsx. */
+export function languageFileName(languageId: string | null | undefined, content?: string | null): string | null {
+  if (!languageId) return null;
+  const id = languageId.toLowerCase();
+  if (content && (id === 'typescript' || id === 'javascript') && JSX_PATTERN.test(content.replace(NON_CODE_PATTERN, ''))) {
+    return id === 'typescript' ? '.tsx' : '.jsx';
+  }
+  return LANGUAGE_FILE_NAMES[id] ?? null;
+}
+
+/** How a snippet's language reads on lists and shared pages: its file name, else the language label. */
+export function snippetFileLabel(languageId: string | null | undefined, content?: string | null): string {
+  return languageFileName(languageId, content) ?? languageLabel(languageId);
+}
+
 /** Display label for an item language: the LANGUAGES label, the raw id for unknown ids. */
 export function languageLabel(languageId: string | null | undefined): string {
   if (!languageId) return PLAIN_TEXT_LABEL;

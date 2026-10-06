@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Download, FileText, Image as ImageIcon } from "lucide-react";
 import { isCopyableType, isTextType } from "@/lib/constants/item-types";
-import { languageLabel } from "@/lib/languages";
+import { languageLabel, snippetFileLabel } from "@/lib/languages";
 import { imageFilename } from "@/lib/og/filename";
 import { publicShortPngPath, publicShortRawPath } from "@/lib/public/paths";
 import { formatLongDate } from "@/lib/utils/date";
@@ -16,7 +16,7 @@ interface PublicItemViewProps {
 function typeLabel(item: PublicSharedItem): string {
   switch (item.itemType.name) {
     case "snippet":
-      return languageLabel(item.language);
+      return snippetFileLabel(item.language, item.content);
     case "command":
       return "Terminal";
     default:
@@ -36,7 +36,14 @@ export default function PublicItemView({ item }: PublicItemViewProps) {
           <p className="flex flex-wrap gap-x-2 font-mono text-xs text-muted-foreground">
             <span>@{item.handle}</span>
             <span aria-hidden="true">·</span>
-            <span>{typeLabel(item)}</span>
+            {item.itemType.name === "snippet" ? (
+              <span title={languageLabel(item.language)}>
+                <span aria-hidden="true">{typeLabel(item)}</span>
+                <span className="sr-only">{languageLabel(item.language)}</span>
+              </span>
+            ) : (
+              <span>{typeLabel(item)}</span>
+            )}
             <span aria-hidden="true">·</span>
             <span>Updated {formatLongDate(item.updatedAt)}</span>
           </p>

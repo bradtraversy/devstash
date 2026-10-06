@@ -1,6 +1,6 @@
 import { Code, Pin, Star } from "lucide-react";
 import { ITEM_TYPE_ICONS } from "@/lib/constants/item-types";
-import { languageLabel } from "@/lib/languages";
+import { languageFileName, languageLabel } from "@/lib/languages";
 import type { ItemWithType } from "@/lib/db/items";
 
 const CODE_TYPES = ["snippet", "command"];
@@ -31,4 +31,27 @@ export function ItemMarks({ item, className }: { item: ItemWithType; className?:
 export function itemKindLabel(item: ItemWithType): string {
   if (CODE_TYPES.includes(item.itemType.name) && item.language) return languageLabel(item.language);
   return item.itemType.name.charAt(0).toUpperCase() + item.itemType.name.slice(1);
+}
+
+/** Rows mark only a snippet's language, as a file name chip; every other type is told apart by its icon. */
+export function snippetFileChip(
+  item: Pick<ItemWithType, "itemType" | "language" | "content">
+): { fileName: string; label: string } | null {
+  if (item.itemType.name !== "snippet" || !item.language) return null;
+  const fileName = languageFileName(item.language, item.content);
+  return fileName ? { fileName, label: languageLabel(item.language) } : null;
+}
+
+export function FileChip({ item }: { item: ItemWithType }) {
+  const chip = snippetFileChip(item);
+  if (!chip) return null;
+  return (
+    <span
+      title={chip.label}
+      className="rounded border border-border px-1.5 py-0.5 font-mono text-[11px] leading-none text-muted-foreground"
+    >
+      <span aria-hidden="true">{chip.fileName}</span>
+      <span className="sr-only">{chip.label}</span>
+    </span>
+  );
 }

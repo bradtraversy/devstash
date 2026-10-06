@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FileText, Image as ImageIcon, Download } from "lucide-react";
 import ItemBlock from "@/components/public/item-block";
-import { languageLabel } from "@/lib/languages";
+import { languageLabel, snippetFileLabel } from "@/lib/languages";
 import { publicCollectionPath, publicShortPath } from "@/lib/public/paths";
 import BrowserFrame, { StaticSaveButton } from "./BrowserFrame";
 import ScrollFadeIn from "./ScrollFadeIn";
@@ -14,7 +14,10 @@ function SnippetPage() {
         <p className="flex flex-wrap gap-x-2 font-mono text-xs text-muted-foreground">
           <span>@{SAMPLE_ITEM.handle}</span>
           <span aria-hidden="true">·</span>
-          <span>{languageLabel(SAMPLE_ITEM.language)}</span>
+          <span title={languageLabel(SAMPLE_ITEM.language)}>
+            <span aria-hidden="true">{snippetFileLabel(SAMPLE_ITEM.language, SAMPLE_ITEM.content)}</span>
+            <span className="sr-only">{languageLabel(SAMPLE_ITEM.language)}</span>
+          </span>
         </p>
         <StaticSaveButton />
       </div>
