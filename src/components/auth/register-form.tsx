@@ -8,13 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import AuthCard from "@/components/auth/auth-card";
 import FormError from "@/components/shared/form-error";
 import GitHubAuthSection from "@/components/shared/github-auth-section";
 
@@ -68,14 +67,13 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <AuthCard>
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Create an account</CardTitle>
-        <CardDescription>
-          Enter your details to create your DevStash account
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <GitHubAuthSection />
+
         <FormError message={error} />
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -107,7 +105,7 @@ export function RegisterForm() {
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="At least 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -119,21 +117,31 @@ export function RegisterForm() {
             <Input
               id="confirmPassword"
               type="password"
-              placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={isLoading}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button
+            type="submit"
+            variant="brand"
+            size="lg"
+            className="w-full"
+            disabled={isLoading}
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create account
           </Button>
         </form>
-
-        <GitHubAuthSection />
-
+      </CardContent>
+      <CardFooter className="flex-col gap-6">
+        <p className="text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link href="/sign-in" className="text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
         <p className="text-center text-xs text-muted-foreground">
           By creating an account, you agree to the{" "}
           <Link href="/terms" className="underline hover:text-foreground">
@@ -145,15 +153,7 @@ export function RegisterForm() {
           </Link>
           .
         </p>
-      </CardContent>
-      <CardFooter className="justify-center">
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/sign-in" className="text-primary hover:underline">
-            Sign in
-          </Link>
-        </p>
       </CardFooter>
-    </Card>
+    </AuthCard>
   );
 }

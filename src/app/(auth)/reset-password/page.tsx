@@ -8,10 +8,8 @@ export const metadata = {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background p-4">
-      <Suspense fallback={<div>Loading...</div>}>
-        <ResetPasswordForm />
-      </Suspense>
-    </div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

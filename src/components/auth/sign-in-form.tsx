@@ -10,13 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import AuthCard from "@/components/auth/auth-card";
 import FormError from "@/components/shared/form-error";
 import GitHubAuthSection from "@/components/shared/github-auth-section";
 import { safeRedirectPath } from "@/lib/safe-redirect";
@@ -101,14 +100,13 @@ export function SignInForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <AuthCard>
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Sign in to DevStash</CardTitle>
-        <CardDescription>
-          Enter your credentials or use GitHub to sign in
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <GitHubAuthSection callbackUrl={callbackUrl} />
+
         <FormError
           message={
             formError ||
@@ -157,23 +155,33 @@ export function SignInForm() {
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button
+            type="submit"
+            variant="brand"
+            size="lg"
+            className="w-full"
+            disabled={isLoading}
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign in
           </Button>
         </form>
-
-        <GitHubAuthSection callbackUrl={callbackUrl} />
-
+      </CardContent>
+      <CardFooter className="flex-col gap-6">
+        <p className="text-sm text-muted-foreground">
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="text-primary hover:underline">
+            Register
+          </Link>
+        </p>
         <p className="text-center text-xs text-muted-foreground">
-          Continuing with GitHub creates an account if you don&apos;t have one, and means you agree to the{" "}
+          By continuing, you agree to the{" "}
           <Link href="/terms" className="underline hover:text-foreground">
             Terms
           </Link>{" "}
@@ -183,15 +191,7 @@ export function SignInForm() {
           </Link>
           .
         </p>
-      </CardContent>
-      <CardFooter className="justify-center">
-        <p className="text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-primary hover:underline">
-            Register
-          </Link>
-        </p>
       </CardFooter>
-    </Card>
+    </AuthCard>
   );
 }

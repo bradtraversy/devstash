@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import AuthCard from "@/components/auth/auth-card";
 
 type ResetStatus = "form" | "loading" | "success" | "error" | "no-token";
 
@@ -68,7 +68,7 @@ export function ResetPasswordForm() {
 
   if (status === "no-token") {
     return (
-      <Card className="w-full max-w-md">
+      <AuthCard>
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <XCircle className="h-12 w-12 text-destructive" />
@@ -79,17 +79,17 @@ export function ResetPasswordForm() {
           </CardDescription>
         </CardHeader>
         <CardFooter>
-          <Button asChild className="w-full">
+          <Button asChild variant="brand" className="w-full">
             <Link href="/forgot-password">Request a new link</Link>
           </Button>
         </CardFooter>
-      </Card>
+      </AuthCard>
     );
   }
 
   if (status === "success") {
     return (
-      <Card className="w-full max-w-md">
+      <AuthCard>
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <CheckCircle className="h-12 w-12 text-green-500" />
@@ -98,17 +98,17 @@ export function ResetPasswordForm() {
           <CardDescription>{message}</CardDescription>
         </CardHeader>
         <CardFooter>
-          <Button asChild className="w-full">
+          <Button asChild variant="brand" className="w-full">
             <Link href="/sign-in">Sign in with your new password</Link>
           </Button>
         </CardFooter>
-      </Card>
+      </AuthCard>
     );
   }
 
   if (status === "loading") {
     return (
-      <Card className="w-full max-w-md">
+      <AuthCard>
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
@@ -116,12 +116,12 @@ export function ResetPasswordForm() {
           <CardTitle className="text-2xl">Resetting password...</CardTitle>
           <CardDescription>Please wait while we update your password.</CardDescription>
         </CardHeader>
-      </Card>
+      </AuthCard>
     );
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <AuthCard>
       <CardHeader className="text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
           <KeyRound className="h-6 w-6 text-primary" />
@@ -152,7 +152,7 @@ export function ResetPasswordForm() {
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="At least 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -164,14 +164,13 @@ export function ResetPasswordForm() {
             <Input
               id="confirmPassword"
               type="password"
-              placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={8}
             />
           </div>
-          <Button type="submit" className="w-full">
+          <Button type="submit" variant="brand" className="w-full">
             Reset password
           </Button>
         </form>
@@ -184,6 +183,6 @@ export function ResetPasswordForm() {
           Back to sign in
         </Link>
       </CardFooter>
-    </Card>
+    </AuthCard>
   );
 }
