@@ -4,7 +4,7 @@ import ShareDemo from "./ShareDemo";
 
 export default function HeroSection() {
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center px-6 pt-[120px] pb-20 max-md:px-5 max-md:pt-[100px] max-md:pb-[60px] text-center bg-[#0a0a0f]">
+    <section className="min-h-screen flex flex-col items-center justify-center px-6 pt-[120px] pb-20 max-md:px-5 max-md:pt-[100px] max-md:pb-[60px] text-center bg-[#0a0a0f] bg-[radial-gradient(ellipse_60%_45%_at_50%_25%,rgba(59,130,246,0.16),transparent_70%)]">
       <div className="max-w-[720px] mb-14">
         <h1 className="text-[clamp(2.6rem,6vw,4.4rem)] font-extrabold leading-[1.05] mb-6 tracking-tight max-sm:text-[2.4rem]">
           Stash it.

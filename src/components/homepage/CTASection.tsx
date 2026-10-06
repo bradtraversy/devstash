@@ -4,7 +4,7 @@ import ScrollFadeIn from "./ScrollFadeIn";
 
 export default function CTASection() {
   return (
-    <section className="py-[120px] text-center bg-[#0a0a0f]">
+    <section className="py-[120px] text-center bg-[#0a0a0f] bg-[radial-gradient(ellipse_50%_70%_at_50%_50%,rgba(59,130,246,0.09),transparent_70%)]">
       <div className="max-w-[1200px] mx-auto px-6">
         <ScrollFadeIn>
           <h2 className="text-[clamp(1.8rem,3.5vw,2.8rem)] font-extrabold leading-tight mb-4 tracking-tight max-sm:text-[1.6rem]">
