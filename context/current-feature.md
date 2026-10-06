@@ -1,16 +1,17 @@
-# Current Feature
+# Current Feature: Mobile Hero Heading
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- The homepage hero heading scales with the screen instead of a fixed 38px on phones
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/fixes/mobile-hero-heading.md`
+- Brad found the heading small on mobile (2026-10-06)
 
 ## History
 
