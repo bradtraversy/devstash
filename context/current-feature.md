@@ -1,22 +1,16 @@
-# Current Feature: Docs
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Public docs at `/docs` with six markdown pages rendered by the note renderer (Getting started, Sharing and links, Notes as pages, Collections, AI helpers, Import and export)
-- Index page, statically generated page routes with previous and next links, a docs nav, and per-page metadata; unknown slugs 404
-- `docs` reserved as a handle
-- Entry points: homepage Navbar and Footer, signed-in user menu, the Home paste box hint, and the homepage features grid mention long notes as pages
-- Tests for the docs manifest, files, and internal links
+<!-- Define goals here -->
 
 ## Notes
 
-- Spec: `context/features/docs-spec.md`
-- Markdown files over MDX, no new packages (Brad, 2026-10-06)
-- Copy describes the app with Pro off
+<!-- Additional context here -->
 
 ## History
 
@@ -106,3 +100,4 @@ In Progress
 - **Page Size and Pagination** - Every item list pages at 25 by default with 50 and 100 to choose from, stored in the devstash-page-size cookie (src/lib/page-size.ts with parsePageSize, storePageSize, and parsePageParam, which caps absurd page numbers): ListFooter pairs Pagination with a PageSizeSelect that shows once a list holds more than 25 items and reloads from page 1 keeping the filter or sort; Home, the type pages, collection pages, Favorites, and Shared read the size and redirect a page past the end to the first page; Favorites sorts across every page (Newest and Oldest in the database, Name A-Z, Name Z-A, and Type compared case-insensitively and numerically in JS over the favorite ids so the order does not depend on the database collation, then only the page loaded; src/lib/favorites-sort.ts), and Shared items page too, with favorite and shared collections left unpaged; getHomeItems, getItemsByType (now with an id tiebreaker), the date-sorted getFavoriteItems, and getSharedItems share paginateItems; the size, layout, and Favorites sort controls show the server value through useOptimistic so Back or a second tab never leaves them stale; ITEMS_PER_PAGE removed and /collections keeps its own grid size; spec in context/features/page-size-spec.md; verified with npm run verify, an independent review with its findings applied, and browser checks with 60 items (switching to 50 from page 2, a stale filtered page, Shared page 2, phone width) and 30 mixed-case favorites (case-insensitive and numeric name order across pages, changing the sort from the menu); 12 new tests (894 total) (Completed)
 - **DevStash Logo** - Replaced the placeholder folder and DS branding with the selected minimal nested-container mark across the homepage, signed-in top bar, README, site Open Graph image, and favicon metadata; added reusable SVG mark and lockup assets, an accessible mobile dashboard link, and a 16px, 32px, and 48px PNG-backed ICO fallback; verified with npm run verify, live homepage and asset requests, small-size raster inspection, and an independent review (Completed)
 - **Note Pages** - Every fenced code block in a note or prompt gets a CodeFence header with its language label and a Copy button, on public pages (server Shiki) and in the drawer and dialogs (MarkdownFence highlights on the client through a dynamic import of the same highlightCode, plain code until it loads); bash fences copy without leading `$ ` prompts through fenceCopyText; headings in notes and prompts on public pages get GitHub-style ids from the rehypeHeadingIds plugin with a hover # link and the heading named by its text, prefixed with the block anchor on collection pages, and headings that already carry an id (the GFM footnotes label) are left alone; SHIKI_HTML_CLASS shared by both renderers; the drawer preview height counts fences; always on with no new item type (Brad, 2026-10-05); first used for the CI/CD Crash Course gist imported as one note; spec in context/features/note-pages-spec.md; verified with npm run verify, an independent review with its findings applied, and a browser check of a shared note and a collection page with two notes (53 fences, anchors, footnotes, unique ids) at desktop and phone widths; 14 new tests (908 total) (Completed)
+- **Docs** - Public docs at /docs: six markdown pages in src/content/docs (Getting started, Sharing and links, Notes as pages, Collections, AI helpers, Import and export) rendered through MarkdownBlock so code fences get Copy and headings get anchors, an index of cards, statically generated /docs/[slug] pages with previous and next links and per-page title, description, and canonical, a docs 404 (dynamicParams = false fell through to the [handle]/[slug] route), a DocsNav client component with aria-current that wraps above the content on phones, and src/lib/docs.ts with the manifest, docNeighbors, and readDocMarkdown; copy written for the app with Pro off and checked claim by claim against the code; `docs` reserved as a handle; Docs links in the homepage Navbar (desktop and mobile), the Footer (Features and Pricing now point at /#features and /#pricing so they work off the homepage), and the signed-in user menu; the Home paste box hint says a whole gist becomes one page and the homepage card became Snippets to whole pages; markdown over MDX with no new packages (Brad, 2026-10-06); spec in context/features/docs-spec.md; verified with npm run verify, an independent review of code and copy with its findings applied (the import duplicate check bug it found went to its own task), and a browser check of the index, pages, tables, anchors, the 404, phone width, and every entry point with a throwaway account; 7 new tests (915 total) (Completed)
