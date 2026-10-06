@@ -17,7 +17,7 @@ Set the visibility on the collection's page to Unlisted or Public (see [Sharing 
 - A readable URL: `devstash.io/{handle}/{slug}`
 - A short link: `devstash.io/s/{id}`, which redirects to the readable one
 
-The public page shows every item in order, each with a Copy button and an anchor link (`#b1`, `#b2`, and so on). **Copy as markdown** copies the whole collection, and adding `.md` to the URL serves it as one markdown file:
+The public page shows every item in the collection, including items that are private on their own, in order, each with a Copy button and an anchor link (`#b1`, `#b2`, and so on). **Copy as markdown** copies the whole collection, and adding `.md` to the URL serves it as one markdown file:
 
 ```bash
 curl -s https://devstash.io/yourhandle/react-patterns.md

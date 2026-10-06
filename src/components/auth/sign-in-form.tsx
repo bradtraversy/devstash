@@ -171,6 +171,18 @@ export function SignInForm() {
         </form>
 
         <GitHubAuthSection callbackUrl={callbackUrl} />
+
+        <p className="text-center text-xs text-muted-foreground">
+          Continuing with GitHub creates an account if you don&apos;t have one, and means you agree to the{" "}
+          <Link href="/terms" className="underline hover:text-foreground">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline hover:text-foreground">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">

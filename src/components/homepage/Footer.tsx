@@ -5,18 +5,16 @@ import { isProEnabled } from "@/lib/plans";
 const FOOTER_LINKS = {
   Product: [
     { label: "Features", href: "/#features" },
+    { label: "Sharing", href: "/#sharing" },
     { label: "Pricing", href: "/#pricing" },
-    { label: "Changelog", href: "#" },
   ],
   Resources: [
-    { label: "Documentation", href: "/docs" },
-    { label: "API", href: "#" },
-    { label: "Blog", href: "#" },
+    { label: "Docs", href: "/docs" },
+    { label: "GitHub", href: "https://github.com/bradtraversy/devstash" },
   ],
-  Company: [
-    { label: "About", href: "#" },
-    { label: "Privacy", href: "#" },
-    { label: "Terms", href: "#" },
+  Legal: [
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
   ],
 };
 
@@ -57,7 +55,7 @@ export default function Footer() {
 
         <div className="border-t border-[#1e1e2e] pt-6 text-center">
           <p className="text-sm text-[#55556a]">
-            &copy; {new Date().getFullYear()} DevStash. All rights reserved.
+            &copy; {new Date().getFullYear()} Traversy Media. All rights reserved.
           </p>
         </div>
       </div>
