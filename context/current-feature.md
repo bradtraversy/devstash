@@ -1,22 +1,16 @@
-# Current Feature: Footer, Privacy, and Terms
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Plain-language `/privacy` and `/terms` pages from markdown on the docs content panel, with metadata and a last-updated date
-- Footer without dead links: Product, Resources (Docs, GitHub), Legal (Privacy, Terms); copyright names Traversy Media
-- `privacy` and `terms` reserved as handles
-- Register form says creating an account means agreeing to the Terms and Privacy Policy
-- Tests for the legal page files
+<!-- Define goals here -->
 
 ## Notes
 
-- Spec: `context/features/legal-pages-spec.md`
-- Operator Traversy Media, contact brad@traversymedia.com (Brad, 2026-10-06)
-- Through merge (Brad, 2026-10-06); drafts are plain language, not legal review
+<!-- Additional context here -->
 
 ## History
 
@@ -108,3 +102,4 @@ In Progress
 - **Note Pages** - Every fenced code block in a note or prompt gets a CodeFence header with its language label and a Copy button, on public pages (server Shiki) and in the drawer and dialogs (MarkdownFence highlights on the client through a dynamic import of the same highlightCode, plain code until it loads); bash fences copy without leading `$ ` prompts through fenceCopyText; headings in notes and prompts on public pages get GitHub-style ids from the rehypeHeadingIds plugin with a hover # link and the heading named by its text, prefixed with the block anchor on collection pages, and headings that already carry an id (the GFM footnotes label) are left alone; SHIKI_HTML_CLASS shared by both renderers; the drawer preview height counts fences; always on with no new item type (Brad, 2026-10-05); first used for the CI/CD Crash Course gist imported as one note; spec in context/features/note-pages-spec.md; verified with npm run verify, an independent review with its findings applied, and a browser check of a shared note and a collection page with two notes (53 fences, anchors, footnotes, unique ids) at desktop and phone widths; 14 new tests (908 total) (Completed)
 - **Docs** - Public docs at /docs: six markdown pages in src/content/docs (Getting started, Sharing and links, Notes as pages, Collections, AI helpers, Import and export) rendered through MarkdownBlock so code fences get Copy and headings get anchors, an index of cards, statically generated /docs/[slug] pages with previous and next links and per-page title, description, and canonical, a docs 404 (dynamicParams = false fell through to the [handle]/[slug] route), a DocsNav client component with aria-current that wraps above the content on phones, and src/lib/docs.ts with the manifest, docNeighbors, and readDocMarkdown; copy written for the app with Pro off and checked claim by claim against the code; `docs` reserved as a handle; Docs links in the homepage Navbar (desktop and mobile), the Footer (Features and Pricing now point at /#features and /#pricing so they work off the homepage), and the signed-in user menu; the Home paste box hint says a whole gist becomes one page and the homepage card became Snippets to whole pages; markdown over MDX with no new packages (Brad, 2026-10-06); spec in context/features/docs-spec.md; verified with npm run verify, an independent review of code and copy with its findings applied (the import duplicate check bug it found went to its own task), and a browser check of the index, pages, tables, anchors, the 404, phone width, and every entry point with a throwaway account; 7 new tests (915 total) (Completed)
 - **Homepage Glow** - Soft blue radial glow behind the hero headline and a fainter one behind the closing call to action, matching the docs, plus a thin divider between the hero and the Sharing section so the long black run reads as two sections; checked on the dev server at 1440px; no tests needed (Completed)
+- **Footer, Privacy, and Terms** - Plain-language /privacy and /terms pages from src/content/legal through MarkdownBlock on the docs content panel (LegalPage component and legalMetadata, src/lib/legal.ts with the pages and last-updated date), naming Traversy Media as operator and brad@traversymedia.com as contact (Brad, 2026-10-06); Privacy lists account details including the stored GitHub tokens, the handle and where it shows, rate limit counters by IP and email, cookieless page views, every processing service including jsDelivr for the editor, cookies, export, unsharing, and account deletion with what it leaves (others' saved copies, backups, uploaded files on request); Terms cover the account, content ownership and the permission to host, share, copy into others' stashes, and send to OpenAI, what sharing exposes, acceptable use, the free service, shutdown notice, no warranty, and limited liability; both pages and the docs say sharing a collection shares every item in it, including items that are private on their own; footer without dead links (Product, Resources with Docs and GitHub, Legal) and Traversy Media in the copyright; register and sign-in forms link the Terms and Privacy Policy; privacy and terms reserved as handles; verified with npm run verify, an independent review of code and every policy claim with its findings applied, and a browser check of both pages, the footer, and the forms at desktop and phone widths; 3 new tests (918 total) (Completed)
