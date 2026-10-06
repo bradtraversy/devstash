@@ -18,7 +18,7 @@ export default function HeroSection() {
           short link, a raw URL for curl, or a clean image.
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
-          <Button asChild size="lg" className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-400 text-white border-0 px-8 py-3 text-base hover:opacity-90 hover:-translate-y-0.5 transition-all">
+          <Button asChild size="lg" variant="brand" className="px-8 py-3 text-base hover:-translate-y-0.5 transition-all">
             <Link href="/register">Start sharing free</Link>
           </Button>
           <Button variant="outline" asChild size="lg" className="border-[#1e1e2e] text-[#8888a4] hover:text-[#e4e4ef] hover:border-[#8888a4] bg-transparent px-8 py-3 text-base">
