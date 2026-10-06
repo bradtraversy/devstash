@@ -21,7 +21,7 @@ export default function DocsIndexPage() {
           <li key={page.slug}>
             <Link
               href={`/docs/${page.slug}`}
-              className="block h-full rounded-lg border border-white/10 p-5 transition-colors hover:border-white/20 hover:bg-white/[0.03]"
+              className="block h-full rounded-xl border border-[#1e1e2e] bg-[#12121a] p-5 transition-colors hover:border-[#2e2e44] hover:bg-[#16161f]"
             >
               <h2 className="font-semibold">{page.title}</h2>
               <p className="mt-1.5 text-sm text-[#8888a4]">{page.description}</p>
