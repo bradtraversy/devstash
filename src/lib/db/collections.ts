@@ -345,6 +345,13 @@ export interface CollectionDetail {
   updatedAt: Date;
 }
 
+/** Items in the collection that are private on their own; sharing the collection shows them anyway. */
+export function countPrivateCollectionItems(collectionId: string, userId: string): Promise<number> {
+  return prisma.itemCollection.count({
+    where: { collectionId, collection: { userId }, item: { visibility: 'PRIVATE' } },
+  });
+}
+
 /**
  * Get a single collection by ID with ownership check
  */
