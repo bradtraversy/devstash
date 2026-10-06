@@ -1,20 +1,16 @@
-# Current Feature: Auth Page Polish
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- GitHub first on sign-in and register, then an "or" divider and the email form
-- Blue gradient brand button for the primary action on every auth page
-- No card on the five auth pages, no redundant subtitles, no dots placeholder
-- Short fine print at the bottom, content sits higher on tall screens
+<!-- Define goals here -->
 
 ## Notes
 
-- Spec: `context/features/auth-page-polish-spec.md`
-- Brad agreed to the login page polish after a comparison with other dev tools (2026-10-06)
+<!-- Additional context here -->
 
 ## History
 
@@ -112,3 +108,4 @@ In Progress
 - **Homepage Page Sample** - The homepage's "What people see when you share" section gains its own "Whole gists, one page" heading and line (a markdown doc or gist pasted as a note becomes one page with Copy on every code block and a link on every heading), then a fictional "Ship checklist" note by @sam (SAMPLE_NOTE, two ##### sections with bash and yaml blocks) rendered as a shared page through the real ItemBlock in a BrowserFrame; outline h2, h3, h4, h5 with the h5s styled; anchors in the section land below the fixed navbar (scroll-mt-20), which also fixes the collection sample's block links; spec in context/features/homepage-page-sample-spec.md; verified with npm run verify (the homepage stays static), an independent review with its findings applied, and a browser check at desktop and phone widths (Completed)
 - **Rows Cleanup** - Item rows lose the date (lists are already ordered; the drawer keeps the dates), the Private pill becomes a quiet lock icon (sr-only label and title kept) so shared pills stand out, and the type label column becomes a mono file-name chip for snippets only (.ts, .py, .yml, .sh, Dockerfile) from LANGUAGE_FILE_NAMES and languageFileName, with .tsx or .jsx when the code holds JSX (closing tags, fragments, or self-closing elements whose props may carry braces and arrows, after blanking comments and string and template literals so HTML in strings does not count; linear on adversarial input), titled and screen-read as the language name; shared snippet pages (block header and the line under the title) and the homepage sample use the same file label through snippetFileLabel (Brad, 2026-10-06); spec in context/features/rows-cleanup-spec.md; verified with npm run verify, an independent review with its findings applied, and browser checks of rows with private, shared, and via-collection items and the homepage sample; 11 new tests (940 total) (Completed)
 - **Dashboard Double Scrollbar** - main in the dashboard layout is now relative, so absolutely positioned descendants (sr-only labels on visibility pills and file chips) are clipped by its scroll area instead of escaping to the viewport and stretching the page into a second scrollbar after the list scrolls; scrollbars app-wide are thin and dark (scrollbar-width thin, a faint thumb on a transparent track, color-scheme dark) instead of the platform's light gray; fix notes in context/fixes/dashboard-double-scrollbar.md; verified in Brad's Chrome on the dev server (page stays window height after scrolling Home, type pages, Favorites, Shared, Collections, and Settings) and with npm run verify (Completed)
+- **Auth Page Polish** - Sign-in and register lead with a full-width Continue with GitHub button, then an "or" divider and the email form (GitHubAuthSection renders the button before the divider), matching dev tools like Supabase and Railway and the local restore's 368 GitHub to 329 password accounts; an AuthCard wrapper drops the card border, background, and shadow on all five auth pages (sign-in, register, forgot-password, reset-password, verify-email); a brand Button variant (blue-700 to blue-600 gradient, which keeps white text at 5.26:1 or better where the homepage's to-blue-400 end falls under AA) for every primary auth action; subtitles and dots placeholders removed, new password fields say At least 8 characters, form errors sit between the divider and the form, the Terms and Privacy fine print moved to the bottom; the (auth) layout owns the page wrapper and sits content higher on tall screens; no auth logic changed; spec in context/features/auth-page-polish-spec.md; verified with npm run verify, an independent review with its contrast finding applied, and a browser check of all five pages, a wrong password, the OAuthAccountNotLinked error, and phone width (Completed)
