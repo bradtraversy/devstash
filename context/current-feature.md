@@ -1,18 +1,16 @@
-# Current Feature: Header GitHub Link
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- GitHub icon linking to the repo in the homepage header at every width
-- One shared repo URL constant for the header and footer
+<!-- Define goals here -->
 
 ## Notes
 
-- Spec: `context/features/header-github-link-spec.md`
-- Brad asked for the GitHub icon and repo link in the header (2026-10-06)
+<!-- Additional context here -->
 
 ## History
 
@@ -113,3 +111,4 @@ In Progress
 - **Auth Page Polish** - Sign-in and register lead with a full-width Continue with GitHub button, then an "or" divider and the email form (GitHubAuthSection renders the button before the divider), matching dev tools like Supabase and Railway and the local restore's 368 GitHub to 329 password accounts; an AuthCard wrapper drops the card border, background, and shadow on all five auth pages (sign-in, register, forgot-password, reset-password, verify-email); a brand Button variant (blue-700 to blue-600 gradient, which keeps white text at 5.26:1 or better where the homepage's to-blue-400 end falls under AA) for every primary auth action; subtitles and dots placeholders removed, new password fields say At least 8 characters, form errors sit between the divider and the form, the Terms and Privacy fine print moved to the bottom; the (auth) layout owns the page wrapper and sits content higher on tall screens; no auth logic changed; spec in context/features/auth-page-polish-spec.md; verified with npm run verify, an independent review with its contrast finding applied, and a browser check of all five pages, a wrong password, the OAuthAccountNotLinked error, and phone width (Completed)
 - **Darker Brand Buttons** - One primary button style across the site: the brand Button variant is a blue-800 to blue-600 gradient (white text at 5.26:1 or better across the width; blue-900 to blue-700 was tried and its low-chroma left end looked gray on full-width buttons), and the homepage Navbar Get Started (desktop and mobile), Hero and CTA Start sharing free, and Pricing Pro buttons use variant="brand" in place of the inline blue-700 to blue-400 gradient whose light end fell to about 2.6:1; the ShareDemo Share button and the Pricing badge take the same gradient; the headline text gradients are unchanged (Brad, 2026-10-06); notes in context/fixes/darker-brand-buttons.md; verified with npm run verify and a browser check of the homepage and sign-in page (Completed)
 - **Mobile Hero Heading** - The homepage hero heading uses one fluid size, clamp(2.75rem, 13vw, 4.4rem), in place of the fixed 38px phone override, so it is about 44px at 320px, 49px at 375px, and the full 70px from about 540px up, with desktop unchanged and tablets no longer at 46px (Brad, 2026-10-06); notes in context/fixes/mobile-hero-heading.md; verified with npm run verify (the homepage stays static) and a browser check at 320px, 375px, 768px, and 1440px with no horizontal overflow (Completed)
+- **Header GitHub Link** - The homepage Navbar (shared by the auth pages and docs) shows a muted GitHub icon linking to the repo at every width, before Sign In on desktop and beside the menu button on phones, opening in a new tab with rel noopener noreferrer and named DevStash on GitHub; GITHUB_REPO_URL in src/lib/constants/links.ts is shared by the Navbar and the Footer link (Brad, 2026-10-06); spec in context/features/header-github-link-spec.md; verified with npm run verify and a browser check at desktop and 375px (Completed)
