@@ -56,7 +56,7 @@ DevStash is a place to keep the snippets, commands, prompts, notes, and links yo
 - Export everything as Markdown or JSON, and import from a JSON export
 
 **Under the hood**
-- Email and password or GitHub sign-in, with email verification and password reset
+- Email and password, GitHub, or Google sign-in, with email verification and password reset
 - Rate limiting on the auth endpoints and AI requests
 - Images and preview cards rendered on the server with Shiki highlighting and `next/og`
 - A Pro plan with Stripe billing and file and image uploads is built but disabled; set `NEXT_PUBLIC_PRO_ENABLED=true` to turn it back on
@@ -114,6 +114,8 @@ cp .env.example .env
 | `AUTH_SECRET` | NextAuth secret (generate with `npx auth secret`) |
 | `AUTH_GITHUB_ID` | GitHub OAuth app ID (optional, for GitHub sign-in) |
 | `AUTH_GITHUB_SECRET` | GitHub OAuth app secret (optional) |
+| `AUTH_GOOGLE_ID` | Google OAuth client ID (optional, for Google sign-in) |
+| `AUTH_GOOGLE_SECRET` | Google OAuth client secret (optional) |
 | `RESEND_API_KEY` | Resend API key for verification and reset emails |
 | `SKIP_EMAIL_VERIFICATION` | `true` skips email verification in development |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis URL for rate limiting (required in production) |

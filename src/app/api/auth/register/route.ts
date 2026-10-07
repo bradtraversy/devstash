@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { generateVerificationToken } from '@/lib/tokens';
 import { sendVerificationEmail } from '@/lib/email';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { skipsEmailVerification } from '@/lib/auth/email-verification';
 
 export async function POST(request: Request) {
   try {
@@ -55,8 +56,7 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Check if email verification should be skipped
-    const skipVerification = process.env.SKIP_EMAIL_VERIFICATION === 'true';
+    const skipVerification = skipsEmailVerification();
 
     // Create user (emailVerified is set if skipping verification)
     const user = await prisma.user.create({

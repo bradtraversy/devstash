@@ -2,7 +2,7 @@ DevStash is one place for the snippets, commands, prompts, notes, and links you 
 
 ## Create an account
 
-Sign up with an email and password, or continue with GitHub.
+Sign up with an email and password, or continue with GitHub or Google. If you already have an account with the same email, Google signs you in to it.
 
 ## Save from the paste box
 

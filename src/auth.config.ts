@@ -1,6 +1,6 @@
-import GitHub from 'next-auth/providers/github'
 import Credentials from 'next-auth/providers/credentials'
 import type { NextAuthConfig } from 'next-auth'
+import { gitHubProvider, googleProvider } from '@/lib/auth/providers'
 
 /**
  * Edge-compatible auth configuration.
@@ -15,7 +15,8 @@ export default {
     signIn: '/sign-in',
   },
   providers: [
-    GitHub,
+    gitHubProvider,
+    googleProvider,
     Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },

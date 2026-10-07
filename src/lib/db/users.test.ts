@@ -123,12 +123,14 @@ describe('getUserWithSettings', () => {
       handle: 'brad',
       createdAt: new Date('2025-01-01T00:00:00Z'),
       editorPreferences: null,
+      accounts: [{ provider: 'github' }, { provider: 'google' }],
     } as never);
 
     const user = await getUserWithSettings('user-1');
 
     expect(user?.handle).toBe('brad');
     expect(user?.hasPassword).toBe(false);
+    expect(user?.providers).toEqual(['github', 'google']);
     expect(mockFindUnique).toHaveBeenCalledWith(
       expect.objectContaining({ select: expect.objectContaining({ handle: true }) })
     );

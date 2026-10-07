@@ -1,9 +1,10 @@
 import NextAuth from 'next-auth'
 import { PrismaAdapter } from '@auth/prisma-adapter'
-import GitHub from 'next-auth/providers/github'
 import Credentials from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import { authorizeCredentials } from '@/lib/auth/credentials'
+import { checkOAuthSignIn, onLinkAccount } from '@/lib/auth/oauth'
+import { gitHubProvider, googleProvider } from '@/lib/auth/providers'
 
 /**
  * Full NextAuth configuration with Prisma adapter.
@@ -19,7 +20,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/sign-in',
   },
   providers: [
-    GitHub,
+    gitHubProvider,
+    googleProvider,
     Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },
@@ -28,7 +30,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       authorize: authorizeCredentials,
     }),
   ],
+  events: {
+    linkAccount: onLinkAccount,
+  },
   callbacks: {
+    signIn({ user, account, profile }) {
+      return checkOAuthSignIn({ user, account, profile })
+    },
     async jwt({ token, user }) {
       // Add user.id to the JWT token on sign in
       if (user?.id) {

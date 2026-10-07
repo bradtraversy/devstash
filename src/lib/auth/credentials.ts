@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import { CredentialsSignin } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { skipsEmailVerification } from '@/lib/auth/email-verification'
 
 export class RateLimitedSignin extends CredentialsSignin {
   code = 'rate_limited'
@@ -58,8 +59,7 @@ export async function authorizeCredentials(
     return null
   }
 
-  const skipVerification = process.env.SKIP_EMAIL_VERIFICATION === 'true'
-  if (!skipVerification && !user.emailVerified) {
+  if (!skipsEmailVerification() && !user.emailVerified) {
     throw new EmailNotVerifiedSignin()
   }
 
