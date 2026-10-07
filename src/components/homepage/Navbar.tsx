@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Github, Menu, X } from "lucide-react";
 import DevStashMark from "@/components/shared/devstash-mark";
 import { Button } from "@/components/ui/button";
 import { isProEnabled } from "@/lib/plans";
+import { GITHUB_REPO_URL } from "@/lib/constants/links";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -48,22 +49,35 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
-          <Button variant="outline" asChild className="border-[#1e1e2e] text-[#8888a4] hover:text-[#e4e4ef] hover:border-[#8888a4] bg-transparent">
-            <Link href="/sign-in">Sign In</Link>
-          </Button>
-          <Button asChild variant="brand">
-            <Link href="/register">Get Started</Link>
-          </Button>
-        </div>
+        <div className="flex items-center gap-3">
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="DevStash on GitHub"
+            title="DevStash on GitHub"
+            className="p-1.5 text-[#8888a4] hover:text-[#e4e4ef] transition-colors"
+          >
+            <Github className="size-5" />
+          </a>
 
-        <button
-          className="md:hidden text-[#e4e4ef] p-1"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="size-6" /> : <Menu className="size-6" />}
-        </button>
+          <div className="hidden md:flex items-center gap-3">
+            <Button variant="outline" asChild className="border-[#1e1e2e] text-[#8888a4] hover:text-[#e4e4ef] hover:border-[#8888a4] bg-transparent">
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
+            <Button asChild variant="brand">
+              <Link href="/register">Get Started</Link>
+            </Button>
+          </div>
+
+          <button
+            className="md:hidden text-[#e4e4ef] p-1"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="size-6" /> : <Menu className="size-6" />}
+          </button>
+        </div>
       </div>
 
       {mobileOpen && (

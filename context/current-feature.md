@@ -1,16 +1,18 @@
-# Current Feature
+# Current Feature: Header GitHub Link
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- GitHub icon linking to the repo in the homepage header at every width
+- One shared repo URL constant for the header and footer
 
 ## Notes
 
-<!-- Additional context here -->
+- Spec: `context/features/header-github-link-spec.md`
+- Brad asked for the GitHub icon and repo link in the header (2026-10-06)
 
 ## History
 
