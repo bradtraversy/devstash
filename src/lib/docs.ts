@@ -38,6 +38,11 @@ export const DOC_PAGES: DocPage[] = [
     title: 'Import and export',
     description: 'Download your stash as JSON or markdown and bring a JSON export back in.',
   },
+  {
+    slug: 'api',
+    title: 'API',
+    description: 'Create a token and save, search, share, and delete items from scripts and AI tools.',
+  },
 ];
 
 export const DOCS_DIR = path.join(process.cwd(), 'src/content/docs');

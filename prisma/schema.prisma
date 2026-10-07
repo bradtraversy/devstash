@@ -34,8 +34,27 @@ model User {
   accounts    Account[]
   sessions    Session[]
   slugHistory CollectionSlugHistory[]
+  apiTokens   ApiToken[]
 
   @@map("users")
+}
+
+// ============================================
+// API TOKENS
+// ============================================
+model ApiToken {
+  id         String    @id @default(cuid())
+  name       String
+  tokenHash  String    @unique // SHA-256 hex of the full token; the token itself is never stored
+  lastFour   String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_tokens")
 }
 
 // ============================================

@@ -239,6 +239,20 @@ describe('deleteItem', () => {
     expect(result).toBe(true);
     expect(mockDelete).toHaveBeenCalledWith({ where: { id: 'item-1' } });
   });
+
+  it('returns false when a concurrent delete removed the item first', async () => {
+    mockFindUnique.mockResolvedValue({ userId: 'user-1' } as never);
+    mockDelete.mockRejectedValue(Object.assign(new Error('Record to delete does not exist'), { code: 'P2025' }));
+
+    expect(await deleteItem('user-1', 'item-1')).toBe(false);
+  });
+
+  it('rethrows other delete errors', async () => {
+    mockFindUnique.mockResolvedValue({ userId: 'user-1' } as never);
+    mockDelete.mockRejectedValue(new Error('connection lost'));
+
+    await expect(deleteItem('user-1', 'item-1')).rejects.toThrow('connection lost');
+  });
 });
 
 const mockItemUpdate = vi.mocked(prisma.item.update);

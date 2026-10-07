@@ -54,10 +54,11 @@ DevStash is a place to keep the snippets, commands, prompts, notes, and links yo
 - Cmd+K search across titles and content
 - AI helpers: tag suggestions, descriptions, code explanations, and a prompt optimizer
 - Export everything as Markdown or JSON, and import from a JSON export
+- A JSON API at `/api/v1` with personal tokens from Settings for saving, searching, sharing, and deleting items from scripts and AI tools ([docs](https://devstash.io/docs/api))
 
 **Under the hood**
 - GitHub or Google sign-in; email and password sign-in, verification, and password reset stay for accounts created before registration closed
-- Rate limiting on the auth endpoints and AI requests
+- Rate limiting on the auth endpoints, AI requests, and the API
 - Images and preview cards rendered on the server with Shiki highlighting and `next/og`
 - A Pro plan with Stripe billing and file and image uploads is built but disabled; set `NEXT_PUBLIC_PRO_ENABLED=true` to turn it back on
 
@@ -182,7 +183,7 @@ src/
 │   ├── (auth)/          # Sign-in, register, verify, password reset
 │   ├── [handle]/[slug]/ # Public collection pages, raw markdown, preview cards
 │   ├── s/[shortId]/     # Short links: shared items, raw text, image, preview card
-│   ├── api/             # Route handlers (items, export, upload, download, auth, stripe)
+│   ├── api/             # Route handlers (v1 API, items, export, upload, download, auth, stripe)
 │   ├── collections/     # Collections list and detail pages
 │   ├── dashboard/       # Main dashboard
 │   ├── favorites/       # Favorites page

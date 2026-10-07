@@ -251,6 +251,33 @@ export async function getUserCollections(
   return collections;
 }
 
+export interface CollectionSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  visibility: CollectionVisibility;
+  shortId: string;
+  itemCount: number;
+}
+
+/** Every collection the user has, by name, with its item count. */
+export async function getCollectionSummaries(userId: string): Promise<CollectionSummary[]> {
+  const collections = await prisma.collection.findMany({
+    where: { userId },
+    orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      visibility: true,
+      shortId: true,
+      _count: { select: { items: true } },
+    },
+  });
+
+  return collections.map(({ _count, ...collection }) => ({ ...collection, itemCount: _count.items }));
+}
+
 export interface PaginatedCollections {
   collections: CollectionWithTypes[];
   totalCount: number;
