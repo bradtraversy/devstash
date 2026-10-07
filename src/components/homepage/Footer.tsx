@@ -1,6 +1,7 @@
 import Link from "next/link";
 import DevStashMark from "@/components/shared/devstash-mark";
 import { isProEnabled } from "@/lib/plans";
+import { GITHUB_REPO_URL } from "@/lib/constants/links";
 
 const FOOTER_LINKS = {
   Product: [
@@ -10,7 +11,7 @@ const FOOTER_LINKS = {
   ],
   Resources: [
     { label: "Docs", href: "/docs" },
-    { label: "GitHub", href: "https://github.com/bradtraversy/devstash" },
+    { label: "GitHub", href: GITHUB_REPO_URL },
   ],
   Legal: [
     { label: "Privacy", href: "/privacy" },
