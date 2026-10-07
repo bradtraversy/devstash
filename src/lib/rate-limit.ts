@@ -35,13 +35,6 @@ export const rateLimitConfigs = {
     keyBy: 'ip+id',
     failClosed: true,
   },
-  // Register: 3 attempts per hour per IP
-  register: {
-    limiter: Ratelimit.slidingWindow(3, '1 h'),
-    prefix: 'ratelimit:register',
-    keyBy: 'ip',
-    failClosed: false,
-  },
   // Forgot password: 3 attempts per hour per IP
   forgotPassword: {
     limiter: Ratelimit.slidingWindow(3, '1 h'),

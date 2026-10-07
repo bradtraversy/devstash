@@ -57,7 +57,7 @@ describe('checkRateLimit', () => {
   it('keys login by ip and email, and ip-only limits by the first forwarded address', async () => {
     const { checkRateLimit } = await load()
     await checkRateLimit('login', 'a@b.c')
-    await checkRateLimit('register')
+    await checkRateLimit('forgotPassword')
     expect(limitMock).toHaveBeenNthCalledWith(1, '203.0.113.9:a@b.c')
     expect(limitMock).toHaveBeenNthCalledWith(2, '203.0.113.9')
   })

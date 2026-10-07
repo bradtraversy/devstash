@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -26,18 +26,9 @@ export function SignInForm() {
   const searchParams = useSearchParams();
   const callbackUrl = safeRedirectPath(searchParams.get("callbackUrl"));
   const error = searchParams.get("error");
-  const registered = searchParams.get("registered");
 
+  const [showEmailForm, setShowEmailForm] = useState(searchParams.get("with") === "email");
   const [email, setEmail] = useState("");
-  const toastShown = useRef(false);
-
-  useEffect(() => {
-    if (registered === "true" && !toastShown.current) {
-      toastShown.current = true;
-      toast.success("Account created successfully! You can now sign in.");
-      router.replace("/sign-in", { scroll: false });
-    }
-  }, [registered, router]);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -100,6 +91,21 @@ export function SignInForm() {
     }
   }
 
+  const errorNotice = (
+    <FormError message={formError || oauthErrorMessage(error)}>
+      {needsVerification && (
+        <button
+          type="button"
+          onClick={handleResendVerification}
+          disabled={isResending}
+          className="mt-2 text-primary hover:underline disabled:opacity-50"
+        >
+          {isResending ? "Sending..." : "Resend verification email"}
+        </button>
+      )}
+    </FormError>
+  );
+
   return (
     <AuthCard>
       <CardHeader className="text-center">
@@ -108,62 +114,76 @@ export function SignInForm() {
       <CardContent className="space-y-4">
         <OAuthSection callbackUrl={callbackUrl} />
 
-        <FormError message={formError || oauthErrorMessage(error)}>
-          {needsVerification && (
+        {showEmailForm ? (
+          <>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-background px-2 text-muted-foreground">or</span>
+              </div>
+            </div>
+
+            {errorNotice}
+
+            <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoFocus
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-muted-foreground hover:text-primary"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <Button
+                type="submit"
+                variant="brand"
+                size="lg"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign in
+              </Button>
+            </form>
+          </>
+        ) : (
+          <>
+            {errorNotice}
             <button
               type="button"
-              onClick={handleResendVerification}
-              disabled={isResending}
-              className="mt-2 text-primary hover:underline disabled:opacity-50"
+              onClick={() => setShowEmailForm(true)}
+              className="mx-auto block text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
-              {isResending ? "Sending..." : "Resend verification email"}
+              Sign in with email and password
             </button>
-          )}
-        </FormError>
-
-        <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link
-                href="/forgot-password"
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
-                Forgot password?
-              </Link>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
-          <Button
-            type="submit"
-            variant="brand"
-            size="lg"
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in
-          </Button>
-        </form>
+          </>
+        )}
       </CardContent>
       <CardFooter className="flex-col gap-6">
         <p className="text-sm text-muted-foreground">
