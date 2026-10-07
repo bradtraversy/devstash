@@ -25,6 +25,7 @@ export async function getUserById(userId: string): Promise<DashboardUser | null>
 
 export interface UserWithSettings extends DashboardUser {
   hasPassword: boolean;
+  providers: string[];
   handle: string | null;
   createdAt: Date;
   editorPreferences: EditorPreferences;
@@ -45,6 +46,7 @@ export async function getUserWithSettings(userId: string): Promise<UserWithSetti
       handle: true,
       createdAt: true,
       editorPreferences: true,
+      accounts: { select: { provider: true } },
     },
   });
 
@@ -56,6 +58,7 @@ export async function getUserWithSettings(userId: string): Promise<UserWithSetti
     email: user.email,
     image: user.image,
     hasPassword: !!user.password,
+    providers: user.accounts.map((account) => account.provider),
     handle: user.handle,
     createdAt: user.createdAt,
     editorPreferences: mergeWithDefaults(user.editorPreferences as Partial<EditorPreferences> | null),

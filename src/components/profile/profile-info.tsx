@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Calendar, Mail } from "lucide-react";
+import { describeSignInMethods } from "@/lib/auth/sign-in-copy";
 
 interface ProfileInfoProps {
   user: {
@@ -9,6 +10,8 @@ interface ProfileInfoProps {
     email: string;
     image: string | null;
     createdAt: Date;
+    hasPassword: boolean;
+    providers: string[];
   };
 }
 
@@ -37,7 +40,7 @@ export default function ProfileInfo({ user }: ProfileInfoProps) {
               {user.name || "No name set"}
             </h3>
             <p className="text-sm text-muted-foreground">
-              {user.image ? "Signed in with GitHub" : "Email account"}
+              {describeSignInMethods(user.hasPassword, user.providers)}
             </p>
           </div>
         </div>

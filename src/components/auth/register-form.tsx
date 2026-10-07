@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import AuthCard from "@/components/auth/auth-card";
 import FormError from "@/components/shared/form-error";
-import GitHubAuthSection from "@/components/shared/github-auth-section";
+import OAuthSection from "@/components/shared/oauth-section";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -72,7 +72,7 @@ export function RegisterForm() {
         <CardTitle className="text-2xl">Create an account</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <GitHubAuthSection />
+        <OAuthSection />
 
         <FormError message={error} />
 

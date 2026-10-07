@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/card";
 import AuthCard from "@/components/auth/auth-card";
 import FormError from "@/components/shared/form-error";
-import GitHubAuthSection from "@/components/shared/github-auth-section";
+import OAuthSection from "@/components/shared/oauth-section";
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { oauthErrorMessage } from "@/lib/auth/sign-in-copy";
 
 export function SignInForm() {
   const router = useRouter();
@@ -105,18 +106,9 @@ export function SignInForm() {
         <CardTitle className="text-2xl">Sign in to DevStash</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <GitHubAuthSection callbackUrl={callbackUrl} />
+        <OAuthSection callbackUrl={callbackUrl} />
 
-        <FormError
-          message={
-            formError ||
-            (error === "OAuthAccountNotLinked"
-              ? "This email is already registered with a password. Please sign in with your email and password instead."
-              : error
-                ? "An error occurred. Please try again."
-                : null)
-          }
-        >
+        <FormError message={formError || oauthErrorMessage(error)}>
           {needsVerification && (
             <button
               type="button"

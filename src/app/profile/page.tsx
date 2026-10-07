@@ -79,6 +79,8 @@ export default async function ProfilePage() {
             email: user.email,
             image: user.image,
             createdAt: user.createdAt,
+            hasPassword: user.hasPassword,
+            providers: user.providers,
           }}
         />
 
