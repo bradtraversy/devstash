@@ -33,7 +33,7 @@ Execute the requested action: $ARGUMENTS
 | `review`   | Check goals met, code quality                             |
 | `test`     | Check for testable logic for server actions and utilities |
 | `explain`  | Document what changed and why                             |
-| `complete` | Commit, push, merge, reset                                |
+| `complete` | Reset, commit, pull request, merge                        |
 
 See [actions/](actions/) for detailed instructions.
 
