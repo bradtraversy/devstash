@@ -2,7 +2,7 @@ DevStash is one place for the snippets, commands, prompts, notes, and links you 
 
 ## Create an account
 
-Sign up with an email and password, or continue with GitHub or Google. If you already have an account with the same email, Google signs you in to it.
+Sign up with GitHub or Google. If you already have an account with the same email, Google signs you in to it. Accounts created with an email and password before October 2026 still sign in with **Sign in with email and password** under the buttons, where Forgot password is too.
 
 ## Save from the paste box
 
@@ -40,4 +40,4 @@ Click any item to open it in the drawer, where you can edit, copy, pin, favorite
 
 ## Make it yours
 
-Settings has the code editor preferences (font size, tab size, word wrap, minimap, and theme), your public handle, your password, and your data (see [Import and export](/docs/import-export)).
+Settings has the code editor preferences (font size, tab size, word wrap, minimap, and theme), your public handle, your password if your account has one, and your data (see [Import and export](/docs/import-export)).

@@ -56,7 +56,7 @@ DevStash is a place to keep the snippets, commands, prompts, notes, and links yo
 - Export everything as Markdown or JSON, and import from a JSON export
 
 **Under the hood**
-- Email and password, GitHub, or Google sign-in, with email verification and password reset
+- GitHub or Google sign-in; email and password sign-in, verification, and password reset stay for accounts created before registration closed
 - Rate limiting on the auth endpoints and AI requests
 - Images and preview cards rendered on the server with Shiki highlighting and `next/og`
 - A Pro plan with Stripe billing and file and image uploads is built but disabled; set `NEXT_PUBLIC_PRO_ENABLED=true` to turn it back on

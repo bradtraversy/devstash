@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import AuthCard from '@/components/auth/auth-card'
+import { EMAIL_SIGN_IN_PATH } from '@/lib/constants/links'
 
 type VerificationStatus = 'loading' | 'success' | 'error' | 'no-token'
 
@@ -76,7 +77,7 @@ export function VerifyEmailContent() {
           {status === 'success' && message}
           {status === 'error' && message}
           {status === 'no-token' &&
-            "We've sent you a verification link. Please check your inbox."}
+            'Open the link in your verification email. To get a new one, sign in with your email and password.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -89,17 +90,17 @@ export function VerifyEmailContent() {
       <CardFooter className="flex flex-col gap-3">
         {status === 'success' && (
           <Button asChild variant="brand" className="w-full">
-            <Link href="/sign-in">Sign in to your account</Link>
+            <Link href={EMAIL_SIGN_IN_PATH}>Sign in to your account</Link>
           </Button>
         )}
         {status === 'error' && (
           <Button asChild variant="outline" className="w-full">
-            <Link href="/register">Try registering again</Link>
+            <Link href={EMAIL_SIGN_IN_PATH}>Back to sign in</Link>
           </Button>
         )}
         {status === 'no-token' && (
           <Button asChild variant="outline" className="w-full">
-            <Link href="/sign-in">Back to sign in</Link>
+            <Link href={EMAIL_SIGN_IN_PATH}>Back to sign in</Link>
           </Button>
         )}
       </CardFooter>

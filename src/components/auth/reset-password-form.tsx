@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import AuthCard from "@/components/auth/auth-card";
+import { EMAIL_SIGN_IN_PATH } from "@/lib/constants/links";
 
 type ResetStatus = "form" | "loading" | "success" | "error" | "no-token";
 
@@ -99,7 +100,7 @@ export function ResetPasswordForm() {
         </CardHeader>
         <CardFooter>
           <Button asChild variant="brand" className="w-full">
-            <Link href="/sign-in">Sign in with your new password</Link>
+            <Link href={EMAIL_SIGN_IN_PATH}>Sign in with your new password</Link>
           </Button>
         </CardFooter>
       </AuthCard>
@@ -177,7 +178,7 @@ export function ResetPasswordForm() {
       </CardContent>
       <CardFooter className="justify-center">
         <Link
-          href="/sign-in"
+          href={EMAIL_SIGN_IN_PATH}
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           Back to sign in

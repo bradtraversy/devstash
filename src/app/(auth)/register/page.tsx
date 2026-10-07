@@ -1,4 +1,4 @@
-import { RegisterForm } from "@/components/auth/register-form";
+import { RegisterCard } from "@/components/auth/register-card";
 
 export const metadata = {
   title: "Register - DevStash",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function RegisterPage() {
-  return <RegisterForm />;
+  return <RegisterCard />;
 }

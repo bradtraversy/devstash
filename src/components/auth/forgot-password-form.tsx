@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import AuthCard from "@/components/auth/auth-card";
 import FormError from "@/components/shared/form-error";
+import { EMAIL_SIGN_IN_PATH } from "@/lib/constants/links";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -77,7 +78,7 @@ export function ForgotPasswordForm() {
           >
             Try a different email
           </Button>
-          <Link href="/sign-in" className="w-full">
+          <Link href={EMAIL_SIGN_IN_PATH} className="w-full">
             <Button variant="ghost" className="w-full">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to sign in
@@ -120,7 +121,7 @@ export function ForgotPasswordForm() {
       </CardContent>
       <CardFooter className="justify-center">
         <Link
-          href="/sign-in"
+          href={EMAIL_SIGN_IN_PATH}
           className="flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
