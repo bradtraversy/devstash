@@ -4,8 +4,8 @@ import type { CollectionVisibility, SharedViaCollection, VisibilityUpdate } from
 import type { HomeFilter } from '@/lib/home';
 import type { FavoriteItemSort } from '@/lib/favorites-sort';
 import { DEFAULT_PAGE_SIZE } from '@/lib/page-size';
-import { generateShortId } from '@/lib/short-id';
-import { isUniqueViolation } from '@/lib/db/errors';
+import { generateShortId, SHORT_ID_PATTERN } from '@/lib/short-id';
+import { isRecordNotFound, isUniqueViolation } from '@/lib/db/errors';
 import { ensureUserHandle, retryOnHandleCollision } from '@/lib/db/users';
 
 /** Display order of a collection's items; the reorder in collections.ts walks the same order. */
@@ -317,26 +317,57 @@ export async function getItemById(
   userId: string,
   itemId: string
 ): Promise<ItemDetail | null> {
-  const item = await prisma.item.findUnique({
-    where: { id: itemId },
+  return getItemByWhere(userId, { id: itemId });
+}
+
+const ITEM_DETAIL_INCLUDE = {
+  itemType: true,
+  tags: true,
+  collections: {
     include: {
-      itemType: true,
-      tags: true,
-      collections: {
-        include: {
-          collection: {
-            select: { id: true, name: true, visibility: true },
-          },
-        },
+      collection: {
+        select: { id: true, name: true, visibility: true },
       },
     },
-  });
+  },
+} as const satisfies Prisma.ItemInclude;
+
+async function getItemByWhere(
+  userId: string,
+  where: Prisma.ItemWhereUniqueInput
+): Promise<ItemDetail | null> {
+  const item = await prisma.item.findUnique({ where, include: ITEM_DETAIL_INCLUDE });
 
   if (!item || item.userId !== userId) {
     return null;
   }
 
   return toItemDetail(item);
+}
+
+/** A short id when the reference has that shape, else an item id; a cuid is never 8 characters. */
+function itemRefWhere(ref: string): Prisma.ItemWhereUniqueInput {
+  return SHORT_ID_PATTERN.test(ref) ? { shortId: ref } : { id: ref };
+}
+
+/** Full item detail by item id or short id, for its owner only. */
+export async function getItemByRef(userId: string, ref: string): Promise<ItemDetail | null> {
+  return getItemByWhere(userId, itemRefWhere(ref));
+}
+
+export interface OwnedItemRef {
+  id: string;
+  shortId: string;
+  title: string;
+}
+
+/** The caller's items among a list of item ids and short ids; anything else is simply absent. */
+export async function findOwnedItems(userId: string, refs: string[]): Promise<OwnedItemRef[]> {
+  if (refs.length === 0) return [];
+  return prisma.item.findMany({
+    where: { userId, OR: [{ id: { in: refs } }, { shortId: { in: refs } }] },
+    select: { id: true, shortId: true, title: true },
+  });
 }
 
 type CollectionReader = {
@@ -535,9 +566,15 @@ export async function deleteItem(
     }
   }
 
-  await prisma.item.delete({
-    where: { id: itemId },
-  });
+  try {
+    await prisma.item.delete({
+      where: { id: itemId },
+    });
+  } catch (error) {
+    // A concurrent delete removed it after the ownership read.
+    if (isRecordNotFound(error)) return false;
+    throw error;
+  }
 
   return true;
 }
@@ -680,6 +717,38 @@ export async function getFavoriteItems(
     totalPages: Math.ceil(keys.length / limit),
     currentPage: page,
   };
+}
+
+export interface ItemSearch {
+  query?: string;
+  typeName?: ValidItemType;
+  page: number;
+  limit: number;
+}
+
+/** One page of the user's items whose title, description, content, URL, or a tag contains the query. */
+export async function searchItems(
+  userId: string,
+  { query, typeName, page, limit }: ItemSearch
+): Promise<PaginatedItems> {
+  const contains = query ? { contains: query, mode: 'insensitive' as const } : null;
+  const where: Prisma.ItemWhereInput = {
+    userId,
+    ...(typeName ? { itemType: { name: typeName, isSystem: true } } : {}),
+    ...(contains
+      ? {
+          OR: [
+            { title: contains },
+            { description: contains },
+            { content: contains },
+            { url: contains },
+            { tags: { some: { name: contains } } },
+          ],
+        }
+      : {}),
+  };
+
+  return paginateItems(where, [{ updatedAt: 'desc' }, { id: 'asc' }], page, limit);
 }
 
 /** One page of the user's items that anyone with the link can open, most recently updated first. */

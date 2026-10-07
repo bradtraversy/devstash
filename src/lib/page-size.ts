@@ -10,7 +10,7 @@ export const PAGE_SIZE_COOKIE = 'devstash-page-size';
 const PAGE_SIZE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 // A page number beyond any real list, so a huge value never reaches the query as an out-of-range offset.
-const MAX_PAGE = 10000;
+export const MAX_PAGE = 10000;
 
 export function parsePageSize(value: string | null | undefined): PageSize {
   const size = Number(value);

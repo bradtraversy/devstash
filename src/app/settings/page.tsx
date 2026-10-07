@@ -2,10 +2,12 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import AccountSettings from '@/components/settings/account-settings';
+import ApiTokenSettings from '@/components/settings/api-token-settings';
 import BillingSettings from '@/components/settings/billing-settings';
 import DataSettings from '@/components/settings/data-settings';
 import EditorSettings from '@/components/settings/editor-settings';
 import HandleSettings from '@/components/settings/handle-settings';
+import { getApiTokens } from '@/lib/db/api-tokens';
 import { getSidebarCollections } from '@/lib/db/collections';
 import { getItemTypesWithCounts } from '@/lib/db/items';
 import { getUserWithSettings } from '@/lib/db/users';
@@ -28,10 +30,11 @@ export default async function SettingsPage() {
   const isPro = session.user.isPro ?? false;
 
   // Get sidebar data and usage stats for layout
-  const [itemTypesWithCounts, sidebarCollections, usage] = await Promise.all([
+  const [itemTypesWithCounts, sidebarCollections, usage, apiTokens] = await Promise.all([
     getItemTypesWithCounts(user.id),
     getSidebarCollections(user.id),
     getUserUsage(user.id, isPro),
+    getApiTokens(user.id),
   ]);
 
   return (
@@ -65,6 +68,8 @@ export default async function SettingsPage() {
 
         {/* Data Settings */}
         <DataSettings isPro={isPro} />
+
+        <ApiTokenSettings tokens={apiTokens} />
 
         {/* Account Settings */}
         <AccountSettings hasPassword={user.hasPassword} />

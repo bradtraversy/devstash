@@ -17,6 +17,7 @@ interface ConfirmDeleteDialogProps {
   title: string;
   description: React.ReactNode;
   onConfirm: () => Promise<void>;
+  confirmLabel?: string;
 }
 
 export default function ConfirmDeleteDialog({
@@ -25,6 +26,7 @@ export default function ConfirmDeleteDialog({
   title,
   description,
   onConfirm,
+  confirmLabel = "Delete",
 }: ConfirmDeleteDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -78,7 +80,7 @@ export default function ConfirmDeleteDialog({
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {confirmLabel}
             </Button>
           </div>
         </div>

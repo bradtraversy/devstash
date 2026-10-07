@@ -70,6 +70,20 @@ export const rateLimitConfigs = {
     keyBy: 'id',
     failClosed: true,
   },
+  // API requests: 120 per minute per user, across all of their tokens
+  api: {
+    limiter: Ratelimit.slidingWindow(120, '1 m'),
+    prefix: 'ratelimit:api',
+    keyBy: 'id',
+    failClosed: false,
+  },
+  // API item creates: 100 per hour per user, which also slows scripted public pages
+  apiCreate: {
+    limiter: Ratelimit.slidingWindow(100, '1 h'),
+    prefix: 'ratelimit:api-create',
+    keyBy: 'id',
+    failClosed: false,
+  },
 } as const satisfies Record<string, { limiter: unknown; prefix: string; keyBy: KeyBy; failClosed: boolean }>
 
 export type RateLimitType = keyof typeof rateLimitConfigs
