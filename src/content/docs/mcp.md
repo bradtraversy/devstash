@@ -1,8 +1,8 @@
-The DevStash MCP server lets AI tools like Claude Code and Cursor search, read, save, share, and delete items in your stash while you work. It runs at `https://devstash.io/mcp`, so there is nothing to install.
+The DevStash MCP server lets AI tools like Claude Code, Codex, and Cursor search, read, save, share, and delete items in your stash while you work. It runs at `https://devstash.io/mcp`, so there is nothing to install.
 
 ## Create a token
 
-The MCP server signs in with an API token. Go to **Settings**, then **API tokens**, and click **Create token**. Once it is created, the dialog shows the setup for Claude Code and Cursor with your token filled in, ready to copy. The token is shown once.
+The MCP server signs in with an API token. Go to **Settings**, then **API tokens**, and click **Create token**. Once it is created, the dialog shows the setup for Claude Code, Codex, and Cursor with your token filled in, ready to copy. The token is shown once.
 
 ## Claude Code
 
@@ -13,6 +13,20 @@ claude mcp add --scope user --transport http devstash https://devstash.io/mcp --
 ```
 
 `--scope user` makes DevStash available in every project. Run `/mcp` inside Claude Code to see that it is connected.
+
+## Codex
+
+Add DevStash to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.devstash]
+url = "https://devstash.io/mcp"
+http_headers = { "Authorization" = "Bearer ds_your_token" }
+```
+
+The Codex CLI, the IDE extension, and the ChatGPT desktop app all read this file, so one entry covers each of them. Run `/mcp` inside Codex to see that it is connected.
+
+To keep the token out of the file, put `bearer_token_env_var = "DEVSTASH_TOKEN"` in place of the `http_headers` line and set `DEVSTASH_TOKEN` in your environment. An app opened from the dock may not see variables from your shell profile, so the header is the simpler choice there.
 
 ## Cursor
 
@@ -60,4 +74,4 @@ The MCP server shares the API's limits: 120 requests a minute and 100 saves an h
 
 ## Revoke access
 
-Revoke the token on the **Settings** page and the AI tool loses access right away. To take DevStash out of Claude Code, run `claude mcp remove --scope user devstash`.
+Revoke the token on the **Settings** page and the AI tool loses access right away. To take DevStash out of Claude Code, run `claude mcp remove --scope user devstash`. For Codex or Cursor, delete the `devstash` entry from its config file.

@@ -106,7 +106,7 @@ export default function ApiTokenSettings({ tokens }: ApiTokenSettingsProps) {
           </Link>{" "}
           for the endpoints, or{" "}
           <Link href="/docs/mcp" className="text-foreground underline underline-offset-4">
-            connect Claude Code or Cursor
+            connect Claude Code, Codex, or Cursor
           </Link>{" "}
           through the MCP server.
         </p>
