@@ -66,7 +66,7 @@ export default function ShareFormatsSection() {
   const markdownPath = publicMarkdownPath(SAMPLE_COLLECTION.handle, SAMPLE_COLLECTION.slug);
 
   return (
-    <section id="sharing" className="py-[120px] text-center bg-[#0a0a0f] border-t border-[#1e1e2e] scroll-mt-16">
+    <section id="sharing" className="py-[120px] text-center bg-[#0a0a0f] bg-[radial-gradient(ellipse_50%_30%_at_50%_32%,rgba(16,185,129,0.07),transparent_70%)] border-t border-[#1e1e2e] scroll-mt-16">
       <div className="max-w-[1200px] mx-auto px-6">
         <ScrollFadeIn>
           <h2 className="text-[clamp(1.8rem,3.5vw,2.8rem)] font-extrabold leading-tight mb-4 tracking-tight max-sm:text-[1.6rem]">

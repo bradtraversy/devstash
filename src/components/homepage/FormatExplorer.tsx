@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { useTabList } from "@/hooks/use-tab-list";
 
 export interface LinkFormat {
   key: string;
@@ -19,18 +20,8 @@ interface FormatExplorerProps {
 
 /** The short link with a switchable ending; each ending shows what that URL returns. */
 export default function FormatExplorer({ origin, prefix, shortId, formats }: FormatExplorerProps) {
-  const [selected, setSelected] = useState(0);
-  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const { selected, setSelected, onKeyDown, tabRef } = useTabList(formats.length);
   const current = formats[selected];
-
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-    event.preventDefault();
-    const step = event.key === "ArrowRight" ? 1 : -1;
-    const next = (selected + step + formats.length) % formats.length;
-    setSelected(next);
-    tabs.current[next]?.focus();
-  };
 
   return (
     <div className="mx-auto w-full max-w-[860px]">
@@ -49,9 +40,7 @@ export default function FormatExplorer({ origin, prefix, shortId, formats }: For
           return (
             <button
               key={format.key}
-              ref={(element) => {
-                tabs.current[index] = element;
-              }}
+              ref={tabRef(index)}
               type="button"
               role="tab"
               id={`format-tab-${format.key}`}

@@ -133,6 +133,27 @@ describe('/mcp', () => {
     expect(mockCollections).not.toHaveBeenCalled();
   });
 
+  it('sends a browser to the setup page without authenticating', async () => {
+    const res = await GET(
+      new Request('http://localhost/mcp', { headers: { Accept: 'text/html,application/xhtml+xml,*/*;q=0.8' } })
+    );
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('Location')).toBe('http://localhost/docs/mcp');
+    expect(mockAuth).not.toHaveBeenCalled();
+  });
+
+  it('keeps a GET that asks for an event stream on the MCP path', async () => {
+    const res = await GET(
+      new Request('http://localhost/mcp', {
+        headers: { Authorization: 'Bearer ds_test', Accept: 'text/event-stream, text/html' },
+      })
+    );
+
+    expect(res.status).toBe(405);
+    expect(mockAuth).toHaveBeenCalled();
+  });
+
   it.each([
     ['GET', GET],
     ['DELETE', DELETE],

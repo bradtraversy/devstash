@@ -17,6 +17,7 @@ import ConfirmDeleteDialog from "@/components/shared/confirm-delete-dialog";
 import CreateApiTokenDialog from "@/components/settings/create-api-token-dialog";
 import { revokeApiToken } from "@/actions/api-tokens";
 import { API_TOKEN_LIMIT } from "@/lib/constants/api-tokens";
+import { MCP_DOCS_PATH } from "@/lib/constants/links";
 import type { ApiTokenSummary } from "@/lib/db/api-tokens";
 import { formatRelativeDate } from "@/lib/utils/date";
 
@@ -105,7 +106,7 @@ export default function ApiTokenSettings({ tokens }: ApiTokenSettingsProps) {
             API docs
           </Link>{" "}
           for the endpoints, or{" "}
-          <Link href="/docs/mcp" className="text-foreground underline underline-offset-4">
+          <Link href={MCP_DOCS_PATH} className="text-foreground underline underline-offset-4">
             connect Claude Code, Codex, or Cursor
           </Link>{" "}
           through the MCP server.
