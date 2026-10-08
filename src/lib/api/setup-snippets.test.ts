@@ -17,6 +17,16 @@ describe('setupSnippet', () => {
     );
   });
 
+  it('writes a Codex config.toml entry with the URL and header', () => {
+    expect(setupSnippet('codex', ORIGIN, TOKEN)).toBe(
+      [
+        '[mcp_servers.devstash]',
+        'url = "https://devstash.io/mcp"',
+        'http_headers = { "Authorization" = "Bearer ds_abc" }',
+      ].join('\n')
+    );
+  });
+
   it('writes Cursor config with the URL and header', () => {
     expect(JSON.parse(setupSnippet('cursor', ORIGIN, TOKEN))).toEqual({
       mcpServers: { devstash: { url: 'https://devstash.io/mcp', headers: { Authorization: 'Bearer ds_abc' } } },
