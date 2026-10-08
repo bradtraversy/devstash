@@ -1,7 +1,7 @@
 import Link from "next/link";
 import DevStashMark from "@/components/shared/devstash-mark";
 import { isProEnabled } from "@/lib/plans";
-import { GITHUB_REPO_URL } from "@/lib/constants/links";
+import { GITHUB_REPO_URL, MCP_DOCS_PATH } from "@/lib/constants/links";
 
 const FOOTER_LINKS = {
   Product: [
@@ -11,6 +11,7 @@ const FOOTER_LINKS = {
   ],
   Resources: [
     { label: "Docs", href: "/docs" },
+    { label: "MCP server", href: MCP_DOCS_PATH },
     { label: "GitHub", href: GITHUB_REPO_URL },
   ],
   Legal: [

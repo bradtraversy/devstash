@@ -3,6 +3,7 @@ import HeroSection from "@/components/homepage/HeroSection";
 import ShareFormatsSection from "@/components/homepage/ShareFormatsSection";
 import SharedViewSection from "@/components/homepage/SharedViewSection";
 import PreviewsSection from "@/components/homepage/PreviewsSection";
+import McpSection from "@/components/homepage/McpSection";
 import FeaturesSection from "@/components/homepage/FeaturesSection";
 import PricingSection from "@/components/homepage/PricingSection";
 import CTASection from "@/components/homepage/CTASection";
@@ -17,6 +18,7 @@ export default function Home() {
       <ShareFormatsSection />
       <SharedViewSection />
       <PreviewsSection />
+      <McpSection />
       <FeaturesSection />
       {isProEnabled() && <PricingSection />}
       <CTASection />

@@ -39,6 +39,9 @@ export default function Navbar() {
           <Link href="/#features" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
             Features
           </Link>
+          <Link href="/#mcp" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
+            MCP
+          </Link>
           {isProEnabled() && (
             <Link href="/#pricing" className="text-sm font-medium text-[#8888a4] hover:text-[#e4e4ef] transition-colors">
               Pricing
@@ -95,6 +98,13 @@ export default function Navbar() {
             onClick={() => setMobileOpen(false)}
           >
             Features
+          </Link>
+          <Link
+            href="/#mcp"
+            className="text-[#8888a4] text-sm py-2"
+            onClick={() => setMobileOpen(false)}
+          >
+            MCP
           </Link>
           {isProEnabled() && (
             <Link
