@@ -9,9 +9,11 @@ import {
   apiCreateItemSchema,
   apiListQuerySchema,
   apiUpdateItemSchema,
+  itemRefFromInput,
   shareLink,
   toApiCollection,
   toApiItem,
+  toApiItemSummary,
   toApiListItem,
   toCreateItemData,
   type ApiCreateItemInput,
@@ -91,7 +93,7 @@ describe('toApiItem', () => {
       url: null,
       language: 'typescript',
       tags: ['react', 'hooks'],
-      collections: [{ id: 'col-1', name: 'React' }],
+      collections: [{ id: 'col-1', name: 'React', visibility: 'unlisted' }],
       visibility: 'private',
       link: null,
       isFavorite: true,
@@ -117,6 +119,34 @@ describe('toApiItem', () => {
     expect(item).not.toHaveProperty('fileUrl');
     expect(item).not.toHaveProperty('contentType');
     expect(JSON.stringify(item)).not.toContain(FILE_URL);
+  });
+});
+
+describe('toApiItemSummary', () => {
+  it('is the whole item without its content', () => {
+    const { content, ...rest } = toApiItem(detail);
+    expect(content).toBe('export const x = 1;');
+    expect(toApiItemSummary(detail)).toEqual(rest);
+  });
+});
+
+describe('itemRefFromInput', () => {
+  it.each([
+    ['abc12345', 'abc12345'],
+    ['cmgh1item0000000000000001', 'cmgh1item0000000000000001'],
+    ['  abc12345 ', 'abc12345'],
+    ['https://devstash.io/s/abc12345', 'abc12345'],
+    ['devstash.io/s/abc12345/', 'abc12345'],
+    ['https://devstash.io/s/abc12345/raw', 'abc12345'],
+    ['https://devstash.io/s/abc12345.png', 'abc12345'],
+    ['https://devstash.io/s/abc12345?ref=x#b1', 'abc12345'],
+  ])('reads %s as %s', (input, ref) => {
+    expect(itemRefFromInput(input)).toBe(ref);
+  });
+
+  it('leaves anything that is not a short link as it is', () => {
+    expect(itemRefFromInput('https://devstash.io/brad/react-patterns')).toBe('https://devstash.io/brad/react-patterns');
+    expect(itemRefFromInput('https://devstash.io/s/abc1234')).toBe('https://devstash.io/s/abc1234');
   });
 });
 

@@ -43,6 +43,11 @@ export const DOC_PAGES: DocPage[] = [
     title: 'API',
     description: 'Create a token and save, search, share, and delete items from scripts and AI tools.',
   },
+  {
+    slug: 'mcp',
+    title: 'MCP server',
+    description: 'Connect Claude Code, Cursor, and other AI tools to your stash with nothing to install.',
+  },
 ];
 
 export const DOCS_DIR = path.join(process.cwd(), 'src/content/docs');

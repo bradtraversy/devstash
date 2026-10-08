@@ -49,7 +49,7 @@ interface ApiItemBase {
 export interface ApiItem extends ApiItemBase {
   description: string | null;
   content: string | null;
-  collections: { id: string; name: string }[];
+  collections: { id: string; name: string; visibility: ApiVisibility }[];
 }
 
 export interface ApiListItem extends ApiItemBase {
@@ -86,12 +86,29 @@ function toApiItemBase(item: ItemDetail | ItemWithType): ApiItemBase {
 }
 
 export function toApiItem(item: ItemDetail): ApiItem {
+  return { ...toApiItemSummary(item), content: item.content };
+}
+
+/** An item without its content, for answers to a client that just sent the content or only changed sharing. */
+export function toApiItemSummary(item: ItemDetail): Omit<ApiItem, 'content'> {
   return {
     ...toApiItemBase(item),
     description: item.description,
-    content: item.content,
-    collections: item.collections.map(({ id, name }) => ({ id, name })),
+    collections: item.collections.map(({ id, name, visibility }) => ({
+      id,
+      name,
+      visibility: toApiVisibility(visibility),
+    })),
   };
+}
+
+// The short id from a pasted short link, including its /raw and .png forms.
+const SHORT_LINK_PATTERN = /\/s\/([a-z0-9]{8})(?:\/raw|\.png)?\/?(?:[?#].*)?$/;
+
+/** An item id or short id, taken from a short link when one is pasted. */
+export function itemRefFromInput(input: string): string {
+  const trimmed = input.trim();
+  return trimmed.match(SHORT_LINK_PATTERN)?.[1] ?? trimmed;
 }
 
 export function toApiListItem(item: ItemWithType): ApiListItem {

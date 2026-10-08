@@ -19,6 +19,7 @@ import { createApiToken } from "@/actions/api-tokens";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useOrigin } from "@/hooks/use-origin";
 import { API_TOKEN_NAME_MAX } from "@/lib/constants/api-tokens";
+import { SETUP_KINDS, setupSnippet, type SetupKind } from "@/lib/api/setup-snippets";
 
 interface CreateApiTokenDialogProps {
   open: boolean;
@@ -29,13 +30,15 @@ export default function CreateApiTokenDialog({ open, onOpenChange }: CreateApiTo
   const router = useRouter();
   const origin = useOrigin();
   const tokenClipboard = useClipboard();
-  const curlClipboard = useClipboard();
+  const snippetClipboard = useClipboard();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [setupKind, setSetupKind] = useState<SetupKind>("curl");
 
-  const curl = token ? `curl -H "Authorization: Bearer ${token}" ${origin}/api/v1/items` : "";
+  const snippet = token ? setupSnippet(setupKind, origin, token) : "";
+  const setupHint = SETUP_KINDS.find((kind) => kind.value === setupKind)?.hint;
 
   const handleClose = () => {
     if (isLoading) return;
@@ -43,6 +46,7 @@ export default function CreateApiTokenDialog({ open, onOpenChange }: CreateApiTo
     setName("");
     setError(null);
     setToken(null);
+    setSetupKind("curl");
     onOpenChange(false);
   };
 
@@ -109,21 +113,35 @@ export default function CreateApiTokenDialog({ open, onOpenChange }: CreateApiTo
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <Label>Try it</Label>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Use it with">
+                  {SETUP_KINDS.map(({ value, label }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      size="xs"
+                      variant={setupKind === value ? "default" : "outline"}
+                      aria-pressed={setupKind === value}
+                      onClick={() => setSetupKind(value)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
                   size="xs"
-                  onClick={() => curlClipboard.copy(curl, "Command copied")}
+                  onClick={() => snippetClipboard.copy(snippet, "Copied")}
                 >
-                  {curlClipboard.copied ? <Check className="text-emerald-500" /> : <Copy />}
+                  {snippetClipboard.copied ? <Check className="text-emerald-500" /> : <Copy />}
                   Copy
                 </Button>
               </div>
               <pre className="overflow-x-auto rounded-md border bg-muted px-3 py-2 font-mono text-xs">
-                {curl}
+                {snippet}
               </pre>
+              <p className="text-sm text-muted-foreground">{setupHint}</p>
             </div>
 
             <div className="flex justify-end pt-2">
