@@ -115,7 +115,7 @@ describe('GET /api/v1/items/[id]', () => {
       shortId: SHORT_ID,
       content: 'export const x = 1;',
       tags: ['react'],
-      collections: [{ id: 'col-1', name: 'React' }],
+      collections: [{ id: 'col-1', name: 'React', visibility: 'private' }],
       visibility: 'private',
       link: null,
     });

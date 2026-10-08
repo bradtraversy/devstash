@@ -11,6 +11,7 @@ export const RESERVED_HANDLES = new Set([
   'docs',
   'favorites',
   'items',
+  'mcp',
   'privacy',
   'profile',
   'settings',

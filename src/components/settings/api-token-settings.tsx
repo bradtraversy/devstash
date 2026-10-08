@@ -104,7 +104,11 @@ export default function ApiTokenSettings({ tokens }: ApiTokenSettingsProps) {
           <Link href="/docs/api" className="text-foreground underline underline-offset-4">
             API docs
           </Link>{" "}
-          for the endpoints.
+          for the endpoints, or{" "}
+          <Link href="/docs/mcp" className="text-foreground underline underline-offset-4">
+            connect Claude Code or Cursor
+          </Link>{" "}
+          through the MCP server.
         </p>
       </CardContent>
 
