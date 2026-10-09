@@ -91,6 +91,15 @@ export async function getUserHandle(userId: string): Promise<string | null> {
   return user?.handle ?? null;
 }
 
+/** Whether the user's profile page exists: at least one Public item or collection. */
+export async function hasPublicProfile(userId: string): Promise<boolean> {
+  const [item, collection] = await Promise.all([
+    prisma.item.findFirst({ where: { userId, visibility: 'PUBLIC' }, select: { id: true } }),
+    prisma.collection.findFirst({ where: { userId, visibility: 'PUBLIC' }, select: { id: true } }),
+  ]);
+  return Boolean(item || collection);
+}
+
 export type HandleClient = {
   user: {
     findUnique: typeof prisma.user.findUnique;

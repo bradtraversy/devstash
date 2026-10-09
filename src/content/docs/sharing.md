@@ -6,7 +6,7 @@ Every item starts private. Sharing gives it a short link that keeps working for 
 | --- | --- |
 | Private | Only you |
 | Unlisted | Anyone with the link. It is not listed anywhere or indexed by search engines |
-| Public | Anyone, and search engines may index it |
+| Public | Anyone. It is listed on your profile and search engines may index it |
 
 Change it from the sharing block at the top of an item's drawer. Sharing a collection shares every item in it, including items that are private on their own (see [Collections](/docs/collections)).
 
@@ -44,6 +44,12 @@ When you paste a link into Slack, Discord, or a social post, it unfurls into a p
 ## The Shared page
 
 **Shared** in the sidebar lists everything you have shared, items and collections, with Copy link and Stop sharing on each.
+
+## Your profile
+
+Everything you set to Public, items and collections, is listed on your profile at `devstash.io/{handle}`, most recently shared first. Unlisted and private things never appear there. Until you make something Public, your profile address shows a not found page.
+
+On a public item or collection page, the @handle links to the profile. **View profile** on the Shared page opens it.
 
 ## Save to your stash
 

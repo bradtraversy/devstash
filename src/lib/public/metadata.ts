@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import type { PublicCollection, PublicSharedItem } from '@/lib/db/public';
+import type { PublicCollection, PublicProfile, PublicSharedItem } from '@/lib/db/public';
 import { defaultShareTitle } from '@/lib/languages';
 import { OG_IMAGE_SIZE } from '@/lib/og/constants';
 import { publicCollectionOgPath, publicShortOgPath, versionedPath } from '@/lib/public/paths';
@@ -83,4 +83,42 @@ export function publicItemMetadata(item: PublicSharedItem, canonicalPath: string
     item.visibility,
     versionedPath(publicShortOgPath(item.shortId), item.updatedAt)
   );
+}
+
+function countLabel(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+/** `2 collections and 5 items`, leaving out a zero count; the profile always has at least one. */
+export function profileCountsLabel(profile: Pick<PublicProfile, 'collectionCount' | 'itemCount'>): string {
+  const parts = [
+    ...(profile.collectionCount > 0 ? [countLabel(profile.collectionCount, 'collection')] : []),
+    ...(profile.itemCount > 0 ? [countLabel(profile.itemCount, 'item')] : []),
+  ];
+  return parts.join(' and ');
+}
+
+// The root opengraph-image route; a page that sets openGraph replaces the inherited image, so it names it.
+const SITE_OG_IMAGE_PATH = '/opengraph-image';
+
+/** Page metadata for a public profile, with the site-wide Open Graph image. */
+export function publicProfileMetadata(profile: PublicProfile, canonicalPath: string): Metadata {
+  const title = `@${profile.handle}`;
+  const description = `${profileCountsLabel(profile)} shared by @${profile.handle} on ${SITE_NAME}`;
+  const image = { url: SITE_OG_IMAGE_PATH, width: OG_IMAGE_SIZE.width, height: OG_IMAGE_SIZE.height, alt: SITE_NAME };
+  return {
+    title: `${title} | ${SITE_NAME}`,
+    description,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      type: 'profile',
+      title,
+      description,
+      url: canonicalPath,
+      siteName: SITE_NAME,
+      username: profile.handle,
+      images: [image],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [SITE_OG_IMAGE_PATH] },
+  };
 }

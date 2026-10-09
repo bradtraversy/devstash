@@ -3,6 +3,7 @@ import { publicMarkdownPath } from "@/lib/public/paths";
 import { formatLongDate } from "@/lib/utils/date";
 import type { PublicCollection } from "@/lib/db/public";
 import CopyButton from "./copy-button";
+import HandleLink from "./handle-link";
 import SaveButton from "./save-button";
 
 interface CollectionHeaderProps {
@@ -37,7 +38,7 @@ export default function CollectionHeader({ collection, markdown }: CollectionHea
         <p className="text-base text-muted-foreground">{collection.description}</p>
       )}
       <p className="flex flex-wrap gap-x-2 font-mono text-xs text-muted-foreground">
-        <span>@{collection.handle}</span>
+        <HandleLink handle={collection.handle} visibility={collection.visibility} />
         <span aria-hidden="true">·</span>
         <span>
           {collection.itemCount} {noun}

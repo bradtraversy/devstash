@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import type { PublicCollection, PublicSharedItem } from '@/lib/db/public';
-import { itemKindLabel, publicCollectionMetadata, publicItemMetadata } from './metadata';
+import type { PublicCollection, PublicProfile, PublicSharedItem } from '@/lib/db/public';
+import {
+  itemKindLabel,
+  profileCountsLabel,
+  publicCollectionMetadata,
+  publicItemMetadata,
+  publicProfileMetadata,
+} from './metadata';
 
 const base: PublicCollection = {
   id: 'col-1',
@@ -160,5 +166,46 @@ describe('publicItemMetadata', () => {
 describe('itemKindLabel', () => {
   it('capitalises non-snippet types', () => {
     expect(itemKindLabel({ itemType: { name: 'note', icon: 'StickyNote', color: '#fde047' }, language: null })).toBe('Note');
+  });
+});
+
+describe('profileCountsLabel', () => {
+  it('names both counts and pluralizes', () => {
+    expect(profileCountsLabel({ collectionCount: 2, itemCount: 5 })).toBe('2 collections and 5 items');
+    expect(profileCountsLabel({ collectionCount: 1, itemCount: 1 })).toBe('1 collection and 1 item');
+  });
+
+  it('leaves out a zero count', () => {
+    expect(profileCountsLabel({ collectionCount: 0, itemCount: 3 })).toBe('3 items');
+    expect(profileCountsLabel({ collectionCount: 1, itemCount: 0 })).toBe('1 collection');
+  });
+});
+
+describe('publicProfileMetadata', () => {
+  const profile: PublicProfile = {
+    handle: 'brad',
+    collections: [],
+    collectionCount: 2,
+    items: [],
+    itemCount: 5,
+  };
+
+  it('titles the page by handle, describes the counts, and is canonical at the profile', () => {
+    const metadata = publicProfileMetadata(profile, '/brad');
+
+    expect(metadata.title).toBe('@brad | DevStash');
+    expect(metadata.description).toBe('2 collections and 5 items shared by @brad on DevStash');
+    expect(metadata.alternates).toEqual({ canonical: '/brad' });
+    expect(metadata.openGraph).toMatchObject({ type: 'profile', title: '@brad', url: '/brad', username: 'brad' });
+    expect(metadata.robots).toBeUndefined();
+  });
+
+  it('names the site-wide Open Graph image, since setting openGraph replaces the inherited one', () => {
+    const metadata = publicProfileMetadata(profile, '/brad');
+
+    expect(metadata.openGraph?.images).toEqual([
+      { url: '/opengraph-image', width: 1200, height: 630, alt: 'DevStash' },
+    ]);
+    expect(metadata.twitter).toMatchObject({ images: ['/opengraph-image'] });
   });
 });

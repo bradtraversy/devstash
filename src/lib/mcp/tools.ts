@@ -232,7 +232,7 @@ export function registerDevstashTools(server: McpServer): void {
     {
       title: 'Share item',
       description:
-        "Share an item or stop sharing it, and get its link. unlisted: anyone with the link can open it. public: the same, and search engines may index it. private: the item's own link stops working, but it stays visible through any unlisted or public collection it is in, shown in its collections.",
+        "Share an item or stop sharing it, and get its link. unlisted: anyone with the link can open it. public: the same, it is listed on the owner's public profile, and search engines may index it. private: the item's own link stops working, but it stays visible through any unlisted or public collection it is in, shown in its collections.",
       inputSchema: shareInput,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },

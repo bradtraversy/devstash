@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ensureUserHandle, updateUserHandle, getUserWithSettings, retryOnHandleCollision } from './users';
+import {
+  ensureUserHandle,
+  updateUserHandle,
+  getUserWithSettings,
+  hasPublicProfile,
+  retryOnHandleCollision,
+} from './users';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -8,6 +14,8 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       update: vi.fn(),
     },
+    item: { findFirst: vi.fn() },
+    collection: { findFirst: vi.fn() },
   },
 }));
 
@@ -163,5 +171,34 @@ describe('retryOnHandleCollision', () => {
 
     await expect(retryOnHandleCollision(write)).rejects.toThrow('down');
     expect(write).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('hasPublicProfile', () => {
+  const mockItemFindFirst = vi.mocked(prisma.item.findFirst);
+  const mockCollectionFindFirst = vi.mocked(prisma.collection.findFirst);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockItemFindFirst.mockResolvedValue(null);
+    mockCollectionFindFirst.mockResolvedValue(null);
+  });
+
+  it('looks only for Public items and collections of the user', async () => {
+    await hasPublicProfile('user-1');
+
+    const where = { userId: 'user-1', visibility: 'PUBLIC' };
+    expect(mockItemFindFirst).toHaveBeenCalledWith({ where, select: { id: true } });
+    expect(mockCollectionFindFirst).toHaveBeenCalledWith({ where, select: { id: true } });
+  });
+
+  it('is true when either a Public item or a Public collection exists', async () => {
+    expect(await hasPublicProfile('user-1')).toBe(false);
+
+    mockItemFindFirst.mockResolvedValueOnce({ id: 'item-1' } as never);
+    expect(await hasPublicProfile('user-1')).toBe(true);
+
+    mockCollectionFindFirst.mockResolvedValueOnce({ id: 'col-1' } as never);
+    expect(await hasPublicProfile('user-1')).toBe(true);
   });
 });

@@ -34,6 +34,10 @@ export const RESERVED_HANDLES = new Set([
   'static',
   'public',
   '_next',
+  'opengraph-image',
+  'twitter-image',
+  'icon',
+  'apple-icon',
 ]);
 
 export const RESERVED_SLUGS = new Set(['raw', 'new', 'edit']);

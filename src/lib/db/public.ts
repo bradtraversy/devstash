@@ -1,9 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import { COLLECTION_ITEM_ORDER, type ItemType } from '@/lib/db/items';
-import { PUBLIC_PAGE_ITEM_LIMIT } from '@/lib/constants/pagination';
+import {
+  PUBLIC_PAGE_ITEM_LIMIT,
+  PUBLIC_PROFILE_COLLECTION_LIMIT,
+  PUBLIC_PROFILE_ITEM_LIMIT,
+} from '@/lib/constants/pagination';
 import {
   publicCollectionOgPath,
   publicCollectionPath,
+  publicProfilePath,
   publicShortImagePath,
   publicShortOgPath,
   publicShortPath,
@@ -12,6 +17,9 @@ import type { CollectionVisibility } from '@/lib/constants/visibility';
 
 // Every query in this module carries this filter; nothing here takes a user id from a request.
 const SHARED = { not: 'PRIVATE' } as const;
+
+// The profile lists only what the owner made Public; unlisted things stay reachable by link alone.
+const LISTED = 'PUBLIC' as const;
 
 const OWNER_HANDLE = { select: { handle: true } } as const;
 
@@ -53,6 +61,34 @@ export interface PublicCollection {
   handle: string;
   itemCount: number;
   items: PublicItem[];
+}
+
+export interface PublicProfileCollection {
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  itemCount: number;
+}
+
+export interface PublicProfileItem {
+  id: string;
+  shortId: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  url: string | null;
+  language: string | null;
+  fileName: string | null;
+  itemType: ItemType;
+}
+
+export interface PublicProfile {
+  handle: string;
+  collections: PublicProfileCollection[];
+  collectionCount: number;
+  items: PublicProfileItem[];
+  itemCount: number;
 }
 
 export interface PublicTarget {
@@ -169,6 +205,68 @@ export async function getPublicItem(shortId: string): Promise<PublicSharedItem |
   };
 }
 
+// publishedAt only changes through visibility writes, which revalidate the profile; updatedAt also
+// moves on pin and favorite toggles, which do not, and would let a private action reorder the page.
+const PROFILE_ORDER = [{ publishedAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }] as const;
+
+/**
+ * The Public collections and items of the user with this handle, most recently shared first and capped,
+ * with the full counts. Null for an unknown handle or when nothing is Public, so the page 404s.
+ */
+export async function getPublicProfile(handle: string): Promise<PublicProfile | null> {
+  const user = await prisma.user.findUnique({ where: { handle }, select: { id: true } });
+  if (!user) return null;
+
+  const collectionWhere = { userId: user.id, visibility: LISTED };
+  const itemWhere = { userId: user.id, visibility: LISTED };
+
+  const [collections, collectionCount, items, itemCount] = await Promise.all([
+    prisma.collection.findMany({
+      where: collectionWhere,
+      orderBy: [...PROFILE_ORDER],
+      take: PUBLIC_PROFILE_COLLECTION_LIMIT,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        slug: true,
+        _count: { select: { items: true } },
+      },
+    }),
+    prisma.collection.count({ where: collectionWhere }),
+    prisma.item.findMany({
+      where: itemWhere,
+      orderBy: [...PROFILE_ORDER],
+      take: PUBLIC_PROFILE_ITEM_LIMIT,
+      select: {
+        id: true,
+        shortId: true,
+        title: true,
+        description: true,
+        content: true,
+        url: true,
+        language: true,
+        fileName: true,
+        itemType: ITEM_TYPE_SELECT,
+      },
+    }),
+    prisma.item.count({ where: itemWhere }),
+  ]);
+
+  if (collectionCount === 0 && itemCount === 0) return null;
+
+  return {
+    handle,
+    collections: collections.map(({ _count, ...collection }) => ({
+      ...collection,
+      itemCount: _count.items,
+    })),
+    collectionCount,
+    items,
+    itemCount,
+  };
+}
+
 /** Canonical handle and slug for a short id, or null when it is unknown or private. */
 export async function resolveShortId(shortId: string): Promise<PublicTarget | null> {
   const collection = await prisma.collection.findFirst({
@@ -236,7 +334,8 @@ const PATH_SELECT = {
 } as const;
 
 // Retired slugs are cached as redirects, and so are the short link and the Open Graph image at the
-// live slug, so all of them are revalidated with the live page.
+// live slug, so all of them are revalidated with the live page. The owner's profile lists public
+// collections, so it goes too; for an unlisted one that only re-renders the profile.
 function toPaths(rows: PathRow[]): string[] {
   return rows.flatMap((row) => {
     const handle = row.user.handle;
@@ -247,14 +346,22 @@ function toPaths(rows: PathRow[]): string[] {
       ),
       publicCollectionOgPath(handle, row.slug),
       publicShortPath(row.shortId),
+      publicProfilePath(handle),
     ];
   });
 }
 
-/** A shared item's page, its Open Graph card, and its full image. */
-function itemPaths(shortId: string): string[] {
-  return [publicShortPath(shortId), publicShortOgPath(shortId), publicShortImagePath(shortId)];
+/** A shared item's page, its Open Graph card, its full image, and the owner's profile. */
+function itemPaths(shortId: string, handle: string | null): string[] {
+  return [
+    publicShortPath(shortId),
+    publicShortOgPath(shortId),
+    publicShortImagePath(shortId),
+    ...(handle ? [publicProfilePath(handle)] : []),
+  ];
 }
+
+const ITEM_PATH_SELECT = { shortId: true, user: OWNER_HANDLE } as const;
 
 /** Paths for the non-private collections among the given ids: the live page, its slug redirects, and its short link. */
 export async function publicPathsForCollections(collectionIds: string[]): Promise<string[]> {
@@ -273,7 +380,7 @@ export async function publicPathsForItem(itemId: string): Promise<string[]> {
   const [item, rows] = await Promise.all([
     prisma.item.findFirst({
       where: { id: itemId, visibility: SHARED },
-      select: { shortId: true },
+      select: ITEM_PATH_SELECT,
     }),
     prisma.collection.findMany({
       where: { visibility: SHARED, items: { some: { itemId } } },
@@ -281,7 +388,7 @@ export async function publicPathsForItem(itemId: string): Promise<string[]> {
     }),
   ]);
 
-  return [...(item ? itemPaths(item.shortId) : []), ...toPaths(rows)];
+  return [...(item ? itemPaths(item.shortId, item.user.handle) : []), ...toPaths(rows)];
 }
 
 /**
@@ -294,7 +401,7 @@ export async function publicPathForOwnerSlug(userId: string, slug: string): Prom
   return user?.handle ? [publicCollectionPath(user.handle, slug)] : [];
 }
 
-/** Paths for everything the user shares: collection pages with their redirects and short links, and item pages. */
+/** Paths for everything the user shares: collection pages with their redirects and short links, item pages, and the profile. */
 export async function publicPathsForUser(userId: string): Promise<string[]> {
   const [rows, items] = await Promise.all([
     prisma.collection.findMany({
@@ -303,9 +410,9 @@ export async function publicPathsForUser(userId: string): Promise<string[]> {
     }),
     prisma.item.findMany({
       where: { userId, visibility: SHARED },
-      select: { shortId: true },
+      select: ITEM_PATH_SELECT,
     }),
   ]);
 
-  return [...toPaths(rows), ...items.flatMap((item) => itemPaths(item.shortId))];
+  return [...toPaths(rows), ...items.flatMap((item) => itemPaths(item.shortId, item.user.handle))];
 }

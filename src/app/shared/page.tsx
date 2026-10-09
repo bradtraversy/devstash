@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { Share2 } from "lucide-react";
+import { Share2, UserRound } from "lucide-react";
 import { auth } from "@/auth";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ListLayoutSwitch from "@/components/items/list-layout-switch";
@@ -9,9 +9,10 @@ import SharedItemList from "@/components/sharing/shared-item-list";
 import SharedCollectionList from "@/components/sharing/shared-collection-list";
 import { getSharedCollections, getSidebarCollections } from "@/lib/db/collections";
 import { getItemTypesWithCounts, getSharedItems } from "@/lib/db/items";
-import { getEditorPreferences, getUserById, getUserHandle } from "@/lib/db/users";
+import { getEditorPreferences, getUserById, getUserHandle, hasPublicProfile } from "@/lib/db/users";
 import { LIST_LAYOUT_COOKIE, parseListLayout } from "@/lib/list-layout";
 import { getCodePreviews } from "@/lib/item-previews";
+import { publicProfilePath } from "@/lib/public/paths";
 import { PAGE_SIZE_COOKIE, parsePageParam, parsePageSize } from "@/lib/page-size";
 import ListFooter from "@/components/shared/list-footer";
 
@@ -40,11 +41,12 @@ export default async function SharedPage({ searchParams }: SharedPageProps) {
   const cookieStore = await cookies();
   const pageSize = parsePageSize(cookieStore.get(PAGE_SIZE_COOKIE)?.value);
 
-  const [sharedItems, collections, handle, itemTypes, sidebarCollections, editorPreferences] =
+  const [sharedItems, collections, handle, hasProfile, itemTypes, sidebarCollections, editorPreferences] =
     await Promise.all([
       getSharedItems(user.id, currentPage, pageSize),
       getSharedCollections(user.id),
       getUserHandle(user.id),
+      hasPublicProfile(user.id),
       getItemTypesWithCounts(user.id),
       getSidebarCollections(user.id),
       getEditorPreferences(user.id),
@@ -68,11 +70,23 @@ export default async function SharedPage({ searchParams }: SharedPageProps) {
       isPro={session.user.isPro}
     >
       <div className="mx-auto max-w-6xl space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Shared</h1>
-          <p className="text-muted-foreground">
-            Anyone with one of these links can open it. Public ones can also show up in search engines.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Shared</h1>
+            <p className="text-muted-foreground">
+              Anyone with one of these links can open it. Public ones are also listed on your profile and can
+              show up in search engines.
+            </p>
+          </div>
+          {handle && hasProfile && (
+            <Link
+              href={publicProfilePath(handle)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <UserRound className="h-4 w-4" aria-hidden="true" />
+              View profile
+            </Link>
+          )}
         </div>
 
         {hasNothing ? (
