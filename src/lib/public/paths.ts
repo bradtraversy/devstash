@@ -5,6 +5,11 @@ export function siteOrigin(): string {
   return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001').replace(/\/+$/, '');
 }
 
+/** The owner's profile: their public collections and items. */
+export function publicProfilePath(handle: string): string {
+  return `/${handle}`;
+}
+
 export function publicCollectionPath(handle: string, slug: string): string {
   return `/${handle}/${slug}`;
 }

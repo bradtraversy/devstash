@@ -13,7 +13,7 @@ export const LEGAL_PAGES: Record<LegalPage['slug'], LegalPage> = {
     slug: 'privacy',
     title: 'Privacy Policy',
     description: 'What DevStash collects, why, which services process it, and what you can do about it.',
-    updated: 'October 7, 2026',
+    updated: 'October 9, 2026',
   },
   terms: {
     slug: 'terms',

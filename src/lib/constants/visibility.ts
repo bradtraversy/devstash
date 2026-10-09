@@ -18,7 +18,7 @@ export const VISIBILITY_OPTIONS: VisibilityOption[] = [
   {
     value: 'PUBLIC',
     label: 'Public',
-    description: 'Anyone can view it and search engines may index it',
+    description: 'Anyone can view it, it is listed on your profile, and search engines may index it',
   },
 ];
 

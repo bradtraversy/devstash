@@ -34,12 +34,19 @@ const SLUGIFY_CASES: [input: string, expected: string][] = [
   ['a'.repeat(62) + '-bcd', 'a'.repeat(62)],
 ];
 
+// Metadata route files served at an extensionless path, which the profile route would otherwise share.
+const METADATA_ROUTE_FILE = /^(opengraph-image|twitter-image|icon|apple-icon)\.[a-z]+$/;
+
 // Route segments under src/app, with route groups flattened and dynamic, private, and
-// parallel segments left out because they are not literal paths.
+// parallel segments left out because they are not literal paths, plus metadata route files.
 function routeSegments(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
     .flatMap((entry) => {
+      if (entry.isFile()) {
+        const match = METADATA_ROUTE_FILE.exec(entry.name);
+        return match ? [match[1]] : [];
+      }
+      if (!entry.isDirectory()) return [];
       if (entry.name.startsWith('(') && entry.name.endsWith(')')) {
         return routeSegments(path.join(dir, entry.name));
       }

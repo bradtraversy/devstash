@@ -44,6 +44,7 @@ DevStash is a place to keep the snippets, commands, prompts, notes, and links yo
 - Share any snippet, command, note, or prompt at a short link: `devstash.io/s/{id}`
 - Add `/raw` for plain text (`curl -s https://devstash.io/s/{id}/raw`) or `.png` for an image of the whole snippet
 - Publish a collection as one ordered page at `devstash.io/{handle}/{slug}`, with `.md` for the same collection as markdown
+- A public profile at `devstash.io/{handle}` lists everything set to Public, collections first, then items as code cards
 - Every link unfurls into a preview card with the code on it in Slack, X, Discord, and iMessage
 - Save to your stash: copy someone else's shared snippet or collection into your own account
 
@@ -182,6 +183,7 @@ Open [http://localhost:3001](http://localhost:3001).
 src/
 ├── app/
 │   ├── (auth)/          # Sign-in, register, verify, password reset
+│   ├── [handle]/        # Public profile
 │   ├── [handle]/[slug]/ # Public collection pages, raw markdown, preview cards
 │   ├── s/[shortId]/     # Short links: shared items, raw text, image, preview card
 │   ├── api/             # Route handlers (v1 API, items, export, upload, download, auth, stripe)

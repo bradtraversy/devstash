@@ -4,6 +4,7 @@ import {
   publicCollectionOgPath,
   publicCollectionPath,
   publicMarkdownPath,
+  publicProfilePath,
   publicRawPath,
   publicShortImagePath,
   publicShortOgPath,
@@ -34,6 +35,10 @@ describe('public paths', () => {
     expect(publicCollectionPath('brad', 'react-hooks')).toBe('/brad/react-hooks');
     expect(publicRawPath('brad', 'react-hooks')).toBe('/brad/react-hooks/raw');
     expect(publicMarkdownPath('brad', 'react-hooks')).toBe('/brad/react-hooks.md');
+  });
+
+  it('builds the profile path', () => {
+    expect(publicProfilePath('brad')).toBe('/brad');
   });
 });
 

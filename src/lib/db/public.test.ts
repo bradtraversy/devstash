@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getPublicCollection,
   getPublicItem,
+  getPublicProfile,
   resolveShortId,
   resolveShortLink,
   resolveSlugHistory,
@@ -11,13 +12,18 @@ import {
   publicPathForOwnerSlug,
 } from './public';
 import { COLLECTION_ITEM_ORDER } from '@/lib/db/items';
-import { PUBLIC_PAGE_ITEM_LIMIT } from '@/lib/constants/pagination';
+import {
+  PUBLIC_PAGE_ITEM_LIMIT,
+  PUBLIC_PROFILE_COLLECTION_LIMIT,
+  PUBLIC_PROFILE_ITEM_LIMIT,
+} from '@/lib/constants/pagination';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     collection: {
       findFirst: vi.fn(),
       findMany: vi.fn(),
+      count: vi.fn(),
     },
     collectionSlugHistory: {
       findFirst: vi.fn(),
@@ -28,6 +34,7 @@ vi.mock('@/lib/prisma', () => ({
     item: {
       findFirst: vi.fn(),
       findMany: vi.fn(),
+      count: vi.fn(),
     },
   },
 }));
@@ -40,6 +47,8 @@ const mockHistoryFindFirst = vi.mocked(prisma.collectionSlugHistory.findFirst);
 const mockUserFindUnique = vi.mocked(prisma.user.findUnique);
 const mockItemFindFirst = vi.mocked(prisma.item.findFirst);
 const mockItemFindMany = vi.mocked(prisma.item.findMany);
+const mockCollectionCount = vi.mocked(prisma.collection.count);
+const mockItemCount = vi.mocked(prisma.item.count);
 
 const NOW = new Date('2026-09-28T12:00:00Z');
 
@@ -232,7 +241,7 @@ describe('public path lookups', () => {
       id: { in: ['col-1', 'col-2'] },
       visibility: { not: 'PRIVATE' },
     });
-    expect(paths).toEqual(['/brad/react-hooks', '/brad/hooks', '/brad/react-hooks/og', '/s/abc12345']);
+    expect(paths).toEqual(['/brad/react-hooks', '/brad/hooks', '/brad/react-hooks/og', '/s/abc12345', '/brad']);
   });
 
   it('publicPathsForItem finds non-private collections holding the item', async () => {
@@ -246,27 +255,43 @@ describe('public path lookups', () => {
       id: 'item-1',
       visibility: { not: 'PRIVATE' },
     });
-    expect(paths).toEqual(['/brad/react-hooks', '/brad/hooks', '/brad/react-hooks/og', '/s/abc12345']);
+    expect(paths).toEqual(['/brad/react-hooks', '/brad/hooks', '/brad/react-hooks/og', '/s/abc12345', '/brad']);
   });
 
   it('publicPathsForItem adds the item page when the item itself is shared', async () => {
-    mockItemFindFirst.mockResolvedValue({ shortId: 'item0001' } as never);
+    mockItemFindFirst.mockResolvedValue({ shortId: 'item0001', user: { handle: 'brad' } } as never);
 
     const paths = await publicPathsForItem('item-1');
 
+    expect(mockItemFindFirst.mock.calls[0][0]!.select).toEqual({
+      shortId: true,
+      user: { select: { handle: true } },
+    });
     expect(paths).toEqual([
       '/s/item0001',
       '/s/item0001/og',
       '/s/item0001/image',
+      '/brad',
       '/brad/react-hooks',
       '/brad/hooks',
       '/brad/react-hooks/og',
       '/s/abc12345',
+      '/brad',
     ]);
   });
 
+  it('publicPathsForItem leaves out the profile when the owner has no handle', async () => {
+    mockCollectionFindMany.mockResolvedValue([]);
+    mockItemFindFirst.mockResolvedValue({ shortId: 'item0001', user: { handle: null } } as never);
+
+    expect(await publicPathsForItem('item-1')).toEqual(['/s/item0001', '/s/item0001/og', '/s/item0001/image']);
+  });
+
   it('publicPathsForUser finds the non-private collections and items of the owner', async () => {
-    mockItemFindMany.mockResolvedValue([{ shortId: 'item0001' }, { shortId: 'item0002' }] as never);
+    mockItemFindMany.mockResolvedValue([
+      { shortId: 'item0001', user: { handle: 'brad' } },
+      { shortId: 'item0002', user: { handle: 'brad' } },
+    ] as never);
 
     const paths = await publicPathsForUser('user-1');
 
@@ -283,12 +308,15 @@ describe('public path lookups', () => {
       '/brad/hooks',
       '/brad/react-hooks/og',
       '/s/abc12345',
+      '/brad',
       '/s/item0001',
       '/s/item0001/og',
       '/s/item0001/image',
+      '/brad',
       '/s/item0002',
       '/s/item0002/og',
       '/s/item0002/image',
+      '/brad',
     ]);
   });
 });
@@ -407,5 +435,92 @@ describe('publicPathForOwnerSlug', () => {
     mockUserFindUnique.mockResolvedValue({ handle: null } as never);
 
     expect(await publicPathForOwnerSlug('user-1', 'react')).toEqual([]);
+  });
+});
+
+describe('getPublicProfile', () => {
+  const profileItem = {
+    id: 'item-1',
+    shortId: 'item0001',
+    title: 'useAuth Hook',
+    description: null,
+    content: 'export function useAuth() {}',
+    url: null,
+    language: 'typescript',
+    fileName: null,
+    itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUserFindUnique.mockResolvedValue({ id: 'user-1' } as never);
+    mockCollectionFindMany.mockResolvedValue([
+      { id: 'col-1', name: 'React Hooks', description: 'Hooks I reuse', slug: 'react-hooks', _count: { items: 4 } },
+    ] as never);
+    mockCollectionCount.mockResolvedValue(1);
+    mockItemFindMany.mockResolvedValue([profileItem] as never);
+    mockItemCount.mockResolvedValue(1);
+  });
+
+  it('reads only Public collections and items of the handle owner, most recently shared first and capped', async () => {
+    await getPublicProfile('brad');
+
+    expect(mockUserFindUnique).toHaveBeenCalledWith({ where: { handle: 'brad' }, select: { id: true } });
+    const listed = { userId: 'user-1', visibility: 'PUBLIC' };
+    const order = [{ publishedAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }];
+
+    const collectionQuery = mockCollectionFindMany.mock.calls[0][0]!;
+    expect(collectionQuery.where).toEqual(listed);
+    expect(collectionQuery.orderBy).toEqual(order);
+    expect(collectionQuery.take).toBe(PUBLIC_PROFILE_COLLECTION_LIMIT);
+    expect(mockCollectionCount).toHaveBeenCalledWith({ where: listed });
+
+    const itemQuery = mockItemFindMany.mock.calls[0][0]!;
+    expect(itemQuery.where).toEqual(listed);
+    expect(itemQuery.orderBy).toEqual(order);
+    expect(itemQuery.take).toBe(PUBLIC_PROFILE_ITEM_LIMIT);
+    expect(mockItemCount).toHaveBeenCalledWith({ where: listed });
+  });
+
+  it('maps collections with their item counts, items, and the full counts', async () => {
+    mockCollectionCount.mockResolvedValue(130);
+    mockItemCount.mockResolvedValue(7);
+
+    expect(await getPublicProfile('brad')).toEqual({
+      handle: 'brad',
+      collections: [
+        { id: 'col-1', name: 'React Hooks', description: 'Hooks I reuse', slug: 'react-hooks', itemCount: 4 },
+      ],
+      collectionCount: 130,
+      items: [profileItem],
+      itemCount: 7,
+    });
+  });
+
+  it('returns null for an unknown handle without listing anything', async () => {
+    mockUserFindUnique.mockResolvedValue(null);
+
+    expect(await getPublicProfile('nobody')).toBeNull();
+    expect(mockCollectionFindMany).not.toHaveBeenCalled();
+    expect(mockItemFindMany).not.toHaveBeenCalled();
+  });
+
+  it('returns null when the owner has nothing Public', async () => {
+    mockCollectionFindMany.mockResolvedValue([]);
+    mockCollectionCount.mockResolvedValue(0);
+    mockItemFindMany.mockResolvedValue([]);
+    mockItemCount.mockResolvedValue(0);
+
+    expect(await getPublicProfile('brad')).toBeNull();
+  });
+
+  it('returns the profile when only items are Public', async () => {
+    mockCollectionFindMany.mockResolvedValue([]);
+    mockCollectionCount.mockResolvedValue(0);
+
+    const profile = await getPublicProfile('brad');
+
+    expect(profile?.collections).toEqual([]);
+    expect(profile?.itemCount).toBe(1);
   });
 });

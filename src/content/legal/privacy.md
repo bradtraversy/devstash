@@ -3,7 +3,7 @@ DevStash is run by Traversy Media. This page explains what we collect when you u
 ## What we collect
 
 - **Account details**: your email address, your name if you give one, and a hashed password if your account was created with an email and password (never the password itself). If you sign in with GitHub or Google: your name, avatar or profile picture, and account ID from that service, and the sign-in tokens it issues, which DevStash stores but does not use. If you create API tokens: each token's name, its last four characters, when it was created and last used, and a one-way hash of the whole token (never the token itself).
-- **Your handle**: created from the part of your email before the @ the first time you share something, and shown as @handle on everything you share. You can change it in Settings.
+- **Your handle**: created from the part of your email before the @ the first time you share something, and shown as @handle on everything you share. Once you make something Public, it is also the address of your profile at devstash.io/{handle}. You can change it in Settings.
 - **What you save**: your items, collections, tags, and settings.
 - **Page views**: anonymous counts through Vercel Web Analytics, which does not use cookies.
 - **Rate limit counters**: email sign-ins, password resets, and verification emails are rate limited by IP address and, for sign-in attempts and verification emails, by email address too. API requests are counted per account. The counters expire within about two hours. Our hosting provider also keeps standard request logs, which include IP addresses, for a limited time.
@@ -12,7 +12,7 @@ DevStash is run by Traversy Media. This page explains what we collect when you u
 
 - To run your account and show you your stash.
 - To send account emails, such as email verification and password resets. We do not send marketing email.
-- To publish what you choose to share. Unlisted items are visible to anyone with the link, and public items can also be indexed by search engines. Sharing a collection shares every item in it, including items that are private on their own; otherwise private items are visible only to you.
+- To publish what you choose to share. Unlisted items are visible to anyone with the link. Public items and collections are also listed on your profile and can be indexed by search engines. Sharing a collection shares every item in it, including items that are private on their own; otherwise private items are visible only to you.
 
 We do not sell your data or use it for advertising.
 

@@ -6,6 +6,7 @@ import { imageFilename } from "@/lib/og/filename";
 import { publicShortPngPath, publicShortRawPath } from "@/lib/public/paths";
 import { formatLongDate } from "@/lib/utils/date";
 import type { PublicSharedItem } from "@/lib/db/public";
+import HandleLink from "./handle-link";
 import ItemBlock from "./item-block";
 import SaveButton from "./save-button";
 
@@ -13,7 +14,8 @@ interface PublicItemViewProps {
   item: PublicSharedItem;
 }
 
-function typeLabel(item: PublicSharedItem): string {
+/** The file label for snippets, Terminal for commands, the type name otherwise. */
+export function typeLabel(item: Pick<PublicSharedItem, "itemType" | "language" | "content">): string {
   switch (item.itemType.name) {
     case "snippet":
       return snippetFileLabel(item.language, item.content);
@@ -34,7 +36,7 @@ export default function PublicItemView({ item }: PublicItemViewProps) {
       <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="flex flex-wrap gap-x-2 font-mono text-xs text-muted-foreground">
-            <span>@{item.handle}</span>
+            <HandleLink handle={item.handle} visibility={item.visibility} />
             <span aria-hidden="true">·</span>
             {item.itemType.name === "snippet" ? (
               <span title={languageLabel(item.language)}>
