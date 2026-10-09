@@ -1,10 +1,10 @@
-The DevStash API lets scripts and AI tools read, save, share, and delete items in your stash. It speaks JSON over HTTPS at `https://devstash.io/api/v1`.
+The DevStash API lets scripts and AI tools find existing items, save or update them, and control sharing or deletion. It speaks JSON over HTTPS at `https://devstash.io/api/v1`.
 
 ## Create a token
 
 Go to **Settings**, then **API tokens**, and click **Create token**. Name it after where you will use it, then copy it: the token is shown once and DevStash keeps only a one-way hash of it.
 
-Anyone with a token can read, create, share, and delete your items, so keep it out of code you commit. Revoke a token on the same page and anything using it stops working right away. You can have up to 10 tokens.
+Anyone with a token can read your items, create or update them, and control sharing or deletion, so keep it out of code you commit. Revoke a token on the same page and anything using it stops working right away. You can have up to 10 tokens.
 
 Send the token in the `Authorization` header with every request:
 
@@ -70,9 +70,34 @@ Results come 20 at a time; use `limit` (up to 100) and `page` for more. Each res
 
 `GET /api/v1/items/{id}` returns the whole item. The `{id}` can be the item's id or its short id, so the end of a short link works too.
 
+## Update an item
+
+`PATCH /api/v1/items/{id}` partially updates an item and returns the whole updated item. The `{id}` can be the item's id or short id.
+
+```bash
+curl -X PATCH https://devstash.io/api/v1/items/k3v9q2xd \
+  -H "Authorization: Bearer ds_your_token" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Start the local stack", "description": null, "tags": []}'
+```
+
+Fields left out stay unchanged. Send `null` to clear a nullable scalar when the item type allows it. An empty `tags` or `collectionIds` array clears that list.
+
+| Field | Notes |
+| --- | --- |
+| `title` | Up to 200 characters and cannot be empty |
+| `description` | Up to 2,000 characters, or `null` to clear it |
+| `content` | Up to 500,000 characters for text items |
+| `url` | One http or https URL for links |
+| `language` | A known language for snippets and commands, or `null` to clear it |
+| `tags` | Up to 20 tags of 50 characters each |
+| `collectionIds` | Up to 20 of your collection ids |
+
+The item type cannot change. Links take a URL and no content, while text items take content and no URL. File and image items support metadata edits only. Adding a private item to an unlisted or public collection exposes it through that collection's link even though the item's own visibility stays private.
+
 ## Share or unshare
 
-`PATCH /api/v1/items/{id}` with a new `visibility` shares an item or makes it private again, and returns the item with its `link`. Visibility is the only thing the API can change on an existing item for now.
+`PATCH /api/v1/items/{id}` with a new `visibility` shares an item or makes it private again, and returns the item with its `link`. Send visibility by itself. A request cannot change visibility and edit item fields together.
 
 ```bash
 curl -X PATCH https://devstash.io/api/v1/items/k3v9q2xd \

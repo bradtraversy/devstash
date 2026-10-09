@@ -55,8 +55,8 @@ DevStash is a place to keep the snippets, commands, prompts, notes, and links yo
 - Cmd+K search across titles and content
 - AI helpers: tag suggestions, descriptions, code explanations, and a prompt optimizer
 - Export everything as Markdown or JSON, and import from a JSON export
-- A JSON API at `/api/v1` with personal tokens from Settings for saving, searching, sharing, and deleting items from scripts and AI tools ([docs](https://devstash.io/docs/api))
-- A remote MCP server at `/mcp` on the same tokens, so MCP clients like Claude Code, Codex, and Cursor can search, save, share, and delete items with nothing to install ([docs](https://devstash.io/docs/mcp))
+- A JSON API at `/api/v1` with personal tokens from Settings, so scripts and AI tools can find existing items, save or update them, and control sharing or deletion ([docs](https://devstash.io/docs/api))
+- A remote MCP server at `/mcp` on the same tokens, so MCP clients like Claude Code, Codex, and Cursor can find existing items, save or update them, and control sharing or deletion with nothing to install ([docs](https://devstash.io/docs/mcp))
 
 **Under the hood**
 - GitHub or Google sign-in; email and password sign-in, verification, and password reset stay for accounts created before registration closed

@@ -9,12 +9,14 @@ vi.mock('@/lib/api/auth', () => ({ authenticateApiRequest: vi.fn() }));
 vi.mock('@/lib/item-writes', () => ({
   deleteItemForUser: vi.fn(),
   setItemVisibilityForUser: vi.fn(),
+  updateItemForUser: vi.fn(),
 }));
 
 import { prisma } from '@/lib/prisma';
 import { authenticateApiRequest } from '@/lib/api/auth';
 import { unauthorizedResponse } from '@/lib/api/respond';
-import { deleteItemForUser, setItemVisibilityForUser } from '@/lib/item-writes';
+import { deleteItemForUser, setItemVisibilityForUser, updateItemForUser } from '@/lib/item-writes';
+import type { ItemDetail } from '@/lib/db/items';
 import { DELETE, GET, PATCH } from './route';
 
 const mockFindUnique = vi.mocked(prisma.item.findUnique);
@@ -22,6 +24,7 @@ const mockFindMany = vi.mocked(prisma.item.findMany);
 const mockAuth = vi.mocked(authenticateApiRequest);
 const mockDelete = vi.mocked(deleteItemForUser);
 const mockSetVisibility = vi.mocked(setItemVisibilityForUser);
+const mockUpdate = vi.mocked(updateItemForUser);
 
 const USER = { id: 'user-1', isPro: false };
 const NOW = new Date('2026-10-07T12:00:00Z');
@@ -49,6 +52,28 @@ const row = {
   itemType: { name: 'snippet', icon: 'Code', color: '#3b82f6' },
   tags: [{ name: 'react' }],
   collections: [{ collection: { id: 'col-1', name: 'React', visibility: 'PRIVATE' } }],
+};
+
+const detail: ItemDetail = {
+  id: ITEM_ID,
+  title: 'useDebounce',
+  description: 'Debounce a value',
+  content: 'export const x = 1;',
+  url: null,
+  language: 'typescript',
+  contentType: 'TEXT',
+  fileUrl: row.fileUrl,
+  fileName: null,
+  fileSize: null,
+  isFavorite: false,
+  isPinned: false,
+  visibility: 'PRIVATE',
+  shortId: SHORT_ID,
+  itemType: row.itemType,
+  tags: ['react'],
+  collections: [{ id: 'col-1', name: 'React', visibility: 'PRIVATE' }],
+  createdAt: NOW,
+  updatedAt: NOW,
 };
 
 const context = (id: string) => ({ params: Promise.resolve({ id }) });
@@ -170,13 +195,13 @@ describe('PATCH /api/v1/items/[id]', () => {
     expect(await res.json()).toEqual({ error: 'Body must be valid JSON' });
   });
 
-  it('refuses any field but visibility', async () => {
+  it('rejects mixing visibility with item fields', async () => {
     const res = await patch(ITEM_ID, { visibility: 'unlisted', title: 'New title' });
 
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({
       error: 'Validation failed',
-      fieldErrors: { title: ['Only visibility can be changed through the API'] },
+      fieldErrors: { visibility: ['visibility cannot be changed with item fields'] },
     });
     expect(mockFindUnique).not.toHaveBeenCalled();
     expect(mockSetVisibility).not.toHaveBeenCalled();
@@ -189,6 +214,18 @@ describe('PATCH /api/v1/items/[id]', () => {
     expect((await res.json()).fieldErrors.visibility).toEqual([
       'visibility must be private, unlisted, or public',
     ]);
+  });
+
+  it('rejects an empty edit and unknown keys before looking up the item', async () => {
+    const empty = await patch(ITEM_ID, {});
+    expect(empty.status).toBe(400);
+    expect((await empty.json()).fieldErrors.body).toEqual(['Send visibility or at least one field to update']);
+
+    const unknown = await patch(ITEM_ID, { title: 'Renamed', color: 'blue' });
+    expect(unknown.status).toBe(400);
+    expect((await unknown.json()).fieldErrors.color).toEqual(['Unknown field']);
+    expect(mockFindUnique).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it("returns 404 for a missing or someone else's item", async () => {
@@ -216,6 +253,93 @@ describe('PATCH /api/v1/items/[id]', () => {
       visibility: 'unlisted',
       link: `https://devstash.io/s/${SHORT_ID}`,
     });
+  });
+
+  it('partially edits by full id, preserves omitted fields, and returns full content', async () => {
+    mockUpdate.mockResolvedValue({ success: true, data: { ...detail, title: 'Renamed' } });
+
+    const res = await patch(ITEM_ID, { title: 'Renamed' });
+
+    expect(res.status).toBe(200);
+    expect(mockUpdate).toHaveBeenCalledWith('user-1', ITEM_ID, {
+      title: 'Renamed',
+      description: detail.description,
+      content: detail.content,
+      url: detail.url,
+      language: detail.language,
+      tags: detail.tags,
+      collectionIds: undefined,
+    });
+    expect((await res.json()).item).toMatchObject({
+      id: ITEM_ID,
+      title: 'Renamed',
+      content: detail.content,
+      collections: [{ id: 'col-1', name: 'React', visibility: 'private' }],
+    });
+  });
+
+  it('keeps null, empty arrays, and omitted values distinct', async () => {
+    mockUpdate.mockResolvedValue({
+      success: true,
+      data: { ...detail, description: null, tags: [], collections: [] },
+    });
+
+    const res = await patch(ITEM_ID, { description: null, tags: [], collectionIds: [] });
+
+    expect(res.status).toBe(200);
+    expect(mockUpdate).toHaveBeenCalledWith('user-1', ITEM_ID, {
+      title: detail.title,
+      description: null,
+      content: detail.content,
+      url: detail.url,
+      language: detail.language,
+      tags: [],
+      collectionIds: [],
+    });
+  });
+
+  it('rejects an edit that violates the existing item type', async () => {
+    const res = await patch(ITEM_ID, { content: null });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: 'Validation failed',
+      fieldErrors: { content: ['A snippet needs content'] },
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('edits the item found by short id', async () => {
+    mockUpdate.mockResolvedValue({ success: true, data: { ...detail, title: 'Short ref' } });
+
+    const res = await patch(SHORT_ID, { title: 'Short ref' });
+
+    expect(res.status).toBe(200);
+    expect(mockFindUnique.mock.calls[0][0].where).toEqual({ shortId: SHORT_ID });
+    expect(mockUpdate).toHaveBeenCalledWith('user-1', ITEM_ID, expect.objectContaining({ title: 'Short ref' }));
+  });
+
+  it("returns 404 without writing for a missing or someone else's edit target", async () => {
+    mockFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...row, userId: 'user-2' } as never);
+
+    expect((await patch(ITEM_ID, { title: 'Nope' })).status).toBe(404);
+    expect((await patch(SHORT_ID, { title: 'Nope' })).status).toBe(404);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('maps an edit writer failure to its status and field errors', async () => {
+    const message = 'One of the selected collections no longer exists';
+    mockUpdate.mockResolvedValue({
+      success: false,
+      error: message,
+      fieldErrors: { collectionIds: [message] },
+      failure: 'invalid',
+    });
+
+    const res = await patch(ITEM_ID, { collectionIds: ['col-missing'] });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: message, fieldErrors: { collectionIds: [message] } });
   });
 
   it('maps a failed write to its status', async () => {

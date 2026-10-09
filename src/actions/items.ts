@@ -2,7 +2,6 @@
 
 import { z } from 'zod';
 import {
-  updateItem as updateItemQuery,
   toggleItemFavorite as toggleItemFavoriteQuery,
   toggleItemPin as toggleItemPinQuery,
   VALID_ITEM_TYPES,
@@ -11,14 +10,12 @@ import {
 import { parseZodErrors, safeUrlSchema, validateId } from '@/lib/validation';
 import { getAuthedSession, type ActionResult } from '@/lib/action-utils';
 import { COLLECTION_VISIBILITIES, type VisibilityUpdate } from '@/lib/constants/visibility';
-import { publicPathsForItem } from '@/lib/db/public';
-import { lookupPublicPaths, revalidateAfterWrite } from '@/lib/public/revalidate';
 import {
-  collectionOrGenericError,
   createItemForUser,
   deleteItemForUser,
   setItemVisibilityForUser,
   toActionResult,
+  updateItemForUser,
 } from '@/lib/item-writes';
 
 const updateItemSchema = z.object({
@@ -48,19 +45,7 @@ export async function updateItem(
     return { success: false, error: 'Validation failed', fieldErrors: parseZodErrors(parsed.error) };
   }
 
-  try {
-    const before = await lookupPublicPaths(() => publicPathsForItem(itemId));
-    const updated = await updateItemQuery(session.user.id, itemId, parsed.data);
-
-    if (!updated) {
-      return { success: false, error: 'Item not found or access denied' };
-    }
-
-    await revalidateAfterWrite(before, () => publicPathsForItem(itemId));
-    return { success: true, data: updated };
-  } catch (error) {
-    return toActionResult(collectionOrGenericError(error, 'Failed to update item'));
-  }
+  return toActionResult(await updateItemForUser(session.user.id, itemId, parsed.data));
 }
 
 export async function deleteItem(

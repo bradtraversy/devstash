@@ -8,15 +8,17 @@ import {
   apiCreateItemSchema,
   fromApiVisibility,
   itemRefFromInput,
+  mcpUpdateItemSchema,
   toApiCollection,
   toApiItem,
   toApiItemSummary,
   toApiListItem,
   toCreateItemData,
+  toUpdateItemData,
 } from '@/lib/api/items';
 import { getCollectionSummaries } from '@/lib/db/collections';
 import { VALID_ITEM_TYPES, getItemByRef, searchItems } from '@/lib/db/items';
-import { createItemForUser, setItemVisibilityForUser } from '@/lib/item-writes';
+import { createItemForUser, setItemVisibilityForUser, updateItemForUser } from '@/lib/item-writes';
 import { MAX_PAGE } from '@/lib/page-size';
 import { checkRateLimit, formatRetryTime } from '@/lib/rate-limit';
 
@@ -160,6 +162,19 @@ const saveTool = asUser<z.output<typeof saveInput>>('save_item', async (input, u
   return toolJson({ item: toApiItemSummary(result.data) });
 });
 
+const updateTool = asUser<z.output<typeof mcpUpdateItemSchema>>('update_item', async (input, user) => {
+  const item = await getItemByRef(user.id, itemRefFromInput(input.id));
+  if (!item) return toolError(ITEM_NOT_FOUND);
+
+  const built = toUpdateItemData(item, input);
+  if (built.fieldErrors) return toolError(failureMessage('Validation failed', built.fieldErrors));
+
+  const result = await updateItemForUser(user.id, item.id, built.data);
+  if (!result.success || !result.data) return toolError(failureMessage(result.error, result.fieldErrors));
+
+  return toolJson({ item: toApiItemSummary(result.data) });
+});
+
 const shareTool = asUser<z.output<typeof shareInput>>('share_item', async ({ id, visibility }, user) => {
   const item = await getItemByRef(user.id, itemRefFromInput(id));
   if (!item) return toolError(ITEM_NOT_FOUND);
@@ -237,6 +252,18 @@ export function registerDevstashTools(server: McpServer): void {
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     shareTool
+  );
+
+  server.registerTool(
+    'update_item',
+    {
+      title: 'Update item',
+      description:
+        "Partially update an item by its id, short id, or short link. Omitted fields stay unchanged. Send null to clear a nullable scalar when the item type allows it, and send an empty array to clear tags or collection membership. The item type and its own visibility setting stay unchanged. Adding a private item to an unlisted or public collection exposes it through that collection's link. Files and images support metadata edits only.",
+      inputSchema: mcpUpdateItemSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    updateTool
   );
 
   server.registerTool(
