@@ -5,6 +5,7 @@ vi.mock('@/lib/prisma', () => ({ prisma: {} }));
 vi.mock('@/lib/db/items', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/db/items')>()),
   createItem: vi.fn(),
+  updateItem: vi.fn(),
   deleteItem: vi.fn(),
   setItemVisibility: vi.fn(),
 }));
@@ -17,11 +18,13 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 import {
   createItem as createItemQuery,
+  updateItem as updateItemQuery,
   deleteItem as deleteItemQuery,
   setItemVisibility as setItemVisibilityQuery,
   UnknownCollectionError,
   type CreateItemData,
   type ItemDetail,
+  type UpdateItemData,
 } from '@/lib/db/items';
 import { canCreateItem } from '@/lib/usage';
 import { publicPathsForItem } from '@/lib/db/public';
@@ -32,10 +35,12 @@ import {
   deleteItemForUser,
   setItemVisibilityForUser,
   toActionResult,
+  updateItemForUser,
   type WriteResult,
 } from './item-writes';
 
 const mockCreateQuery = vi.mocked(createItemQuery);
+const mockUpdateQuery = vi.mocked(updateItemQuery);
 const mockDeleteQuery = vi.mocked(deleteItemQuery);
 const mockSetVisibilityQuery = vi.mocked(setItemVisibilityQuery);
 const mockCanCreateItem = vi.mocked(canCreateItem);
@@ -74,6 +79,15 @@ const created = {
   title: 'Example',
   visibility: 'UNLISTED',
 } as ItemDetail;
+
+const updateInput: UpdateItemData = {
+  title: 'Updated',
+  description: null,
+  content: 'const x = 2;',
+  url: null,
+  language: 'typescript',
+  tags: ['typescript'],
+};
 
 let consoleError: ReturnType<typeof vi.spyOn>;
 
@@ -235,6 +249,43 @@ describe('deleteItemForUser', () => {
     expect(result).toEqual({ success: true });
     expect(mockPublicPaths.mock.invocationCallOrder[0]).toBeLessThan(mockDeleteQuery.mock.invocationCallOrder[0]);
     expect(revalidated()).toEqual(['/s/abc12345']);
+  });
+});
+
+describe('updateItemForUser', () => {
+  it('returns not-found without revalidating when the item is missing or foreign', async () => {
+    mockPublicPaths.mockResolvedValue(['/s/abc12345']);
+    mockUpdateQuery.mockResolvedValue(null);
+
+    const result = await updateItemForUser('user-1', 'item-1', updateInput);
+
+    expect(result).toEqual({ success: false, error: 'Item not found or access denied', failure: 'not-found' });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('reports an unknown collection as invalid', async () => {
+    mockUpdateQuery.mockRejectedValue(new UnknownCollectionError());
+
+    const result = await updateItemForUser('user-1', 'item-1', { ...updateInput, collectionIds: ['col-other'] });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'One of the selected collections no longer exists',
+      fieldErrors: { collectionIds: ['One of the selected collections no longer exists'] },
+      failure: 'invalid',
+    });
+  });
+
+  it('looks up public paths before the write and revalidates paths from before and after', async () => {
+    mockPublicPaths.mockResolvedValueOnce(['/brad/react']).mockResolvedValueOnce(['/s/abc12345/raw', '/brad/node']);
+    mockUpdateQuery.mockResolvedValue(created);
+
+    const result = await updateItemForUser('user-1', 'item-1', updateInput);
+
+    expect(result).toEqual({ success: true, data: created });
+    expect(mockPublicPaths.mock.invocationCallOrder[0]).toBeLessThan(mockUpdateQuery.mock.invocationCallOrder[0]);
+    expect(mockUpdateQuery).toHaveBeenCalledWith('user-1', 'item-1', updateInput);
+    expect(revalidated()).toEqual(['/brad/react', '/s/abc12345/raw', '/brad/node']);
   });
 });
 

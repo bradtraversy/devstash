@@ -1,4 +1,4 @@
-The DevStash MCP server lets AI tools like Claude Code, Codex, and Cursor search, read, save, share, and delete items in your stash while you work. It runs at `https://devstash.io/mcp`, so there is nothing to install.
+The DevStash MCP server lets AI tools like Claude Code, Codex, and Cursor work with your stash while you code. They can find existing items, save or update them, and control sharing or deletion. It runs at `https://devstash.io/mcp`, so there is nothing to install.
 
 ## Create a token
 
@@ -56,13 +56,14 @@ Any MCP client that supports Streamable HTTP and lets you set a header can conne
 | `search_items` | Searches titles, descriptions, content, URLs, and tags, or lists your newest items |
 | `get_item` | Reads one item in full, by its id, short id, or short link |
 | `save_item` | Saves a snippet, command, prompt, note, or link, working out the type and title like the Home paste box |
+| `update_item` | Partially updates an item's supported text fields, tags, or collections without changing its type or own visibility setting |
 | `share_item` | Makes an item unlisted or public and returns its link, or makes it private again |
 | `delete_items` | Deletes up to 100 items at once |
 | `list_collections` | Lists your collections, so new items can go into one |
 
-Try asking "Save this function to DevStash and give me a share link" or "Find my Docker notes in DevStash".
+Try asking "Save this function to DevStash and give me a share link", "Rename my Docker note", or "Find my Docker notes in DevStash".
 
-New items are private unless you ask for them to be shared. As in the app, an item in an unlisted or public collection can be seen through that collection's link whatever its own setting. Anything the tools read from your stash goes to the AI tool you connected, under that tool's own terms.
+New items are private unless you ask for them to be shared. `update_item` leaves an item's own visibility setting unchanged, but adding a private item to an unlisted or public collection exposes it through that collection's link. Anything the tools read from your stash goes to the AI tool you connected, under that tool's own terms.
 
 ## Deletes are permanent
 
@@ -70,7 +71,7 @@ There is no trash. A deleted item is gone, and so is its link. The delete tool i
 
 ## Limits
 
-The MCP server shares the API's limits: 120 requests a minute and 100 saves an hour per account, counted together with any API calls. Files and images cannot be saved through it.
+The MCP server shares the API's limits: 120 requests a minute and 100 saves an hour per account, counted together with any API calls. Files and images cannot be saved through it, but their metadata can be updated.
 
 ## Revoke access
 

@@ -7,15 +7,19 @@ vi.mock('@/lib/prisma', () => ({ prisma: {} }));
 import {
   apiBulkDeleteSchema,
   apiCreateItemSchema,
+  apiItemEditSchema,
   apiListQuerySchema,
+  apiPatchItemSchema,
   apiUpdateItemSchema,
   itemRefFromInput,
+  mcpUpdateItemSchema,
   shareLink,
   toApiCollection,
   toApiItem,
   toApiItemSummary,
   toApiListItem,
   toCreateItemData,
+  toUpdateItemData,
   type ApiCreateItemInput,
 } from './items';
 
@@ -417,6 +421,129 @@ describe('apiUpdateItemSchema', () => {
     expect(apiUpdateItemSchema.safeParse({ visibility: 'unlisted' }).success).toBe(true);
     expect(apiUpdateItemSchema.safeParse({ visibility: 'unlisted', title: 'x' }).success).toBe(false);
     expect(apiUpdateItemSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('apiItemEditSchema', () => {
+  it('accepts one or more partial edit fields', () => {
+    expect(apiItemEditSchema.parse({ title: ' Renamed ' })).toEqual({ title: 'Renamed' });
+    expect(apiItemEditSchema.parse({ description: null, tags: [], collectionIds: [] })).toEqual({
+      description: null,
+      tags: [],
+      collectionIds: [],
+    });
+  });
+
+  it('requires an edit and rejects unknown keys', () => {
+    expect(apiItemEditSchema.safeParse({}).success).toBe(false);
+    expect(apiItemEditSchema.safeParse({ title: 'Renamed', color: 'blue' }).success).toBe(false);
+  });
+});
+
+describe('apiPatchItemSchema', () => {
+  it('accepts either visibility or partial item fields', () => {
+    expect(apiPatchItemSchema.parse({ visibility: 'unlisted' })).toEqual({ visibility: 'unlisted' });
+    expect(apiPatchItemSchema.parse({ title: 'Renamed' })).toEqual({ title: 'Renamed' });
+  });
+
+  it('rejects mixed, empty, and unknown-key bodies', () => {
+    expect(apiPatchItemSchema.safeParse({ visibility: 'public', title: 'Renamed' }).success).toBe(false);
+    expect(apiPatchItemSchema.safeParse({}).success).toBe(false);
+    expect(apiPatchItemSchema.safeParse({ title: 'Renamed', color: 'blue' }).success).toBe(false);
+  });
+});
+
+describe('mcpUpdateItemSchema', () => {
+  it('accepts partial edits and preserves null and empty array values', () => {
+    expect(
+      mcpUpdateItemSchema.parse({ id: 'abc12345', description: null, tags: [], collectionIds: [] })
+    ).toEqual({ id: 'abc12345', description: null, tags: [], collectionIds: [] });
+  });
+
+  it('requires at least one edit field', () => {
+    expect(mcpUpdateItemSchema.safeParse({ id: 'abc12345' }).success).toBe(false);
+  });
+
+  it('enforces every editable field limit and rejects unsafe values', () => {
+    const invalid = [
+      { title: 'x'.repeat(201) },
+      { description: 'x'.repeat(2001) },
+      { content: 'x'.repeat(500_001) },
+      { url: `https://example.com/${'x'.repeat(2049)}` },
+      { url: 'javascript:alert(1)' },
+      { language: 'klingon' },
+      { tags: Array.from({ length: 21 }, (_, i) => `tag-${i}`) },
+      { tags: ['x'.repeat(51)] },
+      { collectionIds: Array.from({ length: 21 }, (_, i) => `col-${i}`) },
+    ];
+
+    for (const edit of invalid) {
+      expect(mcpUpdateItemSchema.safeParse({ id: 'abc12345', ...edit }).success).toBe(false);
+    }
+    expect(mcpUpdateItemSchema.safeParse({ id: 'abc12345', title: '   ' }).success).toBe(false);
+  });
+});
+
+describe('toUpdateItemData', () => {
+  it('merges a title-only edit without changing omitted fields', () => {
+    expect(toUpdateItemData(detail, mcpUpdateItemSchema.parse({ id: 'item-1', title: 'Renamed' })).data).toEqual({
+      title: 'Renamed',
+      description: detail.description,
+      content: detail.content,
+      url: detail.url,
+      language: detail.language,
+      tags: detail.tags,
+      collectionIds: undefined,
+    });
+  });
+
+  it('keeps null, empty arrays, and omission distinct', () => {
+    expect(
+      toUpdateItemData(
+        detail,
+        mcpUpdateItemSchema.parse({ id: 'item-1', description: null, tags: [], collectionIds: [] })
+      ).data
+    ).toMatchObject({
+      description: null,
+      content: detail.content,
+      tags: [],
+      collectionIds: [],
+    });
+  });
+
+  it('rejects invalid link and text shapes after merging', () => {
+    const link = { ...detail, contentType: 'URL' as const, content: null, url: 'https://example.com', language: null };
+    expect(
+      toUpdateItemData(link, mcpUpdateItemSchema.parse({ id: 'item-1', content: 'not allowed' })).fieldErrors
+    ).toEqual({ content: ['A link takes a url and no content'] });
+    expect(toUpdateItemData(link, mcpUpdateItemSchema.parse({ id: 'item-1', url: null })).fieldErrors).toEqual({
+      url: ['A link needs one http or https URL'],
+    });
+    expect(toUpdateItemData(detail, mcpUpdateItemSchema.parse({ id: 'item-1', url: 'https://example.com' })).fieldErrors)
+      .toEqual({ url: ['Only links take a url'] });
+    expect(toUpdateItemData(detail, mcpUpdateItemSchema.parse({ id: 'item-1', content: null })).fieldErrors).toEqual({
+      content: ['A snippet needs content'],
+    });
+  });
+
+  it('allows language only on snippets and commands', () => {
+    const note = { ...detail, itemType: { ...detail.itemType, name: 'note' } };
+    expect(toUpdateItemData(note, mcpUpdateItemSchema.parse({ id: 'item-1', language: 'markdown' })).fieldErrors)
+      .toEqual({ language: ['Only snippets and commands take a language'] });
+  });
+
+  it('allows metadata-only edits for file and image items', () => {
+    const file = {
+      ...detail,
+      contentType: 'FILE' as const,
+      content: null,
+      language: null,
+      itemType: { ...detail.itemType, name: 'file' },
+    };
+    expect(toUpdateItemData(file, mcpUpdateItemSchema.parse({ id: 'item-1', title: 'Notes' })).data)
+      .toMatchObject({ title: 'Notes', content: null });
+    expect(toUpdateItemData(file, mcpUpdateItemSchema.parse({ id: 'item-1', content: null })).fieldErrors)
+      .toEqual({ content: ['File and image items only support metadata edits'] });
   });
 });
 

@@ -1,6 +1,7 @@
 import { authenticateApiRequest } from '@/lib/api/auth';
-import { apiUpdateItemSchema, fromApiVisibility, toApiItem } from '@/lib/api/items';
+import { apiPatchItemSchema, fromApiVisibility, toApiItem, toUpdateItemData } from '@/lib/api/items';
 import {
+  apiError,
   apiJson,
   notFoundResponse,
   readJsonBody,
@@ -9,7 +10,7 @@ import {
   writeFailureResponse,
 } from '@/lib/api/respond';
 import { findOwnedItems, getItemByRef } from '@/lib/db/items';
-import { deleteItemForUser, setItemVisibilityForUser } from '@/lib/item-writes';
+import { deleteItemForUser, setItemVisibilityForUser, updateItemForUser } from '@/lib/item-writes';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -38,26 +39,35 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const json = await readJsonBody(request);
     if (json.response) return json.response;
 
-    const parsed = apiUpdateItemSchema.safeParse(json.body);
+    const parsed = apiPatchItemSchema.safeParse(json.body);
     if (!parsed.success) {
-      return validationResponse(parsed.error, 'Only visibility can be changed through the API');
+      return validationResponse(parsed.error);
     }
 
     const { id } = await params;
     const item = await getItemByRef(auth.user.id, id);
     if (!item) return notFoundResponse();
 
-    const result = await setItemVisibilityForUser(
-      auth.user.id,
-      item.id,
-      fromApiVisibility(parsed.data.visibility)
-    );
-    if (!result.success) return writeFailureResponse(result);
+    if (parsed.data.visibility !== undefined) {
+      const result = await setItemVisibilityForUser(
+        auth.user.id,
+        item.id,
+        fromApiVisibility(parsed.data.visibility)
+      );
+      if (!result.success) return writeFailureResponse(result);
 
-    const updated = await getItemByRef(auth.user.id, item.id);
-    if (!updated) return notFoundResponse();
+      const updated = await getItemByRef(auth.user.id, item.id);
+      if (!updated) return notFoundResponse();
+      return apiJson({ item: toApiItem(updated) });
+    }
 
-    return apiJson({ item: toApiItem(updated) });
+    const built = toUpdateItemData(item, parsed.data);
+    if (built.fieldErrors) return apiError(400, 'Validation failed', built.fieldErrors);
+
+    const result = await updateItemForUser(auth.user.id, item.id, built.data);
+    if (!result.success || !result.data) return writeFailureResponse(result);
+
+    return apiJson({ item: toApiItem(result.data) });
   } catch (error) {
     return serverErrorResponse('API update item failed', error);
   }

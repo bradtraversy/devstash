@@ -1,11 +1,18 @@
 import { z } from 'zod';
-import { VALID_ITEM_TYPES, type CreateItemData, type ItemDetail, type ItemWithType } from '@/lib/db/items';
+import {
+  VALID_ITEM_TYPES,
+  type CreateItemData,
+  type ItemDetail,
+  type ItemWithType,
+  type UpdateItemData,
+} from '@/lib/db/items';
 import type { CollectionSummary } from '@/lib/db/collections';
 import type { CollectionVisibility } from '@/lib/constants/visibility';
 import { LANGUAGES } from '@/lib/constants/editor';
 import { MAX_PAGE } from '@/lib/page-size';
 import { PASTE_TYPES, detectPasteType, pasteAs, type PasteGuess, type PasteType } from '@/lib/paste';
 import { publicShortPath, siteOrigin } from '@/lib/public/paths';
+import { isValidUrlProtocol } from '@/lib/validation';
 
 export const API_VISIBILITIES = ['private', 'unlisted', 'public'] as const;
 export type ApiVisibility = (typeof API_VISIBILITIES)[number];
@@ -160,9 +167,139 @@ export const apiCreateItemSchema = z.strictObject({
 
 export type ApiCreateItemInput = z.infer<typeof apiCreateItemSchema>;
 
+const EDITABLE_ITEM_FIELDS = [
+  'title',
+  'description',
+  'content',
+  'url',
+  'language',
+  'tags',
+  'collectionIds',
+] as const;
+
+const EDITABLE_ITEM_SHAPE = {
+  title: z.string().trim().min(1, 'title cannot be empty').max(200, 'title is limited to 200 characters').optional(),
+  description: z.string().trim().max(2000, 'description is limited to 2,000 characters').nullable().optional(),
+  content: z.string().max(500_000, 'content is limited to 500,000 characters').nullable().optional(),
+  url: z
+    .string()
+    .trim()
+    .max(2048, 'url is limited to 2,048 characters')
+    .refine(isValidUrlProtocol, 'URL must use http or https protocol')
+    .nullable()
+    .optional(),
+  language: z
+    .string()
+    .trim()
+    .refine((value) => LANGUAGE_VALUES.includes(value), `Unknown language. Use one of: ${LANGUAGE_VALUES.join(', ')}`)
+    .nullable()
+    .optional(),
+  tags: z
+    .array(z.string().trim().min(1, 'tags cannot be empty').max(50, 'tags are limited to 50 characters'))
+    .max(20, 'Up to 20 tags')
+    .optional(),
+  collectionIds: z.array(z.string().trim().min(1)).max(20, 'Up to 20 collections').optional(),
+};
+
+function hasItemEdit(input: Record<string, unknown>): boolean {
+  return EDITABLE_ITEM_FIELDS.some((field) => input[field] !== undefined);
+}
+
+export const apiItemEditSchema = z.strictObject(EDITABLE_ITEM_SHAPE).refine(hasItemEdit, {
+  message: 'Send at least one field to update',
+});
+
+export const mcpUpdateItemSchema = z
+  .strictObject({
+    id: z
+      .string()
+      .trim()
+      .min(1, 'id cannot be empty')
+      .max(2048)
+      .describe('The item id, its 8-character short id, or its short link'),
+    ...EDITABLE_ITEM_SHAPE,
+  })
+  .refine(hasItemEdit, {
+    message: 'Send at least one field to update',
+  });
+
+export type ApiItemEditInput = z.infer<typeof apiItemEditSchema>;
+export type McpUpdateItemInput = z.infer<typeof mcpUpdateItemSchema>;
+
+type UpdateItemBuild =
+  | { data: UpdateItemData; fieldErrors?: never }
+  | { data?: never; fieldErrors: Record<string, string[]> };
+
+function present<T>(value: T | undefined, current: T): T {
+  return value === undefined ? current : value;
+}
+
+/** Merge a partial edit with the current item, then enforce that item's fixed type. */
+export function toUpdateItemData(item: ItemDetail, input: ApiItemEditInput): UpdateItemBuild {
+  const data: UpdateItemData = {
+    title: input.title ?? item.title,
+    description: present(input.description, item.description),
+    content: present(input.content, item.content),
+    url: present(input.url, item.url),
+    language: present(input.language, item.language),
+    tags: input.tags === undefined ? item.tags : [...new Set(input.tags)],
+    collectionIds: input.collectionIds === undefined ? undefined : [...new Set(input.collectionIds)],
+  };
+
+  if (item.contentType === 'FILE') {
+    const unsupported = (['content', 'url', 'language'] as const).find((field) => input[field] !== undefined);
+    if (unsupported) {
+      return { fieldErrors: { [unsupported]: ['File and image items only support metadata edits'] } };
+    }
+    return { data };
+  }
+
+  if (item.contentType === 'URL') {
+    if (!data.url || !isValidUrlProtocol(data.url)) {
+      return { fieldErrors: { url: ['A link needs one http or https URL'] } };
+    }
+    if (data.content !== null) {
+      return { fieldErrors: { content: ['A link takes a url and no content'] } };
+    }
+  } else {
+    if (!data.content?.trim()) {
+      return { fieldErrors: { content: [`A ${item.itemType.name} needs content`] } };
+    }
+    if (data.url !== null) {
+      return { fieldErrors: { url: ['Only links take a url'] } };
+    }
+  }
+
+  if (data.language !== null && item.itemType.name !== 'snippet' && item.itemType.name !== 'command') {
+    return { fieldErrors: { language: ['Only snippets and commands take a language'] } };
+  }
+
+  return { data };
+}
+
 export const apiUpdateItemSchema = z.strictObject({
   visibility: z.enum(API_VISIBILITIES, { message: VISIBILITY_MESSAGE }),
 });
+
+export const apiPatchItemSchema = z
+  .strictObject({
+    visibility: z.enum(API_VISIBILITIES, { message: VISIBILITY_MESSAGE }).optional(),
+    ...EDITABLE_ITEM_SHAPE,
+  })
+  .superRefine((input, ctx) => {
+    const hasVisibility = input.visibility !== undefined;
+    const hasEdits = hasItemEdit(input);
+    if (!hasVisibility && !hasEdits) {
+      ctx.addIssue({ code: 'custom', message: 'Send visibility or at least one field to update' });
+    }
+    if (hasVisibility && hasEdits) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['visibility'],
+        message: 'visibility cannot be changed with item fields',
+      });
+    }
+  });
 
 export const apiBulkDeleteSchema = z.strictObject({
   ids: z

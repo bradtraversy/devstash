@@ -16,6 +16,7 @@ vi.mock('@/lib/db/collections', () => ({ getCollectionSummaries: vi.fn() }));
 vi.mock('@/lib/item-writes', () => ({
   createItemForUser: vi.fn(),
   setItemVisibilityForUser: vi.fn(),
+  updateItemForUser: vi.fn(),
 }));
 
 vi.mock('@/lib/api/bulk-delete', () => ({ deleteItemsForUser: vi.fn() }));
@@ -27,7 +28,7 @@ vi.mock('@/lib/rate-limit', async (importOriginal) => ({
 
 import { getItemByRef, searchItems } from '@/lib/db/items';
 import { getCollectionSummaries } from '@/lib/db/collections';
-import { createItemForUser, setItemVisibilityForUser } from '@/lib/item-writes';
+import { createItemForUser, setItemVisibilityForUser, updateItemForUser } from '@/lib/item-writes';
 import { deleteItemsForUser } from '@/lib/api/bulk-delete';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { mcpAuthInfo, registerDevstashTools } from './tools';
@@ -37,6 +38,7 @@ const mockGetItem = vi.mocked(getItemByRef);
 const mockCollections = vi.mocked(getCollectionSummaries);
 const mockCreate = vi.mocked(createItemForUser);
 const mockSetVisibility = vi.mocked(setItemVisibilityForUser);
+const mockUpdate = vi.mocked(updateItemForUser);
 const mockDeleteItems = vi.mocked(deleteItemsForUser);
 const mockCheckRateLimit = vi.mocked(checkRateLimit);
 
@@ -73,7 +75,7 @@ const listItem: ItemWithType = {
 };
 
 interface RegisteredTool {
-  config: { inputSchema: z.ZodType; annotations?: ToolAnnotations };
+  config: { inputSchema: z.ZodType; description?: string; annotations?: ToolAnnotations };
   cb: (args: unknown, ctx: unknown) => Promise<CallToolResult>;
 }
 
@@ -114,11 +116,19 @@ afterEach(() => {
 });
 
 describe('registerDevstashTools', () => {
-  it('registers the six tools with delete marked destructive and reads marked read only', () => {
+  it('registers the seven tools with correct write, destructive, and read annotations', () => {
     expect([...tools.keys()].sort()).toEqual(
-      ['delete_items', 'get_item', 'list_collections', 'save_item', 'search_items', 'share_item'].sort()
+      ['delete_items', 'get_item', 'list_collections', 'save_item', 'search_items', 'share_item', 'update_item'].sort()
     );
     expect(tools.get('delete_items')?.config.annotations?.destructiveHint).toBe(true);
+    expect(tools.get('update_item')?.config.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    });
+    expect(tools.get('update_item')?.config.description).toContain('own visibility setting stay unchanged');
+    expect(tools.get('update_item')?.config.description).toContain("exposes it through that collection's link");
     for (const name of ['search_items', 'get_item', 'list_collections']) {
       expect(tools.get(name)?.config.annotations?.readOnlyHint).toBe(true);
     }
@@ -295,6 +305,84 @@ describe('share_item', () => {
     const result = await callTool('share_item', { id: 'nope' });
     expect(result.isError).toBe(true);
     expect(mockSetVisibility).not.toHaveBeenCalled();
+  });
+});
+
+describe('update_item', () => {
+  it.each([
+    ['an id', 'item-1', 'item-1'],
+    ['a short id', 'abc12345', 'abc12345'],
+    ['a short link', 'https://devstash.io/s/abc12345', 'abc12345'],
+  ])('updates by %s', async (_label, input, ref) => {
+    mockGetItem.mockResolvedValue(detail);
+    mockUpdate.mockResolvedValue({ success: true, data: { ...detail, title: 'Compose' } });
+
+    const result = await callTool('update_item', { id: input, title: 'Compose' });
+
+    expect(mockGetItem).toHaveBeenCalledWith('user-1', ref);
+    expect(mockUpdate).toHaveBeenCalledWith('user-1', 'item-1', expect.objectContaining({ title: 'Compose' }));
+    expect(result.data.item).toMatchObject({ title: 'Compose', visibility: 'private', link: null });
+    expect(result.data.item).not.toHaveProperty('content');
+  });
+
+  it('preserves omitted fields while null and empty arrays clear their fields', async () => {
+    mockGetItem.mockResolvedValue(detail);
+    mockUpdate.mockResolvedValue({ success: true, data: { ...detail, description: null, tags: [], collections: [] } });
+
+    await callTool('update_item', { id: 'item-1', description: null, tags: [], collectionIds: [] });
+
+    expect(mockUpdate).toHaveBeenCalledWith('user-1', 'item-1', {
+      title: detail.title,
+      description: null,
+      content: detail.content,
+      url: detail.url,
+      language: detail.language,
+      tags: [],
+      collectionIds: [],
+    });
+  });
+
+  it('rejects an edit that would violate the fixed item type', async () => {
+    mockGetItem.mockResolvedValue(detail);
+
+    const result = await callTool('update_item', { id: 'item-1', content: null });
+
+    expect(result).toMatchObject({ isError: true, text: 'Validation failed\ncontent: A command needs content' });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('passes an unknown collection failure through without repeating it', async () => {
+    const message = 'One of the selected collections no longer exists';
+    mockGetItem.mockResolvedValue(detail);
+    mockUpdate.mockResolvedValue({
+      success: false,
+      error: message,
+      fieldErrors: { collectionIds: [message] },
+      failure: 'invalid',
+    });
+
+    const result = await callTool('update_item', { id: 'item-1', collectionIds: ['nope'] });
+
+    expect(result).toMatchObject({ isError: true, text: message });
+  });
+
+  it('returns not found without writing for a missing or foreign item', async () => {
+    mockGetItem.mockResolvedValue(null);
+
+    const result = await callTool('update_item', { id: 'nope', title: 'Nope' });
+
+    expect(result.isError).toBe(true);
+    expect(result.text).toContain('No item');
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('does not apply the create-only rate limit', async () => {
+    mockGetItem.mockResolvedValue(detail);
+    mockUpdate.mockResolvedValue({ success: true, data: detail });
+
+    await callTool('update_item', { id: 'item-1', title: 'Compose' });
+
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
   });
 });
 

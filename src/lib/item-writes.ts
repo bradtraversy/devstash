@@ -1,11 +1,13 @@
 import {
   deleteItem as deleteItemQuery,
   createItem as createItemQuery,
+  updateItem as updateItemQuery,
   setItemVisibility as setItemVisibilityQuery,
   isFileType,
   UnknownCollectionError,
   type CreateItemData,
   type ItemDetail,
+  type UpdateItemData,
 } from '@/lib/db/items';
 import { isOwnedFileUrl } from '@/lib/file-urls';
 import { canCreateItem } from '@/lib/usage';
@@ -102,6 +104,27 @@ export async function createItemForUser(
     return { success: true, data: created };
   } catch (error) {
     return collectionOrGenericError(error, 'Failed to create item');
+  }
+}
+
+/** Updates one owned item and clears every public path affected before or after the edit. */
+export async function updateItemForUser(
+  userId: string,
+  itemId: string,
+  input: UpdateItemData
+): Promise<WriteResult<ItemDetail>> {
+  try {
+    const before = await lookupPublicPaths(() => publicPathsForItem(itemId));
+    const updated = await updateItemQuery(userId, itemId, input);
+
+    if (!updated) {
+      return { success: false, error: NOT_FOUND, failure: 'not-found' };
+    }
+
+    await revalidateAfterWrite(before, () => publicPathsForItem(itemId));
+    return { success: true, data: updated };
+  } catch (error) {
+    return collectionOrGenericError(error, 'Failed to update item');
   }
 }
 

@@ -74,16 +74,21 @@ describe('/mcp', () => {
     consoleError.mockRestore();
   });
 
-  it('lists the six tools through the real handler', async () => {
+  it('lists the seven tools through the real handler', async () => {
     const res = await rpc('tools/list');
 
     expect(res.status).toBe(200);
     const result = await rpcResult(res);
     const tools = result.tools as { name: string; annotations?: Record<string, boolean> }[];
     expect(tools.map((tool) => tool.name).sort()).toEqual(
-      ['delete_items', 'get_item', 'list_collections', 'save_item', 'search_items', 'share_item'].sort()
+      ['delete_items', 'get_item', 'list_collections', 'save_item', 'search_items', 'share_item', 'update_item'].sort()
     );
     expect(tools.find((tool) => tool.name === 'delete_items')?.annotations?.destructiveHint).toBe(true);
+    expect(tools.find((tool) => tool.name === 'update_item')?.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+    });
   });
 
   it('runs a tool as the authenticated user', async () => {
