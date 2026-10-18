@@ -102,6 +102,26 @@ describe('/mcp', () => {
     expect(result.content).toEqual([{ type: 'text', text: '{"collections":[]}' }]);
   });
 
+  it('finishes tool work before returning so Next.js can flush public-path revalidation', async () => {
+    let finishLookup!: (value: []) => void;
+    const lookup = new Promise<[]>((resolve) => { finishLookup = resolve; });
+    mockCollections.mockReturnValue(lookup);
+    let responseReturned = false;
+    const response = rpc('tools/call', { name: 'list_collections', arguments: {} }).then((res) => {
+      responseReturned = true;
+      return res;
+    });
+
+    await vi.waitFor(() => expect(mockCollections).toHaveBeenCalledWith('user-1'));
+    const returnedBeforeToolFinished = responseReturned;
+    finishLookup([]);
+    const res = await response;
+
+    expect(returnedBeforeToolFinished).toBe(false);
+    expect(res.status).toBe(200);
+    expect((await rpcResult(res)).content).toEqual([{ type: 'text', text: '{"collections":[]}' }]);
+  });
+
   it('runs each request as its own user', async () => {
     mockCollections.mockResolvedValue([]);
     mockAuth.mockResolvedValueOnce({ user: USER }).mockResolvedValueOnce({ user: { id: 'user-2', isPro: true } });

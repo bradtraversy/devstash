@@ -2,17 +2,26 @@
 
 ## Status
 
-Not Started
+Completed: Fix MCP public-cache revalidation
 
 ## Goals
 
-<!-- Define goals here -->
+- Complete finite MCP tool responses before returning from the Next.js route so pending public-path invalidations are flushed.
+- Preserve the existing response status, headers and MCP payload.
+- Verify with a delayed-tool regression and the normal project checks.
 
 ## Notes
 
-<!-- Additional context here -->
+- Reproduced with the real MCP adapter: the route returned before a delayed tool completed. Next.js snapshots pending revalidations at route return, so later tool writes missed cache invalidation.
+- Buffer finite MCP responses before returning; maxSubscriptions remains 0. SSE response status, headers and payload are preserved.
+- Regression failed before the fix and passes after. Full npm run verify passed: 1,211 tests, typecheck, lint (seven existing warnings), and production build.
+- Refreshed only /s/qh8posjf using its Next.js path tag. The unchanged normal public URL now serves revision 19 without mods-demo; verified via HTTP and the existing Chrome tab.
+- Independent review found no blocking findings. Production acceptance will verify an MCP edit on the unchanged normal public link.
+- No schema changes or migrations. Git closeout and production deployment approved on 2026-10-18.
 
 ## History
+
+- **MCP Public Cache Revalidation** - Await finite MCP response completion before returning from the Next.js route, so tool writes register their public-page invalidations before Next.js flushes them. Added a delayed-tool regression; all 1,211 tests, typecheck, build and independent review passed. No schema changes. (Completed)
 
 - **Initial Setup** - Next.js 16, Tailwind CSS v4, TypeScript configured (Completed)
 - **Dashboard UI Phase 1** - ShadCN UI initialization, dashboard route at /dashboard, main layout with dark mode, top bar with search and buttons, sidebar and main placeholders (Completed)

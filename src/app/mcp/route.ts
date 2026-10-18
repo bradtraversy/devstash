@@ -39,7 +39,16 @@ async function handler(request: Request): Promise<Response> {
   } catch (error) {
     return serverErrorResponse('MCP authentication failed', error);
   }
-  return mcpHandler(request);
+  const response = await mcpHandler(request);
+  if (!response.body) return response;
+
+  // Next.js flushes revalidatePath calls when this route returns; MCP tools finish in the body stream.
+  const body = await response.arrayBuffer();
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
 }
 
 export { handler as GET, handler as POST, handler as DELETE };
