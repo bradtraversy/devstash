@@ -76,7 +76,7 @@ DevStash is a place to keep the snippets, commands, prompts, notes, and links yo
 | Styling       | Tailwind CSS v4 + shadcn/ui                  |
 | Highlighting  | Shiki, Monaco                                |
 | Images        | `next/og` (Satori)                           |
-| AI            | OpenAI (`gpt-5-nano`)                        |
+| AI            | OpenAI (`gpt-5.6-luna`)                      |
 | Rate limiting | Upstash Redis                                |
 | Email         | Resend                                       |
 | File storage  | Cloudflare R2 (disabled)                     |

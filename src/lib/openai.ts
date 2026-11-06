@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 
-export const AI_MODEL = 'gpt-5-nano'
+export const AI_MODEL = 'gpt-5.6-luna'
 
 let client: OpenAI | null = null
 
